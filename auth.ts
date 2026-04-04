@@ -4,6 +4,11 @@ import { Pool } from "@neondatabase/serverless"
 import Resend from "next-auth/providers/resend"
 import { NextResponse } from "next/server"
 
+import {
+  devLocalhostCredentialsProvider,
+  devLocalhostProxyUnauthorizedRedirect,
+} from "@/lib/dev-localhost-auto-login"
+
 export const { handlers, auth, signIn, signOut } = NextAuth(() => {
   const pool = new Pool({ connectionString: process.env.DATABASE_URL })
   return {
@@ -11,6 +16,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth(() => {
     adapter: PostgresAdapter(pool as Parameters<typeof PostgresAdapter>[0]),
     session: { strategy: "jwt" },
     providers: [
+      devLocalhostCredentialsProvider,
       Resend({
         from: process.env.AUTH_RESEND_FROM?.trim() || "Ratatouille <onboarding@resend.dev>",
       }),
@@ -23,11 +29,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth(() => {
         if (auth?.user && (path === "/login" || path === "/signup")) {
           return NextResponse.redirect(new URL("/", request.url))
         }
-        const isPublic =
-          path.startsWith("/api/auth") || path === "/login" || path === "/signup"
+        const isPublic = path.startsWith("/api/auth") || path === "/login" || path === "/signup"
+        const devLocal = devLocalhostProxyUnauthorizedRedirect(request, auth, path, isPublic)
+        if (devLocal) return devLocal
+
         if (!auth?.user && !isPublic) {
           return NextResponse.redirect(new URL("/login", request.url))
         }
+
         return true
       },
       jwt({ token, user }) {

@@ -9,7 +9,7 @@ import { addTask, toggleTask } from "./actions"
 export const dynamic = "force-dynamic"
 
 export default async function TasksPage() {
-  const userId = await requireUserId()
+  const userId = await requireUserId("/tasks")
   const tasks = await listTasks(userId)
 
   return (

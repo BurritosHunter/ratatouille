@@ -3,10 +3,14 @@ import { redirect } from "next/navigation"
 
 import { auth } from "@/auth"
 import { Button } from "@/components/ui/button"
+import { devLocalhostRedirectIfNoSession } from "@/lib/dev-localhost-auto-login"
 
 export default async function Page() {
   const session = await auth()
-  if (!session?.user) redirect("/login")
+  if (!session?.user) {
+    await devLocalhostRedirectIfNoSession("/")
+    redirect("/login")
+  }
 
   return (
     <div className="flex min-h-svh p-6">
