@@ -1,8 +1,9 @@
 import { Geist_Mono, Figtree, Montserrat } from "next/font/google"
 
 import "./globals.css"
-import { AuthSessionProvider } from "@/components/auth-session-provider"
-import { ThemeProvider } from "@/components/theme-provider"
+import { AuthSessionProvider } from "@/components/providers/auth-session-provider"
+import { SiteHeader } from "@/components/organisms/site-header"
+import { ThemeProvider } from "@/components/providers/theme-provider"
 import { cn } from "@/lib/utils"
 
 const montserratHeading = Montserrat({subsets:['latin'],variable:'--font-heading'});
@@ -27,7 +28,10 @@ export default function RootLayout({
     >
       <body>
         <AuthSessionProvider>
-          <ThemeProvider>{children}</ThemeProvider>
+          <ThemeProvider>
+            <SiteHeader />
+            {children}
+          </ThemeProvider>
         </AuthSessionProvider>
       </body>
     </html>
