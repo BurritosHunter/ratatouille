@@ -1,6 +1,7 @@
 import Link from "next/link"
 
 import { Button } from "@/components/ui/button"
+import { requireUserId } from "@/lib/auth-user"
 import { listTasks } from "@/lib/data/tasks"
 
 import { addTask, toggleTask } from "./actions"
@@ -8,7 +9,8 @@ import { addTask, toggleTask } from "./actions"
 export const dynamic = "force-dynamic"
 
 export default async function TasksPage() {
-  const tasks = await listTasks()
+  const userId = await requireUserId()
+  const tasks = await listTasks(userId)
 
   return (
     <div className="flex min-h-svh flex-col gap-6 p-6">

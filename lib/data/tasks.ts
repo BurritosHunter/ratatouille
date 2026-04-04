@@ -11,20 +11,21 @@ function toTask(row: TaskRow): Task {
   return { id: row.id, content: row.content, isCompleted: row.is_completed }
 }
 
-/** Expects a `tasks` table: id serial PK, content text, is_completed boolean */
-export async function listTasks(): Promise<Task[]> {
+/** Expects a `tasks` table: id serial PK, user_id FK, content text, is_completed boolean */
+export async function listTasks(userId: number): Promise<Task[]> {
   const rows = await getSql()`
     SELECT id, content, is_completed
     FROM tasks
+    WHERE user_id = ${userId}
     ORDER BY id ASC
   `
   return (rows as TaskRow[]).map(toTask)
 }
 
-export async function createTask(content: string): Promise<Task> {
+export async function createTask(userId: number, content: string): Promise<Task> {
   const rows = await getSql()`
-    INSERT INTO tasks (content, is_completed)
-    VALUES (${content}, false)
+    INSERT INTO tasks (user_id, content, is_completed)
+    VALUES (${userId}, ${content}, false)
     RETURNING id, content, is_completed
   `
   const row = (rows as TaskRow[])[0]
@@ -32,14 +33,18 @@ export async function createTask(content: string): Promise<Task> {
   return toTask(row)
 }
 
-export async function setTaskCompleted(id: number, isCompleted: boolean): Promise<void> {
+export async function setTaskCompleted(
+  userId: number,
+  id: number,
+  isCompleted: boolean,
+): Promise<void> {
   await getSql()`
-    UPDATE tasks SET is_completed = ${isCompleted} WHERE id = ${id}
+    UPDATE tasks SET is_completed = ${isCompleted} WHERE id = ${id} AND user_id = ${userId}
   `
 }
 
-export async function flipTaskCompletion(id: number): Promise<void> {
+export async function flipTaskCompletion(userId: number, id: number): Promise<void> {
   await getSql()`
-    UPDATE tasks SET is_completed = NOT is_completed WHERE id = ${id}
+    UPDATE tasks SET is_completed = NOT is_completed WHERE id = ${id} AND user_id = ${userId}
   `
 }
