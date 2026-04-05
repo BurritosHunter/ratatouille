@@ -1,5 +1,5 @@
 import { getSql } from "@/lib/db"
-import type { Task } from "@/lib/types/task"
+import type { Task } from "../models/task"
 
 type TaskRow = {
   id: number

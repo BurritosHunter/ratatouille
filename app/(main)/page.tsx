@@ -3,7 +3,7 @@ import { redirect } from "next/navigation"
 
 import { auth } from "@/auth"
 import { Button } from "@/components/ui/button"
-import { devLocalhostRedirectIfNoSession } from "@/lib/dev-localhost-auto-login"
+import { devLocalhostRedirectIfNoSession } from "@/lib/auth/dev-localhost-auto-login"
 
 export default async function Page() {
   const session = await auth()

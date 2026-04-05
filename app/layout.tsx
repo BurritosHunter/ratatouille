@@ -4,7 +4,7 @@ import "./globals.css"
 import { AuthSessionProvider } from "@/components/providers/auth-session-provider"
 import { ThemeProvider } from "@/components/providers/theme-provider"
 import { Toaster } from "@/components/ui/sonner"
-import { cn } from "@/lib/utils"
+import { cn } from "@/lib/helpers/utils"
 
 const montserratHeading = Montserrat({subsets:['latin'],variable:'--font-heading'});
 

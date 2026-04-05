@@ -3,8 +3,9 @@ import Link from "next/link"
 import { restoreDeletedRecipe } from "./actions"
 import { UndoDeleteToast } from "@/components/molecules/toast-undo-delete"
 import { Button } from "@/components/ui/button"
-import { requireUserId } from "@/lib/auth-user"
+import { requireUserId } from "@/lib/auth/auth-user"
 import { listRecipes } from "@/lib/data/recipes"
+import { imageSrcFromStoredOrExternal } from "@/lib/helpers/image/stored-or-external-src"
 
 export const dynamic = "force-dynamic"
 
@@ -46,17 +47,29 @@ export default async function RecipesPage({ searchParams }: PageProps) {
           </Button>
         </div>
       ) : (
-        <ul className="flex max-w-md flex-col gap-2">
-          {recipes.map((recipe) => (
-            <li key={recipe.id}>
-              <Link
-                href={`/recipes/${recipe.id}`}
-                className="text-sm font-medium underline-offset-4 hover:underline"
-              >
-                {recipe.title}
-              </Link>
-            </li>
-          ))}
+        <ul className="flex max-w-lg flex-col gap-3">
+          {recipes.map((recipe) => {
+            const thumbSrc = imageSrcFromStoredOrExternal({
+              hasStored: recipe.hasStoredImage,
+              storedSrc: `/api/recipes/${recipe.id}/image`,
+              externalUrl: recipe.mainImageUrl,
+            })
+            return (
+              <li key={recipe.id}>
+                <Link
+                  href={`/recipes/${recipe.id}`}
+                  className="flex items-center gap-3 rounded-md border p-2 transition-colors hover:bg-muted/50"
+                >
+                  {thumbSrc ? (
+                    <img src={thumbSrc} alt="" className="size-14 shrink-0 rounded-md border object-cover" />
+                  ) : (
+                    <div className="bg-muted text-muted-foreground flex size-14 shrink-0 items-center justify-center rounded-md border text-xs">No image</div>
+                  )}
+                  <span className="min-w-0 text-sm font-medium">{recipe.title}</span>
+                </Link>
+              </li>
+            )
+          })}
         </ul>
       )}
     </div>

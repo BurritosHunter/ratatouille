@@ -1,7 +1,7 @@
 import Link from "next/link"
 
 import { Button } from "@/components/ui/button"
-import { requireUserId } from "@/lib/auth-user"
+import { requireUserId } from "@/lib/auth/auth-user"
 import { listTasks } from "@/lib/data/tasks"
 
 import { addTask, toggleTask } from "./actions"

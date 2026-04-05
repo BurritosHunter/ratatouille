@@ -4,7 +4,7 @@
  *
  * ---------------------------------------------------------------------------------------------
  * To remove this feature: delete this file, delete `app/api/auth/dev-auto/`, and remove the
- * `devLocalhost*` imports / spread from `auth.ts`, `app/page.tsx`, and `lib/auth-user.ts`.
+ * `devLocalhost*` imports / spread from `auth.ts`, `app/page.tsx`, and `lib/auth/auth-user.ts`.
  * ---------------------------------------------------------------------------------------------
  *
  * Security (read before deploying):

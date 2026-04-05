@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { requireUserId } from "@/lib/auth-user"
+import { requireUserId } from "@/lib/auth/auth-user"
 
 export const dynamic = "force-dynamic"
 
@@ -26,6 +26,26 @@ export default async function NewRecipePage() {
           <Field>
             <FieldLabel htmlFor="title">Title</FieldLabel>
             <Input id="title" name="title" type="text" required placeholder="Recipe name" />
+          </Field>
+          <Field>
+            <FieldLabel htmlFor="main_image">Main image (file)</FieldLabel>
+            <Input id="main_image" name="main_image" type="file" accept="image/jpeg,image/png,image/webp,image/gif" />
+            <p className="text-sm text-muted-foreground">
+              Optional. JPEG, PNG, WebP, or GIF, up to 2MB. Stored in the database.
+            </p>
+          </Field>
+          <Field>
+            <FieldLabel htmlFor="main_image_url">Or image URL</FieldLabel>
+            <Input
+              id="main_image_url"
+              name="main_image_url"
+              type="url"
+              inputMode="url"
+              placeholder="https://…"
+            />
+            <p className="text-sm text-muted-foreground">
+              Optional. If you upload a file, it is used instead of the URL.
+            </p>
           </Field>
           <Field>
             <FieldLabel htmlFor="ingredients">Ingredients</FieldLabel>

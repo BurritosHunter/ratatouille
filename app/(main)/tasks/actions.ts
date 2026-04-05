@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache"
 
-import { requireUserId } from "@/lib/auth-user"
+import { requireUserId } from "@/lib/auth/auth-user"
 import { createTask, flipTaskCompletion } from "@/lib/data/tasks"
 
 export async function addTask(formData: FormData) {

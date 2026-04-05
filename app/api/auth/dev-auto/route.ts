@@ -3,7 +3,7 @@ import {
   DEV_LOCALHOST_CREDENTIALS_ID,
   devLocalhostSafeCallbackUrl,
   requestUrlHostnameIsLocalhost,
-} from "@/lib/dev-localhost-auto-login"
+} from "@/lib/auth/dev-localhost-auto-login"
 
 export async function GET(request: Request) {
   if (!requestUrlHostnameIsLocalhost(request)) return new Response("Not found", { status: 404 })

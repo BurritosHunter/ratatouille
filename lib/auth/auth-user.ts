@@ -1,5 +1,5 @@
 import { auth } from "@/auth"
-import { devLocalhostRedirectIfNoSession } from "@/lib/dev-localhost-auto-login"
+import { devLocalhostRedirectIfNoSession } from "./dev-localhost-auto-login"
 import { redirect } from "next/navigation"
 
 /** Redirects to `/login` when there is no valid numeric user id in session. */
@@ -9,7 +9,7 @@ export async function requireUserId(callbackUrl: string = "/"): Promise<number> 
     const id = Number.parseInt(session.user.id, 10)
     if (Number.isFinite(id)) return id
   }
-  
+
   await devLocalhostRedirectIfNoSession(callbackUrl)
   redirect("/login")
 }
