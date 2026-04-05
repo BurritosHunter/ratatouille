@@ -1,6 +1,6 @@
 import Link from "next/link"
 
-import { restoreDeletedRecipe } from "@/app/recipes/actions"
+import { restoreDeletedRecipe } from "./actions"
 import { UndoDeleteToast } from "@/components/molecules/toast-undo-delete"
 import { Button } from "@/components/ui/button"
 import { requireUserId } from "@/lib/auth-user"

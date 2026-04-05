@@ -2,7 +2,6 @@ import { Geist_Mono, Figtree, Montserrat } from "next/font/google"
 
 import "./globals.css"
 import { AuthSessionProvider } from "@/components/providers/auth-session-provider"
-import { SiteHeader } from "@/components/organisms/site-header"
 import { ThemeProvider } from "@/components/providers/theme-provider"
 import { Toaster } from "@/components/ui/sonner"
 import { cn } from "@/lib/utils"
@@ -30,7 +29,6 @@ export default function RootLayout({
       <body>
         <AuthSessionProvider>
           <ThemeProvider>
-            <SiteHeader />
             {children}
             <Toaster position="bottom-right" duration={8000} closeButton />
           </ThemeProvider>
