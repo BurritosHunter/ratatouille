@@ -25,6 +25,9 @@ export function SiteHeader() {
           <Button asChild variant="ghost">
             <Link href="/tasks">Tasks</Link>
           </Button>
+          <Button asChild variant="ghost">
+            <Link href="/recipes">Recipes</Link>
+          </Button>
         </div>
         <div className="flex shrink-0 flex-row items-center gap-2">
           <InputGroup className="w-48 sm:w-64">
@@ -33,7 +36,7 @@ export function SiteHeader() {
             </InputGroupAddon>
             <InputGroupInput placeholder="Search" type="search" aria-label="Search" />
           </InputGroup>
-          <Button type="button" variant="ghost" size="icon" aria-label="Profile">
+          <Button type="button" variant="outline" size="icon" aria-label="Profile">
             <IconUser aria-hidden />
           </Button>
         </div>
