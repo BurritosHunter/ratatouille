@@ -25,6 +25,9 @@ export function SiteHeader() {
           <Button asChild variant="ghost">
             <Link href="/recipes">Recipes</Link>
           </Button>
+          <Button asChild variant="ghost">
+            <Link href="/ingredients">Ingredients</Link>
+          </Button>
         </div>
         <div className="flex shrink-0 flex-row items-center gap-2">
           <InputGroup className="w-48 sm:w-64">

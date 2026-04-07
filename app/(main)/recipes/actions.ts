@@ -10,6 +10,12 @@ import {
   softDeleteRecipe,
   updateRecipe as updateRecipeRow,
 } from "@/lib/data/recipes"
+import {
+  formatIngredientsDisplay,
+  resolveRecipeIngredientPayload,
+  writeRecipeIngredientLines,
+} from "@/lib/data/recipe-ingredients"
+import { parseRecipeIngredientsPayload } from "@/lib/helpers/recipe-ingredients-form"
 import { RecipeImagePatchAction } from "@/lib/constants"
 import type { RecipeImagePatch } from "@/lib/models/recipe"
 import { parseImageUpload } from "@/lib/helpers/image/image-file"
@@ -33,13 +39,18 @@ function parseMainImageUrl(raw: unknown): string | null {
 export async function addRecipe(formData: FormData) {
   const userId = await requireUserId("/recipes/new")
   const title = formData.get("title")
-  const ingredients = formData.get("ingredients")
   const instructions = formData.get("instructions")
+  const payload = parseRecipeIngredientsPayload(formData.get("ingredients_payload"))
   const file = await parseImageUpload(formData.get("main_image"))
   const url = parseMainImageUrl(formData.get("main_image_url"))
   if (typeof title !== "string" || !title.trim()) return
-  if (typeof ingredients !== "string" || !ingredients.trim()) return
+  if (!payload || payload.length === 0) return
   if (typeof instructions !== "string" || !instructions.trim()) return
+
+  const resolved = await resolveRecipeIngredientPayload(userId, payload)
+  if (resolved.length === 0) return;
+
+  const ingredientsText = formatIngredientsDisplay(resolved)
 
   let mainImageUrl: string | null = null
   let mainImageData: Buffer | null = null
@@ -54,12 +65,13 @@ export async function addRecipe(formData: FormData) {
   const recipe = await createRecipe(
     userId,
     title.trim(),
-    ingredients.trim(),
+    ingredientsText,
     instructions.trim(),
     mainImageUrl,
     mainImageData,
     mainImageMime,
   )
+  await writeRecipeIngredientLines(userId, recipe.id, resolved)
   revalidatePath("/recipes")
   redirect(`/recipes/${recipe.id}`)
 }
@@ -89,11 +101,16 @@ export async function updateRecipe(formData: FormData) {
 
   const userId = await requireUserId(`/recipes/${id}/edit`)
   const title = formData.get("title")
-  const ingredients = formData.get("ingredients")
   const instructions = formData.get("instructions")
+  const payload = parseRecipeIngredientsPayload(formData.get("ingredients_payload"))
   if (typeof title !== "string" || !title.trim()) return
-  if (typeof ingredients !== "string" || !ingredients.trim()) return
+  if (!payload || payload.length === 0) return
   if (typeof instructions !== "string" || !instructions.trim()) return
+
+  const resolved = await resolveRecipeIngredientPayload(userId, payload)
+  if (resolved.length === 0) return
+  
+  const ingredientsText = formatIngredientsDisplay(resolved)
 
   const meta = await getRecipeImageState(userId, id)
   if (!meta) return
@@ -107,12 +124,14 @@ export async function updateRecipe(formData: FormData) {
     id,
     {
       title: title.trim(),
-      ingredients: ingredients.trim(),
+      ingredients: ingredientsText,
       instructions: instructions.trim(),
     },
     imagePatch,
   )
   if (!recipe) return
+
+  await writeRecipeIngredientLines(userId, id, resolved)
 
   revalidatePath("/recipes")
   revalidatePath(`/recipes/${id}`)

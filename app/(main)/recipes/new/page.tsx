@@ -1,16 +1,19 @@
 import Link from "next/link"
 
 import { addRecipe } from "../actions"
+import { MealIngredientsEditor } from "@/components/organisms/meal-ingredients-editor"
 import { Button } from "@/components/ui/button"
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { requireUserId } from "@/lib/auth/auth-user"
+import { listIngredients } from "@/lib/data/ingredients"
 
 export const dynamic = "force-dynamic"
 
 export default async function NewRecipePage() {
-  await requireUserId("/recipes/new")
+  const userId = await requireUserId("/recipes/new")
+  const catalog = await listIngredients(userId)
 
   return (
     <div className="flex min-h-svh flex-col gap-6 p-6">
@@ -47,16 +50,7 @@ export default async function NewRecipePage() {
               Optional. If you upload a file, it is used instead of the URL.
             </p>
           </Field>
-          <Field>
-            <FieldLabel htmlFor="ingredients">Ingredients</FieldLabel>
-            <Textarea
-              id="ingredients"
-              name="ingredients"
-              required
-              placeholder="List ingredients (one per line is fine)"
-              className="min-h-28"
-            />
-          </Field>
+          <MealIngredientsEditor catalog={catalog} initialLines={[]} />
           <Field>
             <FieldLabel htmlFor="instructions">Instructions</FieldLabel>
             <Textarea

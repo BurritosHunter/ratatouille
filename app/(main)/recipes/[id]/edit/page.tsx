@@ -2,11 +2,15 @@ import Link from "next/link"
 import { notFound } from "next/navigation"
 
 import { updateRecipe } from "../../actions"
+import { MealIngredientsEditor } from "@/components/organisms/meal-ingredients-editor"
+import type { MealIngredientEditorLine } from "@/components/organisms/meal-ingredients-editor"
 import { Button } from "@/components/ui/button"
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { requireUserId } from "@/lib/auth/auth-user"
+import { listIngredients } from "@/lib/data/ingredients"
+import { legacyPayloadFromIngredientsText, listRecipeIngredientLines } from "@/lib/data/recipe-ingredients"
 import { getRecipeById } from "@/lib/data/recipes"
 import { imageSrcFromStoredOrExternal } from "@/lib/helpers/image/stored-or-external-src"
 
@@ -25,6 +29,21 @@ export default async function EditRecipePage({ params }: PageProps) {
   const userId = await requireUserId(callbackPath)
   const recipe = await getRecipeById(userId, recipeId)
   if (!recipe) notFound()
+
+  const catalog = await listIngredients(userId)
+  const junctionLines = await listRecipeIngredientLines(userId, recipeId)
+  const initialLines: MealIngredientEditorLine[] =
+    junctionLines.length > 0
+      ? junctionLines.map((l) => ({
+          ingredientId: l.ingredientId,
+          name: l.name,
+          quantityNote: l.quantityNote ?? "",
+        }))
+      : legacyPayloadFromIngredientsText(recipe.ingredients).map((p) => ({
+          ingredientId: typeof p.ingredientId === "number" ? p.ingredientId : undefined,
+          name: p.name,
+          quantityNote: typeof p.quantityNote === "string" ? p.quantityNote : "",
+        }))
 
   const previewSrc = imageSrcFromStoredOrExternal({
     hasStored: recipe.hasStoredImage,
@@ -100,15 +119,8 @@ export default async function EditRecipePage({ params }: PageProps) {
             </FieldLabel>
           </Field>
           <Field>
-            <FieldLabel htmlFor="ingredients">Ingredients</FieldLabel>
-            <Textarea
-              id="ingredients"
-              name="ingredients"
-              required
-              placeholder="List ingredients (one per line is fine)"
-              className="min-h-28"
-              defaultValue={recipe.ingredients}
-            />
+            <FieldLabel>Ingredients</FieldLabel>
+            <MealIngredientsEditor catalog={catalog} initialLines={initialLines} />
           </Field>
           <Field>
             <FieldLabel htmlFor="instructions">Instructions</FieldLabel>
