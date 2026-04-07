@@ -23,9 +23,6 @@ export function SiteHeader() {
             <Link href="/">Explore</Link>
           </Button>
           <Button asChild variant="ghost">
-            <Link href="/tasks">Tasks</Link>
-          </Button>
-          <Button asChild variant="ghost">
             <Link href="/recipes">Recipes</Link>
           </Button>
         </div>
