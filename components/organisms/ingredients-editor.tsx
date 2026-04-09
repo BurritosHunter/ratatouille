@@ -1,7 +1,8 @@
 "use client"
 
+import { IconPlus, IconTrash } from "@tabler/icons-react"
 import { useRouter } from "next/navigation"
-import { useCallback, useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react"
 
 import { saveIngredientsState } from "@/app/(main)/ingredients/actions"
 import { Button } from "@/components/ui/button"
@@ -29,6 +30,35 @@ function payloadSignature(payload: Line[]): string {
   return JSON.stringify(payload)
 }
 
+function ingredientsSignature(items: Ingredient[]): string {
+  return JSON.stringify(items.map((i) => [i.id, i.name]))
+}
+
+function mergeIngredientsFromServer(server: Ingredient[], prev: InternalLine[]): InternalLine[] {
+  const serverLines = linesFromServer(server)
+  const suffix: InternalLine[] = []
+  let i = prev.length - 1
+  while (i >= 0 && prev[i].id === undefined) {
+    suffix.unshift(prev[i])
+    i--
+  }
+  let emptyRunStart = suffix.length
+  while (emptyRunStart > 0 && suffix[emptyRunStart - 1].name.trim() === "") {
+    emptyRunStart -= 1
+  }
+  const emptyTail = suffix.slice(emptyRunStart)
+  const toMatch = suffix.slice(0, emptyRunStart)
+
+  let u = toMatch.length - 1
+  let s = serverLines.length - 1
+  while (u >= 0 && s >= 0 && toMatch[u].name.trim() === serverLines[s].name.trim()) {
+    u -= 1
+    s -= 1
+  }
+  const unmatchedDrafts = toMatch.slice(0, u + 1)
+  return [...serverLines, ...unmatchedDrafts, ...emptyTail]
+}
+
 type Props = {
   initial: Ingredient[]
 }
@@ -47,11 +77,17 @@ export function IngredientsEditor({ initial }: Props) {
   const savingLockRef = useRef(false)
   const pendingAgainRef = useRef(false)
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const initialSigRef = useRef(ingredientsSignature(initial))
+  /** Draft row to clear after a successful Enter (confirm) save. */
+  const enterConfirmLineIdRef = useRef<string | null>(null)
 
   const runPersist = useCallback(async () => {
     const payload = linesToPayload(linesRef.current)
     const sig = payloadSignature(payload)
-    if (sig === lastSavedSigRef.current) return
+    if (sig === lastSavedSigRef.current) {
+      enterConfirmLineIdRef.current = null
+      return
+    }
 
     if (savingLockRef.current) {
       pendingAgainRef.current = true
@@ -60,12 +96,18 @@ export function IngredientsEditor({ initial }: Props) {
     savingLockRef.current = true
     setSaving(true)
     try {
-      const r = await saveIngredientsState(payload)
-      if (!r.ok) return
-      const nextLines = linesRef.current.filter((l) => l.id !== undefined || l.name.trim() !== "")
-      lastSavedSigRef.current = payloadSignature(linesToPayload(nextLines))
-      linesRef.current = nextLines
-      setLines(nextLines)
+      const result = await saveIngredientsState(payload)
+      const clearLineId = enterConfirmLineIdRef.current
+      enterConfirmLineIdRef.current = null
+      if (!result.ok) return
+      if (clearLineId) {
+        const next = linesRef.current.map((line) =>
+          line.lineId === clearLineId && line.id === undefined ? { ...line, name: "" } : line
+        )
+        linesRef.current = next
+        setLines(next)
+      }
+      lastSavedSigRef.current = payloadSignature(linesToPayload(linesRef.current))
       router.refresh()
     } finally {
       savingLockRef.current = false
@@ -115,32 +157,75 @@ export function IngredientsEditor({ initial }: Props) {
     }
   }, [])
 
+  useLayoutEffect(() => {
+    const sig = ingredientsSignature(initial)
+    if (sig === initialSigRef.current) return
+    initialSigRef.current = sig
+    setLines((prev) => {
+      const next = mergeIngredientsFromServer(initial, prev)
+      lastSavedSigRef.current = payloadSignature(linesToPayload(next))
+      return next
+    })
+  }, [initial])
+
   function addEmptyRow() {
     setLines((prev) => [...prev, { name: "", lineId: draftLineId() }])
   }
 
+  function removeLine(index: number) {
+    flushDebounce()
+    setLines((prev) => {
+      const next = prev.filter((_line, i) => i !== index)
+      linesRef.current = next
+      queueMicrotask(() => void persistNowRef.current())
+      return next
+    })
+  }
+
   return (
-    <div className="flex max-w-lg flex-col gap-6">
+    <div className="flex flex-col gap-4">
       <FieldGroup className="gap-3">
         {lines.length === 0 ? (
           <p className="text-sm text-muted-foreground">No ingredients yet. Add one below.</p>
         ) : (
           <ul className="flex flex-col gap-3">
-            {lines.map((line, index) => (
+            {lines.map((line, i) => (
               <li key={line.lineId}>
                 <Field className="gap-1.5">
-                  <FieldLabel className="sr-only">Ingredient {index + 1}</FieldLabel>
-                  <Input
-                    value={line.name}
-                    onChange={(e) => {
-                      const v = e.target.value
-                      setLines((prev) => prev.map((l, i) => (i === index ? { ...l, name: v } : l)))
-                    }}
-                    onBlur={schedulePersistFromBlur}
-                    placeholder="Ingredient name"
-                    autoComplete="off"
-                    aria-label={`Ingredient ${index + 1}`}
-                  />
+                  <FieldLabel className="sr-only">Ingredient {i + 1}</FieldLabel>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      className="min-w-0 flex-1"
+                      value={line.name}
+                      onChange={(event) => {
+                        const value = event.target.value
+                        setLines((prev) =>
+                          prev.map((line, j) => (j === i ? { ...line, name: value } : line))
+                        )
+                      }}
+                      onKeyDown={(event) => {
+                        if (event.key !== "Enter" || event.nativeEvent.isComposing) return
+                        event.preventDefault()
+                        flushDebounce()
+                        if (line.id === undefined && line.name.trim() !== "") enterConfirmLineIdRef.current = line.lineId
+                        void persistNowRef.current()
+                      }}
+                      onBlur={schedulePersistFromBlur}
+                      placeholder="Ingredient name"
+                      autoComplete="off"
+                      aria-label={`Ingredient ${i + 1}`}
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-sm"
+                      className="shrink-0 text-muted-foreground hover:text-destructive"
+                      aria-label={`Remove ingredient ${i + 1}`}
+                      onClick={() => removeLine(i)}
+                    >
+                      <IconTrash className="size-4" aria-hidden />
+                    </Button>
+                  </div>
                 </Field>
               </li>
             ))}
@@ -149,8 +234,14 @@ export function IngredientsEditor({ initial }: Props) {
       </FieldGroup>
 
       <div className="flex flex-col gap-2">
-        <Button type="button" variant="link" className="h-auto p-0 text-muted-foreground underline-offset-4" onClick={addEmptyRow}>
-          create a new ingredient
+        <Button
+          type="button"
+          variant="ghost"
+          className="self-start justify-start text-muted-foreground"
+          onClick={addEmptyRow}
+        >
+          <IconPlus className="size-4 shrink-0" aria-hidden />
+          Create a new ingredient
         </Button>
         {saving ? (
           <p className="text-sm text-muted-foreground" aria-live="polite">
@@ -159,10 +250,6 @@ export function IngredientsEditor({ initial }: Props) {
         ) : null}
       </div>
 
-      <p className="text-sm text-muted-foreground">
-        Changes save when you leave a field, switch tab, or leave this page. Empty rows are not stored. Clear a name and
-        leave the field to remove that ingredient.
-      </p>
     </div>
   )
 }

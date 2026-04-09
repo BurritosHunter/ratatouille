@@ -2,19 +2,19 @@ import type { RecipeIngredientPayloadItem } from "@/lib/models/recipe-ingredient
 
 export function parseRecipeIngredientsPayload(raw: unknown): RecipeIngredientPayloadItem[] | null {
   if (typeof raw !== "string") return null
-  const t = raw.trim()
-  if (!t) return null
+  const trimmed = raw.trim()
+  if (!trimmed) return null
   try {
-    const data = JSON.parse(t) as unknown
+    const data = JSON.parse(trimmed) as unknown
     if (!Array.isArray(data)) return null
     const out: RecipeIngredientPayloadItem[] = []
-    for (const el of data) {
-      if (!el || typeof el !== "object") continue
-      const o = el as Record<string, unknown>
-      const name = typeof o.name === "string" ? o.name.trim() : ""
+    for (const element of data) {
+      if (!element || typeof element !== "object") continue
+      const record = element as Record<string, unknown>
+      const name = typeof record.name === "string" ? record.name.trim() : ""
       if (!name) continue
-      const quantityNote = typeof o.quantityNote === "string" ? o.quantityNote : undefined
-      const ingredientId = o.ingredientId
+      const quantityNote = typeof record.quantityNote === "string" ? record.quantityNote : undefined
+      const ingredientId = record.ingredientId
       out.push({
         name,
         quantityNote,

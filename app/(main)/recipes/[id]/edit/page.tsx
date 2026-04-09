@@ -34,15 +34,15 @@ export default async function EditRecipePage({ params }: PageProps) {
   const junctionLines = await listRecipeIngredientLines(userId, recipeId)
   const initialLines: MealIngredientEditorLine[] =
     junctionLines.length > 0
-      ? junctionLines.map((l) => ({
-          ingredientId: l.ingredientId,
-          name: l.name,
-          quantityNote: l.quantityNote ?? "",
+      ? junctionLines.map((line) => ({
+          ingredientId: line.ingredientId,
+          name: line.name,
+          quantityNote: line.quantityNote ?? "",
         }))
-      : legacyPayloadFromIngredientsText(recipe.ingredients).map((p) => ({
-          ingredientId: typeof p.ingredientId === "number" ? p.ingredientId : undefined,
-          name: p.name,
-          quantityNote: typeof p.quantityNote === "string" ? p.quantityNote : "",
+      : legacyPayloadFromIngredientsText(recipe.ingredients).map((payloadItem) => ({
+          ingredientId: typeof payloadItem.ingredientId === "number" ? payloadItem.ingredientId : undefined,
+          name: payloadItem.name,
+          quantityNote: typeof payloadItem.quantityNote === "string" ? payloadItem.quantityNote : "",
         }))
 
   const previewSrc = imageSrcFromStoredOrExternal({

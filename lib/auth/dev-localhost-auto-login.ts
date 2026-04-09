@@ -50,8 +50,8 @@ export function requestUrlHostnameIsLocalhost(request: Request): boolean {
  * `X-Forwarded-Host` here—spoofed values could otherwise trigger dev sign-in on a shared host.
  */
 export async function serverComponentRequestIsLocalhost(): Promise<boolean> {
-  const h = await headers()
-  const host = h.get("host")
+  const requestHeaders = await headers()
+  const host = requestHeaders.get("host")
   if (!host) return false
   return hostnameIsLocalhost(hostnameFromHostHeader(host))
 }

@@ -17,12 +17,12 @@ export function LoginForm() {
   const [showDevLink, setShowDevLink] = useState(false)
 
   useEffect(() => {
-    const h = window.location.hostname
-    if (h === "localhost" || h === "127.0.0.1") setShowDevLink(true)
+    const hostname = window.location.hostname
+    if (hostname === "localhost" || hostname === "127.0.0.1") setShowDevLink(true)
   }, [])
 
-  async function onSubmit(e: React.FormEvent) {
-    e.preventDefault()
+  async function onSubmit(event: React.FormEvent) {
+    event.preventDefault()
     if (!email.trim()) return
     setStatus("loading")
     setErrorMessage("")

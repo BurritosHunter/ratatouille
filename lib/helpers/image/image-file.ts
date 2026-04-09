@@ -28,6 +28,6 @@ export async function parseImageUpload(
   if (raw.size > maxBytes) return null
   const mime = raw.type || "application/octet-stream"
   if (!allowedMime.has(mime)) return null
-  const ab = await raw.arrayBuffer()
-  return { buffer: Buffer.from(ab), mime }
+  const arrayBuffer = await raw.arrayBuffer()
+  return { buffer: Buffer.from(arrayBuffer), mime }
 }

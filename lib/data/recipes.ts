@@ -20,9 +20,9 @@ type RecipeSummaryRow = {
 
 
 function toId(value: string | number): number {
-  const n = typeof value === "string" ? Number.parseInt(value, 10) : Number(value)
-  if (!Number.isFinite(n)) throw new Error("Invalid recipe id")
-  return n
+  const parsed = typeof value === "string" ? Number.parseInt(value, 10) : Number(value)
+  if (!Number.isFinite(parsed)) throw new Error("Invalid recipe id")
+  return parsed
 }
 
 function toRecipe(row: RecipeRow): Recipe {

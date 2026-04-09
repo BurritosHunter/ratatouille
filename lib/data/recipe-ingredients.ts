@@ -24,21 +24,22 @@ export async function listRecipeIngredientLines(
     ORDER BY ri.sort_order ASC
   `
   return (rows as { ingredient_id: string | number; name: string; quantity_note: string | null; sort_order: number }[]).map(
-    (r) => ({
-      ingredientId: typeof r.ingredient_id === "string" ? Number.parseInt(r.ingredient_id, 10) : r.ingredient_id,
-      name: r.name,
-      quantityNote: r.quantity_note,
-      sortOrder: r.sort_order,
+    (row) => ({
+      ingredientId:
+        typeof row.ingredient_id === "string" ? Number.parseInt(row.ingredient_id, 10) : row.ingredient_id,
+      name: row.name,
+      quantityNote: row.quantity_note,
+      sortOrder: row.sort_order,
     }),
   )
 }
 
 export function formatIngredientsDisplay(lines: { name: string; quantityNote: string | null }[]): string {
   return lines
-    .map((l) => {
-      const note = (l.quantityNote ?? "").trim()
-      if (!note) return l.name.trim()
-      return `${note} ${l.name.trim()}`.trim()
+    .map((line) => {
+      const note = (line.quantityNote ?? "").trim()
+      if (!note) return line.name.trim()
+      return `${note} ${line.name.trim()}`.trim()
     })
     .filter(Boolean)
     .join("\n")
@@ -47,7 +48,7 @@ export function formatIngredientsDisplay(lines: { name: string; quantityNote: st
 export function legacyPayloadFromIngredientsText(text: string): RecipeIngredientPayloadItem[] {
   return text
     .split("\n")
-    .map((l) => l.trim())
+    .map((line) => line.trim())
     .filter(Boolean)
     .map((name) => ({ name }))
 }
@@ -65,8 +66,8 @@ async function assertRecipeOwned(userId: number, recipeId: number): Promise<bool
 function parsePayloadItemId(raw: unknown): number | undefined {
   if (typeof raw === "number" && Number.isFinite(raw)) return raw
   if (typeof raw === "string") {
-    const p = Number.parseInt(raw, 10)
-    if (Number.isFinite(p)) return p
+    const parsed = Number.parseInt(raw, 10)
+    if (Number.isFinite(parsed)) return parsed
   }
   return undefined
 }

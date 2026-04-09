@@ -28,7 +28,9 @@ function withIds(rows: MealIngredientEditorLine[], nextId: { current: number }):
 export function MealIngredientsEditor({ catalog: catalogProp, initialLines }: Props) {
   const nextLineId = useRef(0)
   const [catalog, setCatalog] = useState(() =>
-    [...catalogProp].sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: "base" })),
+    [...catalogProp].sort((left, right) =>
+      left.name.localeCompare(right.name, undefined, { sensitivity: "base" }),
+    ),
   )
   const [lines, setLines] = useState<InternalLine[]>(() => withIds(initialLines, nextLineId))
   const [pickId, setPickId] = useState("")
@@ -54,7 +56,7 @@ export function MealIngredientsEditor({ catalog: catalogProp, initialLines }: Pr
   function addFromCatalog() {
     const id = Number.parseInt(pickId, 10)
     if (!Number.isFinite(id)) return
-    const row = catalog.find((c) => c.id === id)
+    const row = catalog.find((entry) => entry.id === id)
     if (!row) return
     appendLine({ ingredientId: row.id, name: row.name, quantityNote: "" })
     setPickId("")
@@ -65,7 +67,7 @@ export function MealIngredientsEditor({ catalog: catalogProp, initialLines }: Pr
   }
 
   function removeLine(index: number) {
-    setLines((prev) => prev.filter((_, i) => i !== index))
+    setLines((prev) => prev.filter((_line, i) => i !== index))
   }
 
   function moveLine(index: number, dir: -1 | 1) {
@@ -73,9 +75,9 @@ export function MealIngredientsEditor({ catalog: catalogProp, initialLines }: Pr
       const next = index + dir
       if (next < 0 || next >= prev.length) return prev
       const copy = [...prev]
-      const t = copy[index]!
+      const temp = copy[index]!
       copy[index] = copy[next]!
-      copy[next] = t
+      copy[next] = temp
       return copy
     })
   }
@@ -85,15 +87,15 @@ export function MealIngredientsEditor({ catalog: catalogProp, initialLines }: Pr
     if (!name || pending) return
     setPending(true)
     try {
-      const r = await quickCreateIngredient(name)
-      if (r.ok) {
+      const createResult = await quickCreateIngredient(name)
+      if (createResult.ok) {
         setCatalog((prev) => {
-          if (prev.some((p) => p.id === r.id)) return prev
-          return [...prev, { id: r.id, name: r.name }].sort((a, b) =>
-            a.name.localeCompare(b.name, undefined, { sensitivity: "base" }),
+          if (prev.some((existing) => existing.id === createResult.id)) return prev
+          return [...prev, { id: createResult.id, name: createResult.name }].sort((left, right) =>
+            left.name.localeCompare(right.name, undefined, { sensitivity: "base" }),
           )
         })
-        appendLine({ ingredientId: r.id, name: r.name, quantityNote: "" })
+        appendLine({ ingredientId: createResult.id, name: createResult.name, quantityNote: "" })
         setNewName("")
       }
     } finally {
@@ -111,13 +113,13 @@ export function MealIngredientsEditor({ catalog: catalogProp, initialLines }: Pr
           <select
             className="border-input bg-background h-9 min-w-[12rem] flex-1 rounded-md border px-3 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
             value={pickId}
-            onChange={(e) => setPickId(e.target.value)}
+            onChange={(event) => setPickId(event.target.value)}
             aria-label="Choose ingredient from pantry"
           >
             <option value="">Choose ingredient…</option>
-            {catalog.map((c) => (
-              <option key={c.id} value={String(c.id)}>
-                {c.name}
+            {catalog.map((entry) => (
+              <option key={entry.id} value={String(entry.id)}>
+                {entry.name}
               </option>
             ))}
           </select>
@@ -133,7 +135,7 @@ export function MealIngredientsEditor({ catalog: catalogProp, initialLines }: Pr
           <Input
             id="new_ingredient_name"
             value={newName}
-            onChange={(e) => setNewName(e.target.value)}
+            onChange={(event) => setNewName(event.target.value)}
             placeholder="e.g. Sumac"
             className="max-w-xs flex-1"
           />
@@ -160,7 +162,7 @@ export function MealIngredientsEditor({ catalog: catalogProp, initialLines }: Pr
           <p className="text-sm text-muted-foreground">No lines yet — pick from pantry, create new, or add a blank line.</p>
         ) : (
           <ul className="flex flex-col gap-3">
-            {lines.map((line, index) => (
+            {lines.map((line, i) => (
               <li
                 key={line.lineId}
                 className="flex flex-col gap-2 rounded-md border p-3 sm:flex-row sm:flex-wrap sm:items-end"
@@ -170,10 +172,12 @@ export function MealIngredientsEditor({ catalog: catalogProp, initialLines }: Pr
                     <FieldLabel className="text-xs">Ingredient name</FieldLabel>
                     <Input
                       value={line.name}
-                      onChange={(e) => {
-                        const v = e.target.value
+                      onChange={(event) => {
+                        const value = event.target.value
                         setLines((prev) =>
-                          prev.map((l, i) => (i === index ? { ...l, name: v, ingredientId: undefined } : l)),
+                          prev.map((line, j) =>
+                            j === i ? { ...line, name: value, ingredientId: undefined } : line
+                          ),
                         )
                       }}
                       placeholder="Ingredient"
@@ -184,28 +188,30 @@ export function MealIngredientsEditor({ catalog: catalogProp, initialLines }: Pr
                     <FieldLabel className="text-xs">Amount / note (optional)</FieldLabel>
                     <Input
                       value={line.quantityNote}
-                      onChange={(e) => {
-                        const v = e.target.value
-                        setLines((prev) => prev.map((l, i) => (i === index ? { ...l, quantityNote: v } : l)))
+                      onChange={(event) => {
+                        const value = event.target.value
+                        setLines((prev) =>
+                          prev.map((line, j) => (j === i ? { ...line, quantityNote: value } : line))
+                        )
                       }}
                       placeholder="e.g. 2 tbsp"
                     />
                   </Field>
                 </div>
                 <div className="flex shrink-0 flex-wrap gap-1">
-                  <Button type="button" variant="ghost" size="sm" onClick={() => moveLine(index, -1)} disabled={index === 0}>
+                  <Button type="button" variant="ghost" size="sm" onClick={() => moveLine(i, -1)} disabled={i === 0}>
                     Up
                   </Button>
                   <Button
                     type="button"
                     variant="ghost"
                     size="sm"
-                    onClick={() => moveLine(index, 1)}
-                    disabled={index === lines.length - 1}
+                    onClick={() => moveLine(i, 1)}
+                    disabled={i === lines.length - 1}
                   >
                     Down
                   </Button>
-                  <Button type="button" variant="ghost" size="sm" onClick={() => removeLine(index)}>
+                  <Button type="button" variant="ghost" size="sm" onClick={() => removeLine(i)}>
                     Remove
                   </Button>
                 </div>

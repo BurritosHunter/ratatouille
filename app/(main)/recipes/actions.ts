@@ -23,13 +23,13 @@ import { parseImageUpload } from "@/lib/helpers/image/image-file"
 function parseMainImageUrl(raw: unknown): string | null {
   if (typeof raw !== "string") return null
 
-  const t = raw.trim()
-  if (!t) return null
+  const trimmed = raw.trim()
+  if (!trimmed) return null
 
   try {
-    const u = new URL(t)
-    if (u.protocol !== "https:" && u.protocol !== "http:") return null
-    return t
+    const parsedUrl = new URL(trimmed)
+    if (parsedUrl.protocol !== "https:" && parsedUrl.protocol !== "http:") return null
+    return trimmed
     
   } catch {
     return null

@@ -15,8 +15,8 @@ export function SignupForm() {
   const [status, setStatus] = useState<"idle" | "loading" | "sent" | "error">("idle")
   const [errorMessage, setErrorMessage] = useState("")
 
-  async function onSubmit(e: React.FormEvent) {
-    e.preventDefault()
+  async function onSubmit(event: React.FormEvent) {
+    event.preventDefault()
     if (!email.trim()) return
     setStatus("loading")
     setErrorMessage("")
