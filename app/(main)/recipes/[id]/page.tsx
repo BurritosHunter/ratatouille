@@ -29,7 +29,7 @@ export default async function RecipeDetailPage({ params }: PageProps) {
   })
 
   return (
-    <div className="flex min-h-svh flex-col gap-8 p-6">
+    <div className="flex min-h-svh flex-col gap-8 p-6 max-w-screen-xl mx-auto">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <Button asChild variant="outline" size="sm">
           <Link href="/recipes">All recipes</Link>

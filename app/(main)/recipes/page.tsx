@@ -23,7 +23,7 @@ export default async function RecipesPage({ searchParams }: PageProps) {
   const deletedRecipeId = Number.isFinite(deletedParsed) ? deletedParsed : undefined
 
   return (
-    <div className="flex min-h-svh flex-col py-6">
+    <div className="flex min-h-svh flex-col py-6 max-w-screen-xl mx-auto">
       <UndoDeleteToast
         deletedId={deletedRecipeId}
         replacePath="/recipes"
@@ -32,7 +32,7 @@ export default async function RecipesPage({ searchParams }: PageProps) {
         restoredMessage="Recipe restored"
         onUndo={restoreDeletedRecipe}
       />
-      <div className="container mx-auto flex flex-col gap-6 px-6">
+      <div className="w-full mx-auto flex flex-col gap-6 px-6">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <h1 className="font-medium">Recipes</h1>
           <Button asChild size="sm">
@@ -48,7 +48,7 @@ export default async function RecipesPage({ searchParams }: PageProps) {
             </Button>
           </div>
         ) : (
-          <ul className="flex flex-col gap-3">
+          <ul className="mx-auto flex w-full max-w-2xl flex-col gap-3">
             {recipes.map((recipe) => {
               const thumbSrc = imageSrcFromStoredOrExternal({
                 hasStored: recipe.hasStoredImage,
@@ -59,7 +59,7 @@ export default async function RecipesPage({ searchParams }: PageProps) {
                 <li key={recipe.id}>
                   <Link
                     href={`/recipes/${recipe.id}`}
-                    className="flex items-center gap-3 rounded-md border p-2 transition-colors hover:bg-muted/50"
+                    className="flex w-full items-center gap-3 rounded-md border p-2 transition-colors hover:bg-muted/50"
                   >
                     {thumbSrc ? (
                       <img src={thumbSrc} alt="" className="size-14 shrink-0 rounded-md border object-cover" />

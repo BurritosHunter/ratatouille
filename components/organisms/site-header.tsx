@@ -14,7 +14,7 @@ import { Separator } from "@/components/ui/separator"
 export function SiteHeader() {
   return (
     <header className="flex flex-col">
-      <div className="flex h-14 w-full items-center gap-4 px-4">
+      <div className="flex h-14 w-full max-w-screen-xl mx-auto items-center gap-4 px-4">
         <div className="flex min-w-0 flex-1 flex-row items-center gap-1">
           <Button asChild variant="ghost" className="shrink-0 font-heading text-base font-semibold">
             <Link href="/">Ratatouille</Link>

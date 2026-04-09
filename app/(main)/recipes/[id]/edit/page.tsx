@@ -52,7 +52,7 @@ export default async function EditRecipePage({ params }: PageProps) {
   })
 
   return (
-    <div className="flex min-h-svh flex-col gap-6 p-6">
+    <div className="flex min-h-svh flex-col gap-6 p-6 max-w-screen-xl mx-auto" >
       <div className="flex flex-wrap items-center justify-between gap-4">
         <h1 className="font-medium">Edit recipe</h1>
         <div className="flex flex-wrap gap-2">
@@ -65,7 +65,7 @@ export default async function EditRecipePage({ params }: PageProps) {
         </div>
       </div>
 
-      <form action={updateRecipe} className="flex max-w-md flex-col gap-6">
+      <form action={updateRecipe} className="container mx-auto max-w-lg flex flex-col gap-6">
         <input type="hidden" name="id" value={recipe.id} />
         <FieldGroup>
           <Field>

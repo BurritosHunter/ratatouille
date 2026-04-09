@@ -13,7 +13,7 @@ export default async function Page() {
   }
 
   return (
-    <div className="flex min-h-svh p-6">
+    <div className="flex min-h-svh p-6 max-w-screen-xl mx-auto">
       <div className="flex max-w-md min-w-0 flex-col gap-4 text-sm leading-loose">
         <p>Signed in as {session.user.email ?? session.user.name ?? "you"}</p>
       </div>
