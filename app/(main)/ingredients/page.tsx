@@ -9,15 +9,12 @@ export default async function IngredientsPage() {
   const items = await listIngredients(userId)
 
   return (
-    <div className="flex min-h-svh flex-col py-6">
-      <div className="container mx-auto px-6">
-        <div className="mx-auto flex w-full max-w-lg flex-col gap-6">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <h1 className="font-medium">Ingredients</h1>
-          </div>
-
-          <IngredientsEditor initial={items} />
+    <div className="max-w-header">
+      <div className="flex flex-col gap-6 w-full max-w-lg mx-auto">
+        <div className="flex flex-wrap gap-4 items-center justify-between">
+          <h1 className="font-large">Ingredients</h1>
         </div>
+        <IngredientsEditor initial={items} />
       </div>
     </div>
   )

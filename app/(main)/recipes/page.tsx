@@ -23,7 +23,7 @@ export default async function RecipesPage({ searchParams }: PageProps) {
   const deletedRecipeId = Number.isFinite(deletedParsed) ? deletedParsed : undefined
 
   return (
-    <div className="flex min-h-svh flex-col py-6 max-w-screen-xl mx-auto">
+    <div className="max-w-header">
       <UndoDeleteToast
         deletedId={deletedRecipeId}
         replacePath="/recipes"
@@ -32,7 +32,7 @@ export default async function RecipesPage({ searchParams }: PageProps) {
         restoredMessage="Recipe restored"
         onUndo={restoreDeletedRecipe}
       />
-      <div className="w-full mx-auto flex flex-col gap-6 px-6">
+      <div className="flex flex-col gap-6">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <h1 className="font-medium">Recipes</h1>
           <Button asChild size="sm">

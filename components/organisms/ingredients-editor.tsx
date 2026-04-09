@@ -31,7 +31,7 @@ function payloadSignature(payload: Line[]): string {
 }
 
 function ingredientsSignature(items: Ingredient[]): string {
-  return JSON.stringify(items.map((i) => [i.id, i.name]))
+  return JSON.stringify(items.map((ingredient) => [ingredient.id, ingredient.name]))
 }
 
 function mergeIngredientsFromServer(server: Ingredient[], prev: InternalLine[]): InternalLine[] {
@@ -168,9 +168,9 @@ export function IngredientsEditor({ initial }: Props) {
     })
   }, [initial])
 
-  function addEmptyRow() {
+  const addEmptyRow = useCallback(() => {
     setLines((prev) => [...prev, { name: "", lineId: draftLineId() }])
-  }
+  }, [])
 
   function removeLine(index: number) {
     flushDebounce()

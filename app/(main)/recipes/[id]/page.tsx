@@ -29,7 +29,7 @@ export default async function RecipeDetailPage({ params }: PageProps) {
   })
 
   return (
-    <div className="flex min-h-svh flex-col gap-8 p-6 max-w-screen-xl mx-auto">
+    <div className="max-w-header gap-8">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <Button asChild variant="outline" size="sm">
           <Link href="/recipes">All recipes</Link>
@@ -46,7 +46,6 @@ export default async function RecipeDetailPage({ params }: PageProps) {
           </form>
         </div>
       </div>
-
       <article className="mx-auto flex w-full max-w-2xl flex-col gap-8">
         <header className="flex flex-col gap-4">
           <h1 className="font-heading text-2xl font-semibold tracking-tight">{recipe.title}</h1>
