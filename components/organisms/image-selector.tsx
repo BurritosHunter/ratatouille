@@ -1,15 +1,20 @@
 "use client"
 
-import { useRef, useState } from "react"
+import { IconLink, IconTrash, IconUpload } from "@tabler/icons-react"
+import { useEffect, useRef, useState } from "react"
 import { Field, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/helpers/utils"
 
-const defaultFileInputName = "main_image"
-const defaultUrlInputName = "main_image_url"
-const defaultRemoveInputName = "remove_main_image"
 const fileAccept = "image/jpeg,image/png,image/webp,image/gif"
-const previewZoneTitleClassName = "max-w-full rounded bg-background/90 px-2 py-1.5 text-center text-xs font-medium leading-tight text-foreground shadow-sm backdrop-blur-sm"
+const previewZoneIconClassName = "size-8 shrink-0 text-foreground"
+const previewZoneTitleClassName = "flex flex-col flex-1 justify-start gap-3 rounded bg-background/60 p-4 text-left text-base font-semibold transition-colors duration-150 group-hover:bg-background/86 group-focus-within:bg-background/86"
+const previewZoneGrowSectionClassName = "group flex flex-col h-full min-w-0 flex-1 cursor-pointer items-stretch justify-stretch p-1.5 rounded-md focus-visible:outline-none "
+const previewZoneDeleteSectionClassName = "group flex flex-col h-full w-fit shrink-0 cursor-pointer items-stretch justify-stretch p-1.5 rounded-md focus-visible:outline-none"
+const removeImageActionLabel = "Remove image completely"
+const uploadZoneLabelAdd = "Add image with a file"
+const urlShowZoneLabelAdd = "Add image with URL"
+const fileFormatHelpText = "JPEG, PNG, or GIF\n(up to 2MB)"
 
 type ImageSelectorProps = {
   previewSrc: string | null
@@ -18,10 +23,6 @@ type ImageSelectorProps = {
   urlInputName?: string
   removeInputName?: string
   selectorLabel?: string
-  emptyPreviewText?: string
-  replaceFileLabel?: string
-  fileHelpText?: string
-  removeCheckboxLabel?: string
   uploadZoneLabel?: string
   urlShowZoneLabel?: string
 }
@@ -29,107 +30,113 @@ type ImageSelectorProps = {
 export function ImageSelector({
   previewSrc,
   defaultImageUrl,
-  fileInputName = defaultFileInputName,
-  urlInputName = defaultUrlInputName,
-  removeInputName = defaultRemoveInputName,
+  fileInputName = "main_image",
+  urlInputName = "main_image_url",
+  removeInputName = "remove_main_image",
   selectorLabel = "Current image",
-  emptyPreviewText = "No image yet.",
-  replaceFileLabel = "Replace with file",
-  fileHelpText = "JPEG, PNG, WebP, or GIF, up to 2MB.",
-  removeCheckboxLabel = "Remove image completely",
-  uploadZoneLabel = "Replace image with a new file",
+  uploadZoneLabel = "Replace image with a file",
   urlShowZoneLabel = "Replace image with URL",
 }: ImageSelectorProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const [urlFieldVisible, setUrlFieldVisible] = useState(() => Boolean(defaultImageUrl.trim()))
+  const [removeImageRequested, setRemoveImageRequested] = useState(false)
+
+  useEffect(() => {
+    if (!previewSrc) setRemoveImageRequested(false)
+  }, [previewSrc])
 
   function onUploadZoneClick() {
     fileInputRef.current?.click()
-  }
-
-  function onUrlShowZoneClick() {
-    setUrlFieldVisible(true)
   }
 
   return (
     <>
       <Field>
         <FieldLabel>{selectorLabel}</FieldLabel>
-        {previewSrc ? (
-          <div className="relative w-full max-h-40 overflow-hidden rounded-md border aspect-video">
+        <div className="relative w-full max-h-40 overflow-hidden rounded-md border aspect-video">
+          {previewSrc ? (
             <img
               src={previewSrc}
               alt=""
               className="pointer-events-none h-full w-full object-cover"
               draggable={false}
             />
-            <div className="absolute inset-0 z-10 flex">
+          ) : (
+            <div className="pointer-events-none h-full w-full bg-muted" aria-hidden />
+          )}
+          <div className="absolute inset-0 z-10 flex min-h-0">
+            <button
+              type="button"
+              className={previewZoneGrowSectionClassName}
+              onClick={onUploadZoneClick}
+            >
+              <span className={previewZoneTitleClassName}>
+                <IconUpload className={previewZoneIconClassName} aria-hidden />
+                <span>
+                  <span>{previewSrc ? uploadZoneLabel : uploadZoneLabelAdd}</span>
+                  <p className="whitespace-pre-line text-sm font-normal text-muted-foreground">{fileFormatHelpText}</p>
+                </span>
+              </span>
+            </button>
+            <label
+              className={previewZoneGrowSectionClassName}
+            >
+              <span className={previewZoneTitleClassName}>
+                <IconLink className={previewZoneIconClassName} aria-hidden />
+                <span>
+                  <span>{previewSrc ? urlShowZoneLabel : urlShowZoneLabelAdd}</span>
+                  <Input
+                    id={urlInputName}
+                    name={urlInputName}
+                    type="url"
+                    inputMode="url"
+                    placeholder="https://…"
+                    defaultValue={defaultImageUrl}
+                    className={"mt-2"}
+                    variant="small"
+                    background="transparent"
+                  />
+                </span>
+              </span>
+            </label>
+            {previewSrc ? (
               <button
                 type="button"
-                className="flex h-full w-1/2 cursor-pointer flex-col items-center justify-end rounded-l-md p-1.5 hover:bg-foreground/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-                onClick={onUploadZoneClick}
+                className={previewZoneDeleteSectionClassName}
+                aria-label={removeImageActionLabel}
+                aria-pressed={removeImageRequested}
+                onClick={() => setRemoveImageRequested((previous) => !previous)}
               >
-                <span className={previewZoneTitleClassName}>{uploadZoneLabel}</span>
+                <span
+                  className={cn(
+                    "rounded bg-background/60 p-1 transition-colors duration-150 group-hover:bg-background/86 group-focus-within:bg-background/86",
+                    removeImageRequested && "bg-destructive/20 group-hover:bg-destructive/25",
+                  )}
+                >
+                  <IconTrash
+                    className={cn(
+                      "size-6 shrink-0",
+                      removeImageRequested ? "text-destructive" : "text-muted-foreground",
+                    )}
+                    aria-hidden
+                  />
+                </span>
               </button>
-              <button
-                type="button"
-                className="flex h-full w-1/2 cursor-pointer flex-col items-center justify-end rounded-r-md p-1.5 hover:bg-foreground/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-                aria-controls={urlInputName}
-                onClick={onUrlShowZoneClick}
-              >
-                <span className={previewZoneTitleClassName}>{urlShowZoneLabel}</span>
-              </button>
-            </div>
-            <input
-              ref={fileInputRef}
-              id={fileInputName}
-              name={fileInputName}
-              type="file"
-              accept={fileAccept}
-              tabIndex={-1}
-              className="sr-only"
-              aria-hidden
-            />
+            ) : null}
           </div>
-        ) : (
-          <p className="text-sm text-muted-foreground">{emptyPreviewText}</p>
-        )}
-      </Field>
-
-      {!previewSrc ? (
-        <Field>
-          <FieldLabel htmlFor={fileInputName}>{replaceFileLabel}</FieldLabel>
-          <Input id={fileInputName} name={fileInputName} type="file" accept={fileAccept} />
-          <p className="text-sm text-muted-foreground">{fileHelpText}</p>
-        </Field>
-      ) : (
-        <p className="text-sm text-muted-foreground">{fileHelpText}</p>
-      )}
-
-      <Field className={cn(previewSrc && !urlFieldVisible && "hidden")}>
-        <FieldLabel htmlFor={urlInputName} className="sr-only">
-          Image URL
-        </FieldLabel>
-        <Input
-          id={urlInputName}
-          name={urlInputName}
-          type="url"
-          inputMode="url"
-          placeholder="https://…"
-          defaultValue={defaultImageUrl}
-        />
-      </Field>
-      <Field orientation="horizontal" className="items-center gap-2">
-        <input
-          id={removeInputName}
-          name={removeInputName}
-          type="checkbox"
-          value="1"
-          className="size-4 rounded border-input"
-        />
-        <FieldLabel htmlFor={removeInputName} className="cursor-pointer font-normal">
-          {removeCheckboxLabel}
-        </FieldLabel>
+          {previewSrc && removeImageRequested ? (
+            <input type="hidden" name={removeInputName} value="1" />
+          ) : null}
+          <input
+            ref={fileInputRef}
+            id={fileInputName}
+            name={fileInputName}
+            type="file"
+            accept={fileAccept}
+            tabIndex={-1}
+            className="sr-only"
+            aria-hidden
+          />
+        </div>
       </Field>
     </>
   )

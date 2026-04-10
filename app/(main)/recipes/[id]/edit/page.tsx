@@ -75,12 +75,7 @@ export default async function EditRecipePage({ params }: PageProps) {
             />
           </Field>
 
-          <ImageSelector
-            previewSrc={previewSrc}
-            defaultImageUrl={recipe.mainImageUrl ?? ""}
-            fileHelpText="JPEG, PNG, WebP, or GIF, up to 2MB"
-            removeCheckboxLabel="Remove main image completely"
-          />
+          <ImageSelector previewSrc={previewSrc} defaultImageUrl={recipe.mainImageUrl ?? ""} />
 
           <Field>
             <FieldLabel>Ingredients</FieldLabel>
