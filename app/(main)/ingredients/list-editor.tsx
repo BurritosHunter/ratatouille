@@ -4,7 +4,7 @@ import { IconPlus, IconTrash } from "@tabler/icons-react"
 import { useRouter } from "next/navigation"
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react"
 
-import { saveIngredientsState } from "@/app/(main)/ingredients/actions"
+import { saveIngredientsState } from "./actions"
 import { Button } from "@/components/ui/button"
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
