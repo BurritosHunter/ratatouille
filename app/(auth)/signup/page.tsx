@@ -1,4 +1,4 @@
-import { SignupForm } from "./form"
+import { SignupForm } from "./_form"
 
 export default function SignupPage() {
   return (

@@ -1,4 +1,4 @@
-import { IngredientsEditor } from "./list-editor"
+import { IngredientsEditor } from "./_list-editor"
 import { requireUserId } from "@/lib/auth/auth-user"
 import { listIngredients } from "@/lib/data/ingredients"
 
