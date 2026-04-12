@@ -7,13 +7,14 @@ import type { MealIngredientEditorLine } from "@/components/organisms/meal-ingre
 import { ImageSelector } from "@/components/organisms/image-selector"
 import { Button } from "@/components/ui/button"
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field"
-import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { requireUserId } from "@/lib/auth/auth-user"
 import { listIngredients } from "@/lib/data/ingredients"
 import { legacyPayloadFromIngredientsText, listRecipeIngredientLines } from "@/lib/data/recipe-ingredients"
 import { getRecipeById } from "@/lib/data/recipes"
 import { imageSrcFromStoredOrExternal } from "@/lib/helpers/image/stored-or-external-src"
+
+import { EditableText } from "@/components/molecules/editable-text"
 
 export const dynamic = "force-dynamic"
 
@@ -63,17 +64,16 @@ export default async function EditRecipePage({ params }: PageProps) {
       <form action={updateRecipe} className="flex flex-col gap-6 container max-w-lg mx-auto">
         <input type="hidden" name="id" value={recipe.id} />
         <FieldGroup>
-          <Field>
-            <FieldLabel htmlFor="title">Title</FieldLabel>
-            <Input
-              id="title"
-              name="title"
-              type="text"
-              required
-              placeholder="Recipe name"
-              defaultValue={recipe.title}
-            />
-          </Field>
+          <EditableText
+            key={recipe.id}
+            name="title"
+            defaultValue={recipe.title}
+            placeholder="Recipe name"
+            ariaLabel="Edit recipe title"
+            variant="h1"
+            typoOverride="text-4xl"
+            className="w-full justify-start"
+          />
 
           <ImageSelector previewSrc={previewSrc} defaultImageUrl={recipe.mainImageUrl ?? ""} />
 

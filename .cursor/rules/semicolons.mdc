@@ -1,0 +1,108 @@
+---
+description: Semicolons in JS/TS; same-line block comments after `;`; no trailing commas when nothing follows
+globs: "**/*.{ts,tsx,js,jsx,mjs,cjs}"
+alwaysApply: false
+priority: high
+---
+
+# Semicolons and commas
+
+## Semicolons
+
+In JavaScript and TypeScript, **terminate statements with semicolons**. Do not rely on Automatic Semicolon Insertion (ASI).
+
+Apply to **all** statement forms, including:
+
+- **`const` / `let` / `var` declarations**
+- **`import` and `export` statements**
+- **`return`**, **`throw`**, **`debugger`**, **`break`**, **`continue`**
+- **Expression statements** (assignments, calls, `++` / `--`, etc.)
+- **Standalone type-only `import` / `export`** where the grammar allows a semicolon
+
+### Same-line block comments
+
+If a **block comment** (`/* … */` or `/** … */`) sits on the **same line** as the end of a statement, put the **semicolon before the comment**, not after it. The semicolon terminates the statement; the comment follows.
+
+### Prefer (same line)
+
+```typescript
+const commitFromKeyboardReference = useRef(false); /** Avoids double commit on Enter + blur. */
+```
+
+### Avoid (same line)
+
+```typescript
+const commitFromKeyboardReference = useRef(false) /** Avoids double commit on Enter + blur. */;
+```
+
+## Trailing commas
+
+**Do not** put a **trailing comma** after the last argument, array element, or object property when **no further items** follow in that list. The comma implies another line or member; omit it when the closing `)`, `]`, or `}` comes next.
+
+Applies to multi-line **function calls** (e.g. `useCallback(fn, [a, b])` with no comma after `[a, b]`), **arrays**, **objects**, and similar.
+
+### Prefer
+
+```typescript
+useCallback(
+  (nextValue: string) => {
+    save(nextValue);
+  },
+  [isFormMode, props]
+);
+
+cn(
+  "h-auto min-h-9 py-1",
+  props.className,
+  props.inputClassName
+);
+```
+
+### Avoid
+
+```typescript
+useCallback(
+  (nextValue: string) => {
+    save(nextValue);
+  },
+  [isFormMode, props],
+);
+
+cn(
+  "h-auto min-h-9 py-1",
+  props.className,
+  props.inputClassName,
+);
+```
+
+## Rationale
+
+Explicit semicolons avoid ASI edge cases, keep diffs predictable, and match common formatter defaults. Omitting unnecessary trailing commas keeps the last line aligned with “nothing more follows.”
+
+## Examples
+
+### Prefer
+
+```typescript
+const title = "Soup";
+let count = 0;
+import { useState } from "react";
+export function Page() {
+  return null;
+}
+```
+
+### Avoid
+
+```typescript
+const title = "Soup"
+let count = 0
+import { useState } from "react"
+export function Page() {
+  return null
+}
+```
+
+## Scope
+
+Applies to **new and edited** code in matched files. Follow existing file style if a legacy file intentionally omits semicolons—prefer aligning new edits with this rule when touching the file. The trailing-comma guidance applies the same way.
