@@ -195,15 +195,13 @@ export function MealIngredientsEditor({
             {lines.map((line, i) => (
               <li
                 key={line.lineId}
-                className="flex flex-col gap-2 rounded-md bg-muted ml-3 pl-3.5 pr-1 py-1 sm:flex-row sm:flex-wrap sm:items-end"
+                className="flex flex-col gap-2 rounded-md bg-muted ml-2 pl-3.5 pr-1 py-1 sm:flex-row sm:flex-wrap sm:items-end"
               >
                 <div className="grid min-w-0 flex-1 gap-2 sm:grid-cols-2">
                   <Field className="gap-1.5">
-                    {/* <FieldLabel className="text-xs">Ingredient</FieldLabel> */}
                     <p className="flex min-h-9 items-center truncate text-sm">{line.name}</p>
                   </Field>
                   <Field className="gap-1.5">
-                    {/* <FieldLabel className="text-xs">Amount / note (optional)</FieldLabel> */}
                     <Input
                       value={line.quantityNote}
                       onChange={(event) => {

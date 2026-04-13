@@ -2,7 +2,7 @@ import Link from "next/link"
 import { notFound } from "next/navigation"
 
 import { EditRecipeForm } from "./_edit-recipe-form"
-import type { MealIngredientEditorLine } from "@/components/organisms/meal-ingredients-editor"
+import type { MealIngredientEditorLine } from "@/app/(main)/recipes/_meal-ingredients-editor"
 import { Button } from "@/components/ui/button"
 import { requireUserId } from "@/lib/auth/auth-user"
 import { listIngredients } from "@/lib/data/ingredients"

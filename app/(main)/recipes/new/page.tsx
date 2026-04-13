@@ -1,7 +1,7 @@
 import Link from "next/link"
 
 import { addRecipe } from "../actions"
-import { MealIngredientsEditor } from "@/components/organisms/meal-ingredients-editor"
+import { MealIngredientsEditor } from "@/app/(main)/recipes/_meal-ingredients-editor"
 import { Button } from "@/components/ui/button"
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"

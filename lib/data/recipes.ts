@@ -55,7 +55,7 @@ export async function listRecipes(userId: number): Promise<RecipeSummary[]> {
       (main_image_data IS NOT NULL) AS has_stored_image
     FROM recipes
     WHERE user_id = ${userId} AND deleted_at IS NULL
-    ORDER BY created_at DESC
+    ORDER BY lower(title) ASC
   `
   return (rows as RecipeSummaryRow[]).map(toRecipeSummary)
 }

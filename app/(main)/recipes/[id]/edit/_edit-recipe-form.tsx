@@ -17,8 +17,8 @@ import {
   autosaveRecipeTitle,
 } from "../../actions"
 import { EditableText } from "@/components/molecules/editable-text"
-import { MealIngredientsEditor } from "@/components/organisms/meal-ingredients-editor"
-import type { MealIngredientEditorLine } from "@/components/organisms/meal-ingredients-editor"
+import { MealIngredientsEditor } from "@/app/(main)/recipes/_meal-ingredients-editor"
+import type { MealIngredientEditorLine } from "@/app/(main)/recipes/_meal-ingredients-editor"
 import { ImageSelector } from "@/components/organisms/image-selector"
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field"
 import { Textarea } from "@/components/ui/textarea"

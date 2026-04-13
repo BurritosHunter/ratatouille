@@ -1,6 +1,7 @@
 import Link from "next/link"
 
 import { restoreDeletedRecipe } from "./actions"
+import { RecipeListRowLink } from "@/components/molecules/recipe-list-row-link"
 import { UndoDeleteToast } from "@/components/molecules/toast-undo-delete"
 import { Button } from "@/components/ui/button"
 import { requireUserId } from "@/lib/auth/auth-user"
@@ -57,17 +58,11 @@ export default async function RecipesPage({ searchParams }: PageProps) {
               })
               return (
                 <li key={recipe.id}>
-                  <Link
-                    href={`/recipes/${recipe.id}`}
-                    className="flex w-full items-center gap-3 rounded-md border p-2 transition-colors hover:bg-muted/50"
-                  >
-                    {thumbSrc ? (
-                      <img src={thumbSrc} alt="" className="size-14 shrink-0 rounded-md border object-cover" />
-                    ) : (
-                      <div className="bg-muted text-muted-foreground flex size-14 shrink-0 items-center justify-center rounded-md border text-xs">No image</div>
-                    )}
-                    <span className="min-w-0 text-sm font-medium">{recipe.title}</span>
-                  </Link>
+                  <RecipeListRowLink
+                    recipeId={recipe.id}
+                    title={recipe.title}
+                    thumbSrc={thumbSrc}
+                  />
                 </li>
               )
             })}
