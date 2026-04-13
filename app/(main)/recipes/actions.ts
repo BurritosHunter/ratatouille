@@ -5,6 +5,7 @@ import { redirect } from "next/navigation"
 import { requireUserId } from "@/lib/auth/auth-user"
 import {
   createRecipe,
+  getRecipeById,
   getRecipeImageState,
   restoreRecipe as restoreRecipeRow,
   softDeleteRecipe,
@@ -136,6 +137,133 @@ export async function updateRecipe(formData: FormData) {
   revalidatePath("/recipes")
   revalidatePath(`/recipes/${id}`)
   redirect(`/recipes/${id}`)
+}
+
+function revalidateRecipePaths(recipeId: number) {
+  revalidatePath("/recipes")
+  revalidatePath(`/recipes/${recipeId}`)
+  revalidatePath(`/recipes/${recipeId}/edit`)
+}
+
+export type AutosaveResult = { ok: true } | { ok: false; reason?: string }
+
+export async function autosaveRecipeTitle(
+  recipeId: number,
+  title: string,
+): Promise<AutosaveResult> {
+  const userId = await requireUserId(`/recipes/${recipeId}/edit`)
+  const trimmed = title.trim()
+  if (!trimmed) return { ok: false, reason: "empty" }
+
+  const existing = await getRecipeById(userId, recipeId)
+  if (!existing) return { ok: false }
+
+  const recipe = await updateRecipeRow(
+    userId,
+    recipeId,
+    {
+      title: trimmed,
+      ingredients: existing.ingredients,
+      instructions: existing.instructions,
+    },
+    { action: RecipeImagePatchAction.NoChange },
+  )
+  if (!recipe) return { ok: false }
+
+  revalidateRecipePaths(recipeId)
+  return { ok: true }
+}
+
+export async function autosaveRecipeIngredients(
+  recipeId: number,
+  ingredientsPayloadJson: string,
+): Promise<AutosaveResult> {
+  const userId = await requireUserId(`/recipes/${recipeId}/edit`)
+  const existing = await getRecipeById(userId, recipeId)
+  if (!existing) return { ok: false }
+
+  const payload = parseRecipeIngredientsPayload(ingredientsPayloadJson)
+  if (!payload || payload.length === 0) return { ok: false, reason: "ingredients" }
+
+  const resolved = await resolveRecipeIngredientPayload(userId, payload)
+  if (resolved.length === 0) return { ok: false }
+
+  const ingredientsText = formatIngredientsDisplay(resolved)
+
+  const recipe = await updateRecipeRow(
+    userId,
+    recipeId,
+    {
+      title: existing.title,
+      ingredients: ingredientsText,
+      instructions: existing.instructions,
+    },
+    { action: RecipeImagePatchAction.NoChange },
+  )
+  if (!recipe) return { ok: false }
+
+  await writeRecipeIngredientLines(userId, recipeId, resolved)
+  revalidateRecipePaths(recipeId)
+  return { ok: true }
+}
+
+export async function autosaveRecipeImage(formData: FormData): Promise<AutosaveResult> {
+  const idRaw = formData.get("id")
+  const id = typeof idRaw === "string" ? Number.parseInt(idRaw, 10) : Number.NaN
+  if (!Number.isFinite(id)) return { ok: false }
+
+  const userId = await requireUserId(`/recipes/${id}/edit`)
+  const existing = await getRecipeById(userId, id)
+  if (!existing) return { ok: false }
+
+  const meta = await getRecipeImageState(userId, id)
+  if (!meta) return { ok: false }
+
+  const file = await parseImageUpload(formData.get("main_image"))
+  const urlParsed = parseMainImageUrl(formData.get("main_image_url"))
+  const imagePatch = resolveUpdateImagePatch(formData, file, urlParsed, meta)
+
+  const recipe = await updateRecipeRow(
+    userId,
+    id,
+    {
+      title: existing.title,
+      ingredients: existing.ingredients,
+      instructions: existing.instructions,
+    },
+    imagePatch,
+  )
+  if (!recipe) return { ok: false }
+
+  revalidateRecipePaths(id)
+  return { ok: true }
+}
+
+export async function autosaveRecipeInstructions(
+  recipeId: number,
+  instructions: string,
+): Promise<AutosaveResult> {
+  const userId = await requireUserId(`/recipes/${recipeId}/edit`)
+  const existing = await getRecipeById(userId, recipeId)
+  if (!existing) return { ok: false }
+
+  const trimmed = instructions.trim()
+  if (!trimmed) return { ok: false, reason: "empty" }
+
+  const recipe = await updateRecipeRow(
+    userId,
+    recipeId,
+    {
+      title: existing.title,
+      ingredients: existing.ingredients,
+      instructions: trimmed,
+    },
+    { action: RecipeImagePatchAction.NoChange },
+  )
+  if (!recipe) return { ok: false }
+
+  revalidateRecipePaths(recipeId)
+  return { ok: true }
 }
 
 export async function deleteRecipe(formData: FormData) {

@@ -1,7 +1,7 @@
 "use client"
 
 import { IconLink, IconTrash, IconUpload } from "@tabler/icons-react"
-import { useEffect, useRef, useState } from "react"
+import { useRef, useState } from "react"
 import { Field, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/helpers/utils"
@@ -22,27 +22,26 @@ type ImageSelectorProps = {
   fileInputName?: string
   urlInputName?: string
   removeInputName?: string
-  selectorLabel?: string
   uploadZoneLabel?: string
   urlShowZoneLabel?: string
+  selectorLabel?: string
+  /** Called after file chosen, URL field blurred, or remove toggled — e.g. submit a wrapping form. */
+  onPersistRequest?: () => void
 }
 
 export function ImageSelector({
   previewSrc,
   defaultImageUrl,
+  selectorLabel,
   fileInputName = "main_image",
   urlInputName = "main_image_url",
   removeInputName = "remove_main_image",
-  selectorLabel = "Current image",
   uploadZoneLabel = "Replace image with a file",
   urlShowZoneLabel = "Replace image with URL",
+  onPersistRequest,
 }: ImageSelectorProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [removeImageRequested, setRemoveImageRequested] = useState(false)
-
-  useEffect(() => {
-    if (!previewSrc) setRemoveImageRequested(false)
-  }, [previewSrc])
 
   function onUploadZoneClick() {
     fileInputRef.current?.click()
@@ -50,8 +49,8 @@ export function ImageSelector({
 
   return (
     <>
-      <Field>
-        <FieldLabel>{selectorLabel}</FieldLabel>
+      <Field key={previewSrc ?? "no-preview"}>
+        {selectorLabel ? <FieldLabel>{selectorLabel}</FieldLabel> : null}
         <div className="relative w-full max-h-40 overflow-hidden rounded-md border aspect-video">
           {previewSrc ? (
             <img
@@ -94,6 +93,7 @@ export function ImageSelector({
                     className={"mt-2"}
                     variant="small"
                     background="transparent"
+                    onBlur={() => onPersistRequest?.()}
                   />
                 </span>
               </span>
@@ -104,7 +104,12 @@ export function ImageSelector({
                 className={previewZoneDeleteSectionClassName}
                 aria-label={removeImageActionLabel}
                 aria-pressed={removeImageRequested}
-                onClick={() => setRemoveImageRequested((previous) => !previous)}
+                onClick={() => {
+                  setRemoveImageRequested((previous) => !previous)
+                  if (onPersistRequest) {
+                    setTimeout(() => onPersistRequest(), 0)
+                  }
+                }}
               >
                 <span
                   className={cn(
@@ -135,6 +140,7 @@ export function ImageSelector({
             tabIndex={-1}
             className="sr-only"
             aria-hidden
+            onChange={() => onPersistRequest?.()}
           />
         </div>
       </Field>

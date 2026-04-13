@@ -1,11 +1,12 @@
 "use client"
 
-import Link from "next/link"
-import { useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { IconTrash } from "@tabler/icons-react"
 
 import { quickCreateIngredient } from "@/app/(main)/ingredients/actions"
+import { SearchableMultiSelect } from "@/components/molecules/searchable-multi-select"
 import { Button } from "@/components/ui/button"
-import { Field, FieldGroup, FieldLabel } from "@/components/ui/field"
+import { Field, FieldGroup } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 
 export type MealIngredientEditorLine = {
@@ -17,25 +18,60 @@ export type MealIngredientEditorLine = {
 type Props = {
   catalog: { id: number; name: string }[]
   initialLines: MealIngredientEditorLine[]
+  /** Called when the serialized ingredients payload changes (e.g. for autosave). */
+  onIngredientsPayloadChange?: (payloadJson: string) => void
 }
 
 type InternalLine = MealIngredientEditorLine & { lineId: string }
 
-function withIds(rows: MealIngredientEditorLine[], nextId: { current: number }): InternalLine[] {
-  return rows.map((row) => ({ ...row, lineId: `ln-${nextId.current++}` }))
+function withIds(rows: MealIngredientEditorLine[]): InternalLine[] {
+  let id = 0
+  return rows.map((row) => ({ ...row, lineId: `ln-${id++}` }))
 }
 
-export function MealIngredientsEditor({ catalog: catalogProp, initialLines }: Props) {
-  const nextLineId = useRef(0)
+/** Unique pantry ids present on lines (first occurrence order), for the multi-select value. */
+function pickIdsFromLines(lineList: InternalLine[]): string[] {
+  const seen = new Set<string>()
+  const ordered: string[] = []
+  for (const line of lineList) {
+    if (line.ingredientId === undefined) continue
+    const idString = String(line.ingredientId)
+    if (seen.has(idString)) continue
+    seen.add(idString)
+    ordered.push(idString)
+  }
+  return ordered
+}
+
+function removeLastLineWithIngredientIdFromLines(
+  previousLines: InternalLine[],
+  idString: string,
+): InternalLine[] {
+  const id = Number.parseInt(idString, 10)
+  if (!Number.isFinite(id)) return previousLines
+  for (let i = previousLines.length - 1; i >= 0; i--) {
+    if (previousLines[i]!.ingredientId === id) {
+      return previousLines.filter((_line, j) => j !== i)
+    }
+  }
+  return previousLines
+}
+
+export function MealIngredientsEditor({
+  catalog: catalogProp,
+  initialLines,
+  onIngredientsPayloadChange,
+}: Props) {
   const [catalog, setCatalog] = useState(() =>
     [...catalogProp].sort((left, right) =>
       left.name.localeCompare(right.name, undefined, { sensitivity: "base" }),
     ),
   )
-  const [lines, setLines] = useState<InternalLine[]>(() => withIds(initialLines, nextLineId))
-  const [pickId, setPickId] = useState("")
-  const [newName, setNewName] = useState("")
-  const [pending, setPending] = useState(false)
+  const [lines, setLines] = useState<InternalLine[]>(() => withIds(initialLines))
+  const nextLineId = useRef(initialLines.length)
+  const skipNextPayloadNotificationReference = useRef(true)
+
+  const pickIds = useMemo(() => pickIdsFromLines(lines), [lines])
 
   const payloadJson = useMemo(
     () =>
@@ -49,22 +85,58 @@ export function MealIngredientsEditor({ catalog: catalogProp, initialLines }: Pr
     [lines],
   )
 
+  useEffect(() => {
+    if (skipNextPayloadNotificationReference.current) {
+      skipNextPayloadNotificationReference.current = false
+      return
+    }
+    onIngredientsPayloadChange?.(payloadJson)
+  }, [payloadJson, onIngredientsPayloadChange])
+
+  const pantryOptions = useMemo(
+    () => catalog.map((entry) => ({ value: String(entry.id), label: entry.name })),
+    [catalog],
+  )
+
   function appendLine(row: MealIngredientEditorLine) {
     setLines((prev) => [...prev, { ...row, lineId: `ln-${nextLineId.current++}` }])
   }
 
-  function addFromCatalog() {
-    const id = Number.parseInt(pickId, 10)
-    if (!Number.isFinite(id)) return
-    const row = catalog.find((entry) => entry.id === id)
-    if (!row) return
-    appendLine({ ingredientId: row.id, name: row.name, quantityNote: "" })
-    setPickId("")
-  }
+  const handlePickIdsChange = useCallback(
+    (nextPickIds: string[]) => {
+      setLines((previousLines) => {
+        const currentPickIds = pickIdsFromLines(previousLines)
+        const previousSet = new Set(currentPickIds)
+        const nextSet = new Set(nextPickIds)
+        let nextLines = previousLines
 
-  function addBlankLine() {
-    appendLine({ name: "", quantityNote: "" })
-  }
+        for (const idString of nextPickIds) {
+          if (!previousSet.has(idString)) {
+            const id = Number.parseInt(idString, 10)
+            if (!Number.isFinite(id)) continue
+            const row = catalog.find((entry) => entry.id === id)
+            if (!row) continue
+            nextLines = [
+              ...nextLines,
+              {
+                ingredientId: row.id,
+                name: row.name,
+                quantityNote: "",
+                lineId: `ln-${nextLineId.current++}`,
+              },
+            ]
+          }
+        }
+        for (const idString of currentPickIds) {
+          if (!nextSet.has(idString)) {
+            nextLines = removeLastLineWithIngredientIdFromLines(nextLines, idString)
+          }
+        }
+        return nextLines
+      })
+    },
+    [catalog],
+  )
 
   function removeLine(index: number) {
     setLines((prev) => prev.filter((_line, i) => i !== index))
@@ -82,110 +154,56 @@ export function MealIngredientsEditor({ catalog: catalogProp, initialLines }: Pr
     })
   }
 
-  async function createAndAdd() {
-    const name = newName.trim()
-    if (!name || pending) return
-    setPending(true)
-    try {
-      const createResult = await quickCreateIngredient(name)
-      if (createResult.ok) {
-        setCatalog((prev) => {
-          if (prev.some((existing) => existing.id === createResult.id)) return prev
-          return [...prev, { id: createResult.id, name: createResult.name }].sort((left, right) =>
-            left.name.localeCompare(right.name, undefined, { sensitivity: "base" }),
-          )
-        })
-        appendLine({ ingredientId: createResult.id, name: createResult.name, quantityNote: "" })
-        setNewName("")
-      }
-    } finally {
-      setPending(false)
-    }
+  async function mergeNewIngredientIntoCatalog(
+    rawName: string,
+  ): Promise<{ id: number; name: string } | null> {
+    const createResult = await quickCreateIngredient(rawName)
+    if (!createResult.ok) return null
+    setCatalog((prev) => {
+      if (prev.some((existing) => existing.id === createResult.id)) return prev
+      return [...prev, { id: createResult.id, name: createResult.name }].sort((left, right) =>
+        left.name.localeCompare(right.name, undefined, { sensitivity: "base" }),
+      )
+    })
+    return { id: createResult.id, name: createResult.name }
+  }
+
+  async function createIngredientByName(name: string) {
+    const created = await mergeNewIngredientIntoCatalog(name)
+    if (!created) return
+    appendLine({ ingredientId: created.id, name: created.name, quantityNote: "" })
   }
 
   return (
     <FieldGroup className="gap-4">
       <input type="hidden" name="ingredients_payload" value={payloadJson} />
 
-      <Field>
-        <FieldLabel>Pantry (pick existing)</FieldLabel>
-        <div className="flex flex-wrap items-end gap-2">
-          <select
-            className="border-input bg-background h-9 min-w-[12rem] flex-1 rounded-md border px-3 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
-            value={pickId}
-            onChange={(event) => setPickId(event.target.value)}
-            aria-label="Choose ingredient from pantry"
-          >
-            <option value="">Choose ingredient…</option>
-            {catalog.map((entry) => (
-              <option key={entry.id} value={String(entry.id)}>
-                {entry.name}
-              </option>
-            ))}
-          </select>
-          <Button type="button" variant="secondary" size="sm" onClick={addFromCatalog}>
-            Add to recipe
-          </Button>
-        </div>
+      <Field className="*:w-auto">
+        <SearchableMultiSelect
+          className="max-w-[200px]"
+          options={pantryOptions}
+          value={pickIds}
+          onChange={handlePickIdsChange}
+          placeholder="Choose ingredient…"
+          searchPlaceholder="Search pantry…"
+          ariaLabel="Choose ingredient from pantry"
+          onCreateOption={createIngredientByName}
+        />
       </Field>
-
-      <Field>
-        <FieldLabel htmlFor="new_ingredient_name">New pantry item (create and add)</FieldLabel>
-        <div className="flex flex-wrap items-end gap-2">
-          <Input
-            id="new_ingredient_name"
-            value={newName}
-            onChange={(event) => setNewName(event.target.value)}
-            placeholder="e.g. Sumac"
-            className="max-w-xs flex-1"
-          />
-          <Button type="button" variant="outline" size="sm" disabled={pending} onClick={createAndAdd}>
-            {pending ? "Saving…" : "Create and add"}
-          </Button>
-        </div>
-        <p className="text-sm text-muted-foreground">
-          Saves to your ingredient list and adds a line to this recipe. Manage all ingredients under{" "}
-          <Link href="/ingredients" className="underline underline-offset-2">
-            Ingredients
-          </Link>
-          .
-        </p>
-      </Field>
-
-      <Field>
-        <FieldLabel>Recipe lines</FieldLabel>
-        <p className="text-sm text-muted-foreground mb-2">
-          Set an optional amount or note per line (e.g. &quot;2 cups&quot;). Reorder with the arrows. At least one line is
-          required to save.
-        </p>
-        {lines.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No lines yet — pick from pantry, create new, or add a blank line.</p>
-        ) : (
-          <ul className="flex flex-col gap-3">
+      {lines.length > 0 && (
+        <ul className="flex flex-col gap-1">
             {lines.map((line, i) => (
               <li
                 key={line.lineId}
-                className="flex flex-col gap-2 rounded-md border p-3 sm:flex-row sm:flex-wrap sm:items-end"
+                className="flex flex-col gap-2 rounded-md bg-muted ml-3 pl-3.5 pr-1 py-1 sm:flex-row sm:flex-wrap sm:items-end"
               >
                 <div className="grid min-w-0 flex-1 gap-2 sm:grid-cols-2">
                   <Field className="gap-1.5">
-                    <FieldLabel className="text-xs">Ingredient name</FieldLabel>
-                    <Input
-                      value={line.name}
-                      onChange={(event) => {
-                        const value = event.target.value
-                        setLines((prev) =>
-                          prev.map((line, j) =>
-                            j === i ? { ...line, name: value, ingredientId: undefined } : line
-                          ),
-                        )
-                      }}
-                      placeholder="Ingredient"
-                      required
-                    />
+                    {/* <FieldLabel className="text-xs">Ingredient</FieldLabel> */}
+                    <p className="flex min-h-9 items-center truncate text-sm">{line.name}</p>
                   </Field>
                   <Field className="gap-1.5">
-                    <FieldLabel className="text-xs">Amount / note (optional)</FieldLabel>
+                    {/* <FieldLabel className="text-xs">Amount / note (optional)</FieldLabel> */}
                     <Input
                       value={line.quantityNote}
                       onChange={(event) => {
@@ -199,30 +217,40 @@ export function MealIngredientsEditor({ catalog: catalogProp, initialLines }: Pr
                   </Field>
                 </div>
                 <div className="flex shrink-0 flex-wrap gap-1">
-                  <Button type="button" variant="ghost" size="sm" onClick={() => moveLine(i, -1)} disabled={i === 0}>
-                    Up
+                  {/* <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon-sm"
+                    aria-label="Move ingredient up"
+                    onClick={() => moveLine(i, -1)}
+                    disabled={i === 0}
+                  >
+                    <IconChevronUp aria-hidden />
                   </Button>
                   <Button
                     type="button"
                     variant="ghost"
-                    size="sm"
+                    size="icon-sm"
+                    aria-label="Move ingredient down"
                     onClick={() => moveLine(i, 1)}
                     disabled={i === lines.length - 1}
                   >
-                    Down
-                  </Button>
-                  <Button type="button" variant="ghost" size="sm" onClick={() => removeLine(i)}>
-                    Remove
+                    <IconChevronDown aria-hidden />
+                  </Button> */}
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon-sm"
+                    aria-label="Remove ingredient"
+                    onClick={() => removeLine(i)}
+                  >
+                    <IconTrash aria-hidden />
                   </Button>
                 </div>
               </li>
             ))}
-          </ul>
-        )}
-        <Button type="button" variant="outline" size="sm" className="mt-2" onClick={addBlankLine}>
-          Add blank line
-        </Button>
-      </Field>
+        </ul>
+      )}
     </FieldGroup>
   )
 }

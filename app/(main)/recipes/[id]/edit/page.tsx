@@ -1,20 +1,14 @@
 import Link from "next/link"
 import { notFound } from "next/navigation"
 
-import { updateRecipe } from "../../actions"
-import { MealIngredientsEditor } from "@/components/organisms/meal-ingredients-editor"
+import { EditRecipeForm } from "./_edit-recipe-form"
 import type { MealIngredientEditorLine } from "@/components/organisms/meal-ingredients-editor"
-import { ImageSelector } from "@/components/organisms/image-selector"
 import { Button } from "@/components/ui/button"
-import { Field, FieldGroup, FieldLabel } from "@/components/ui/field"
-import { Textarea } from "@/components/ui/textarea"
 import { requireUserId } from "@/lib/auth/auth-user"
 import { listIngredients } from "@/lib/data/ingredients"
 import { legacyPayloadFromIngredientsText, listRecipeIngredientLines } from "@/lib/data/recipe-ingredients"
 import { getRecipeById } from "@/lib/data/recipes"
 import { imageSrcFromStoredOrExternal } from "@/lib/helpers/image/stored-or-external-src"
-
-import { EditableText } from "@/components/molecules/editable-text"
 
 export const dynamic = "force-dynamic"
 
@@ -61,40 +55,15 @@ export default async function EditRecipePage({ params }: PageProps) {
           <Link href={`/recipes/${recipe.id}`}>View recipe</Link>
         </Button>
       </div>
-      <form action={updateRecipe} className="flex flex-col gap-6 container max-w-lg mx-auto">
-        <input type="hidden" name="id" value={recipe.id} />
-        <FieldGroup>
-          <EditableText
-            key={recipe.id}
-            name="title"
-            defaultValue={recipe.title}
-            placeholder="Recipe name"
-            ariaLabel="Edit recipe title"
-            variant="h1"
-            typoOverride="text-4xl"
-            className="w-full justify-start"
-          />
-
-          <ImageSelector previewSrc={previewSrc} defaultImageUrl={recipe.mainImageUrl ?? ""} />
-
-          <Field>
-            <FieldLabel>Ingredients</FieldLabel>
-            <MealIngredientsEditor catalog={catalog} initialLines={initialLines} />
-          </Field>
-          <Field>
-            <FieldLabel htmlFor="instructions">Instructions</FieldLabel>
-            <Textarea
-              id="instructions"
-              name="instructions"
-              required
-              placeholder="Step-by-step instructions"
-              className="min-h-40"
-              defaultValue={recipe.instructions}
-            />
-          </Field>
-        </FieldGroup>
-        <Button type="submit">Save changes</Button>
-      </form>
+      <EditRecipeForm
+        recipeId={recipe.id}
+        initialTitle={recipe.title}
+        initialInstructions={recipe.instructions}
+        previewSrc={previewSrc}
+        defaultImageUrl={recipe.mainImageUrl ?? ""}
+        catalog={catalog}
+        initialLines={initialLines}
+      />
     </div>
   )
 }
