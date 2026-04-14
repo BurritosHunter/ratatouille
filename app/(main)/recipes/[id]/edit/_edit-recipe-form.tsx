@@ -163,16 +163,18 @@ export function EditRecipeForm({
         </form>
 
         <Field>
-          <FieldLabel>Ingredients</FieldLabel>
+          <FieldLabel className="text-xl font-medium mt-3">Ingredients</FieldLabel>
           <MealIngredientsEditor
             catalog={catalog}
             initialLines={initialLines}
             onIngredientsPayloadChange={scheduleIngredientsAutosave}
+            triggerLabel="+ Add an ingredient"
+            listMode="hideSelected"
           />
         </Field>
 
         <Field>
-          <FieldLabel htmlFor="instructions">Instructions</FieldLabel>
+          <FieldLabel htmlFor="instructions" className="text-xl font-medium mt-3">Instructions</FieldLabel>
           <Textarea
             id="instructions"
             name="instructions"

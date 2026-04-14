@@ -1,7 +1,7 @@
 "use client"
 
 import { useLayoutEffect, useMemo, useRef, useState } from "react"
-import { IconMinus, IconPlus } from "@tabler/icons-react"
+import { IconCheck, IconMinus, IconPlus } from "@tabler/icons-react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -17,19 +17,20 @@ export type SearchableMultiSelectOption = {
   label: string
 }
 
+export type SearchableMultiSelectListMode =
+  | "split"  /** Selected block, then remaining options (current behavior). */
+  | "inline" /** One list in `options` order; selected rows show a check. */
+  | "hideSelected" /** Only options not yet selected (selected values are omitted from the list). */
+
 export type SearchableMultiSelectProps = {
   options: SearchableMultiSelectOption[]
   value: string[]
   onChange: (nextValues: string[]) => void
-  /** Trigger copy when nothing is selected. */
   placeholder?: string
   searchPlaceholder?: string
-  /** Heading for the searchable list of items not yet selected. */
-  sectionLabelAvailable?: string
-  /** Heading for the list of selected items. */
-  sectionLabelSelected?: string
-  /** Shown when search matches nothing in the available list. */
-  emptyMessage?: string
+  sectionLabelAvailable?: string /** Heading for the searchable list of items not yet selected. */
+  sectionLabelSelected?: string /** Heading for the list of selected items. */
+  emptyMessage?: string /** Shown when search matches nothing in the available list. */
   /**
    * When set, an outline **Create** control is shown if the search is non-empty and
    * the available list is empty. Receives the trimmed search string as the new option name.
@@ -38,6 +39,8 @@ export type SearchableMultiSelectProps = {
   ariaLabel?: string
   className?: string
   disabled?: boolean
+  triggerLabel?: string
+  listMode?: SearchableMultiSelectListMode
 }
 
 function normalizeQuery(raw: string): string {
@@ -75,6 +78,8 @@ export function SearchableMultiSelect({
   ariaLabel = "Open multi-select",
   className,
   disabled = false,
+  triggerLabel: triggerLabelOverride,
+  listMode = "split",
 }: SearchableMultiSelectProps) {
   const [open, setOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
@@ -107,6 +112,14 @@ export function SearchableMultiSelect({
     return [...filtered].sort(compareOptionLabels)
   }, [options, searchQuery, selectedSet])
 
+  const filteredInlineOptions = useMemo(() => {
+    const normalized = normalizeQuery(searchQuery)
+    if (normalized === "") return options
+    return options.filter((option) =>
+      option.label.toLowerCase().includes(normalized),
+    )
+  }, [options, searchQuery])
+
   const selectedOptions = useMemo(() => {
     const list: SearchableMultiSelectOption[] = []
     for (const id of value) {
@@ -132,6 +145,16 @@ export function SearchableMultiSelect({
     onChange(value.filter((item) => item !== optionValue))
   }
 
+  function toggleValue(optionValue: string) {
+    if (disabled) return
+    captureScrollSnapshot()
+    if (selectedSet.has(optionValue)) {
+      onChange(value.filter((item) => item !== optionValue))
+    } else {
+      onChange([...value, optionValue])
+    }
+  }
+
   useLayoutEffect(() => {
     const snapshot = scrollSnapshotReference.current
     if (snapshot === null) return
@@ -146,7 +169,7 @@ export function SearchableMultiSelect({
       : value.length === 1
         ? options.find((option) => option.value === value[0])?.label ??
           `${value.length} selected`
-        : `${value.length} selected`
+        : (triggerLabelOverride ?? `${value.length} selected`)
 
   const availableHeadingId = "searchable-multi-select-available-heading"
   const selectedHeadingId = "searchable-multi-select-selected-heading"
@@ -169,19 +192,37 @@ export function SearchableMultiSelect({
   }
 
   const isSearching = trimmedSearch !== ""
+  const isSplitStyle = listMode === "split" || listMode === "hideSelected"
   /** Hide "Select more" while search has no matching available rows (empty / create-only view). */
   const showSelectedSection =
+    listMode === "split" &&
     selectedOptions.length > 0 &&
     !(isSearching && filteredAvailable.length === 0)
   const showAvailableSection =
-    !isSearching ||
-    filteredAvailable.length > 0 ||
-    showCreateOption
+    isSplitStyle &&
+    (!isSearching ||
+      filteredAvailable.length > 0 ||
+      showCreateOption)
   const showSearchFallback =
-    isSearching && !showSelectedSection && !showAvailableSection
+    isSplitStyle &&
+    isSearching &&
+    !showSelectedSection &&
+    !showAvailableSection
   /** Hide "Select option" heading when search has no matching rows (create-only or empty). */
   const showAvailableSectionHeading =
     !isSearching || filteredAvailable.length > 0
+
+  const showInlineSection =
+    listMode === "inline" &&
+    (!isSearching ||
+      filteredInlineOptions.length > 0 ||
+      showCreateOption)
+  const showInlineSearchFallback =
+    listMode === "inline" &&
+    isSearching &&
+    filteredInlineOptions.length === 0 &&
+    !showCreateOption
+  const showInlineSectionHeading = !isSearching || filteredInlineOptions.length > 0
 
   return (
     <Popover
@@ -234,6 +275,86 @@ export function SearchableMultiSelect({
           className="min-h-0 flex-1 overflow-y-auto overscroll-contain"
         >
           <div className="flex flex-col divide-y divide-border">
+            {showInlineSection ? (
+              <section
+                aria-labelledby={
+                  showInlineSectionHeading ? availableHeadingId : undefined
+                }
+                aria-label={
+                  showInlineSectionHeading ? undefined : sectionLabelAvailable
+                }
+              >
+                {showInlineSectionHeading ? (
+                  <h3
+                    id={availableHeadingId}
+                    className="sticky top-0 z-10 border-b border-border bg-popover px-2.5 py-1.5 text-xs font-medium text-muted-foreground"
+                  >
+                    {sectionLabelAvailable}
+                  </h3>
+                ) : null}
+                <div role="listbox" aria-multiselectable className="p-1">
+                  {filteredInlineOptions.length === 0 ? (
+                    <div className="flex flex-col gap-2 px-2 py-3">
+                      <p className="text-center text-sm text-muted-foreground">
+                        {emptyMessage}
+                      </p>
+                      {showCreateOption ? (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="w-full"
+                          disabled={disabled || createPending}
+                          aria-label={`Create new option ${trimmedSearch}`}
+                          onClick={() => void handleCreateOption()}
+                        >
+                          {createPending ? "Creating…" : `Create “${trimmedSearch}”`}
+                        </Button>
+                      ) : null}
+                    </div>
+                  ) : (
+                    <ul className="flex flex-col gap-0">
+                      {filteredInlineOptions.map((option) => {
+                        const isSelected = selectedSet.has(option.value)
+                        return (
+                          <li key={option.value} role="presentation">
+                            <button
+                              type="button"
+                              role="option"
+                              aria-selected={isSelected}
+                              disabled={disabled}
+                              className={rowButtonClassName}
+                              onClick={() => toggleValue(option.value)}
+                            >
+                              <span
+                                className={cn(iconSlotClassName, "opacity-100")}
+                                aria-hidden
+                              >
+                                {isSelected ? (
+                                  <IconCheck className="size-4" />
+                                ) : (
+                                  <span className="inline-block size-4 rounded border border-border" />
+                                )}
+                              </span>
+                              <span className="min-w-0 flex-1 truncate text-left">
+                                {option.label}
+                              </span>
+                            </button>
+                          </li>
+                        )
+                      })}
+                    </ul>
+                  )}
+                </div>
+              </section>
+            ) : null}
+
+            {showInlineSearchFallback ? (
+              <p className="px-2 py-6 text-center text-sm text-muted-foreground">
+                {emptyMessage}
+              </p>
+            ) : null}
+
             {showSelectedSection ? (
               <section aria-labelledby={selectedHeadingId}>
                 <h3

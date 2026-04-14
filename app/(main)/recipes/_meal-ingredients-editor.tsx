@@ -2,12 +2,14 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { IconTrash } from "@tabler/icons-react"
+import { Fragment } from "react/jsx-runtime"
 
 import { quickCreateIngredient } from "@/app/(main)/ingredients/actions"
-import { SearchableMultiSelect } from "@/components/molecules/searchable-multi-select"
+import { SearchableMultiSelect, type SearchableMultiSelectListMode } from "@/components/molecules/searchable-multi-select"
 import { Button } from "@/components/ui/button"
 import { Field, FieldGroup } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
+import { Separator } from "@/components/ui/separator"
 
 export type MealIngredientEditorLine = {
   ingredientId?: number
@@ -18,8 +20,9 @@ export type MealIngredientEditorLine = {
 type Props = {
   catalog: { id: number; name: string }[]
   initialLines: MealIngredientEditorLine[]
-  /** Called when the serialized ingredients payload changes (e.g. for autosave). */
-  onIngredientsPayloadChange?: (payloadJson: string) => void
+  triggerLabel?: string
+  listMode?: SearchableMultiSelectListMode /** How the pantry picker lists options: split sections, one checklist, or hide already-picked rows. */
+  onIngredientsPayloadChange?: (payloadJson: string) => void /** Called when the serialized ingredients payload changes (e.g. for autosave). */
 }
 
 type InternalLine = MealIngredientEditorLine & { lineId: string }
@@ -60,6 +63,8 @@ function removeLastLineWithIngredientIdFromLines(
 export function MealIngredientsEditor({
   catalog: catalogProp,
   initialLines,
+  triggerLabel,
+  listMode,
   onIngredientsPayloadChange,
 }: Props) {
   const [catalog, setCatalog] = useState(() =>
@@ -177,25 +182,12 @@ export function MealIngredientsEditor({
   return (
     <FieldGroup className="gap-4">
       <input type="hidden" name="ingredients_payload" value={payloadJson} />
-
-      <Field className="*:w-auto">
-        <SearchableMultiSelect
-          className="max-w-[200px]"
-          options={pantryOptions}
-          value={pickIds}
-          onChange={handlePickIdsChange}
-          placeholder="Choose ingredient…"
-          searchPlaceholder="Search pantry…"
-          ariaLabel="Choose ingredient from pantry"
-          onCreateOption={createIngredientByName}
-        />
-      </Field>
       {lines.length > 0 && (
         <ul className="flex flex-col gap-1">
             {lines.map((line, i) => (
+              <Fragment key={line.lineId}>
               <li
-                key={line.lineId}
-                className="flex flex-col gap-2 rounded-md bg-muted ml-2 pl-3.5 pr-1 py-1 sm:flex-row sm:flex-wrap sm:items-end"
+                className="flex flex-col gap-2 rounded-md pl-1 pr-1 py-1 sm:flex-row sm:flex-wrap sm:items-end"
               >
                 <div className="grid min-w-0 flex-1 gap-2 sm:grid-cols-2">
                   <Field className="gap-1.5">
@@ -239,6 +231,7 @@ export function MealIngredientsEditor({
                     type="button"
                     variant="ghost"
                     size="icon-sm"
+                    className="shrink-0 text-muted-foreground hover:text-destructive"
                     aria-label="Remove ingredient"
                     onClick={() => removeLine(i)}
                   >
@@ -246,9 +239,27 @@ export function MealIngredientsEditor({
                   </Button>
                 </div>
               </li>
+              <Separator />
+              </Fragment>
             ))}
         </ul>
       )}
+
+      <Field className="*:w-auto">
+        <SearchableMultiSelect
+          className="max-w-[300px] border-none shadow-none text-muted-foreground -mt-2"
+          options={pantryOptions}
+          value={pickIds}
+          onChange={handlePickIdsChange}
+          placeholder="Choose ingredient…"
+          searchPlaceholder="Search pantry…"
+          ariaLabel="Choose ingredient from pantry"
+          onCreateOption={createIngredientByName}
+          triggerLabel={triggerLabel}
+          listMode={listMode}
+        />
+      </Field>
+      
     </FieldGroup>
   )
 }
