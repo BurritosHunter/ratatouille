@@ -2,6 +2,7 @@
 
 import { useChat } from "@ai-sdk/react"
 import { IconMessageCircle, IconX } from "@tabler/icons-react"
+import type { ReactNode } from "react"
 import { useState } from "react"
 
 import { RecipeListRowLink } from "@/components/molecules/recipe-list-row-link"
@@ -9,7 +10,7 @@ import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/helpers/utils"
 import { DefaultChatTransport } from "ai"
 
-export function AssistantChatShell() {
+export function AssistantChatShell({ children }: { children: ReactNode }) {
   const [panelOpen, setPanelOpen] = useState(false)
   const { messages, sendMessage, status, stop } = useChat({
     transport: new DefaultChatTransport({
@@ -18,7 +19,9 @@ export function AssistantChatShell() {
   })
 
   return (
-    <>
+    <div className="flex h-svh w-full overflow-hidden">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">{children}</div>
+
       {!panelOpen ? (
         <Button
           type="button"
@@ -34,11 +37,22 @@ export function AssistantChatShell() {
       ) : null}
 
       {panelOpen ? (
-        <div
-          className="fixed inset-y-0 right-0 z-40 flex w-full max-w-md flex-col border-l border-border bg-popover shadow-xl"
-          role="dialog"
-          aria-label="Assistant chat"
-        >
+        <>
+          <button
+            type="button"
+            className="fixed inset-0 z-40 bg-background/80 backdrop-blur-sm md:hidden"
+            aria-label="Close assistant"
+            onClick={() => setPanelOpen(false)}
+          />
+          <aside
+            className={cn(
+              "flex h-svh w-full max-w-md shrink-0 flex-col border-l border-border bg-popover shadow-xl",
+              "max-md:fixed max-md:inset-y-0 max-md:right-0 max-md:z-50",
+            )}
+            role="dialog"
+            aria-label="Assistant chat"
+            aria-modal="true"
+          >
           <div className="flex shrink-0 items-center justify-between border-b border-border px-4 py-3">
             <h2 className="font-heading text-sm font-semibold">Assistant</h2>
             <Button type="button" variant="ghost" size="icon-sm" aria-label="Close" onClick={() => setPanelOpen(false)}>
@@ -145,9 +159,10 @@ export function AssistantChatShell() {
               void sendMessage({ text })
             }}
           />
-        </div>
+          </aside>
+        </>
       ) : null}
-    </>
+    </div>
   )
 }
 
