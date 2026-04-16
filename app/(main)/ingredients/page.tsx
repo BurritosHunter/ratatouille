@@ -10,7 +10,7 @@ export default async function IngredientsPage() {
 
   return (
     <div className="max-w-header">
-      <div className="flex flex-col gap-6 w-full max-w-lg mx-auto">
+      <div className="flex flex-col gap-6 w-full max-w-lg mx-auto mb-30">
         <div className="flex flex-wrap gap-4 items-center justify-between">
           <h1 className="font-large">Ingredients</h1>
         </div>

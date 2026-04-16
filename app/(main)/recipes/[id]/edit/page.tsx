@@ -48,7 +48,7 @@ export default async function EditRecipePage({ params }: PageProps) {
   })
 
   return (
-    <div className="max-w-header gap-6">
+    <div className="max-w-header gap-6 mb-30">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <h1 className="font-medium">Edit recipe</h1>
         <Button asChild variant="outline" size="sm">

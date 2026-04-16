@@ -33,7 +33,7 @@ export default async function RecipesPage({ searchParams }: PageProps) {
         restoredMessage="Recipe restored"
         onUndo={restoreDeletedRecipe}
       />
-      <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-6 mb-30">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <h1 className="font-medium">Recipes</h1>
           <Button asChild size="sm">
