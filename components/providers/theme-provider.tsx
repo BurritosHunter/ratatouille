@@ -10,10 +10,10 @@ function ThemeProvider({
   return (
     <NextThemesProvider
       attribute="class"
-      defaultTheme="light"
-      enableSystem={false}
-      forcedTheme="light"
+      defaultTheme="system"
+      enableSystem
       disableTransitionOnChange
+      storageKey="ratatouille-ui-theme"
       {...props}
     >
       {children}

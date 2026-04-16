@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { IconSearch, IconUser } from "@tabler/icons-react"
 
+import { ThemeToggle } from "@/components/theme-toggle"
 import { Button } from "@/components/ui/button"
 import {
   InputGroup,
@@ -36,6 +37,7 @@ export function SiteHeader() {
             </InputGroupAddon>
             <InputGroupInput placeholder="Search" type="search" aria-label="Search" />
           </InputGroup>
+          <ThemeToggle />
           <Button type="button" variant="outline" size="icon" aria-label="Profile">
             <IconUser aria-hidden />
           </Button>
