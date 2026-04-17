@@ -12,11 +12,19 @@ import { DefaultChatTransport } from "ai"
 
 export function AssistantChatShell({ children }: { children: ReactNode }) {
   const [panelOpen, setPanelOpen] = useState(false)
-  const { messages, sendMessage, status, stop } = useChat({
+  const { messages, sendMessage, status, stop, error, clearError } = useChat({
     transport: new DefaultChatTransport({
       api: "/api/chat",
+      credentials: "include",
     }),
+    onError: (chatError) => {
+      if (process.env.NODE_ENV === "development") {
+        console.error("[assistant]", chatError)
+      }
+    },
   })
+
+  const inputDisabled = status === "submitted" || status === "streaming"
 
   return (
     <div className="flex h-svh w-full overflow-hidden">
@@ -61,6 +69,24 @@ export function AssistantChatShell({ children }: { children: ReactNode }) {
           </div>
 
           <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-4">
+            {error ? (
+              <div
+                role="alert"
+                className="rounded-md border border-destructive/50 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+              >
+                <p className="font-medium">Something went wrong</p>
+                <p className="mt-1 whitespace-pre-wrap text-destructive/90">{error.message}</p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="mt-2"
+                  onClick={() => clearError()}
+                >
+                  Dismiss
+                </Button>
+              </div>
+            ) : null}
             {messages.length === 0 ? (
               <p className="text-sm text-muted-foreground">
                 Ask anything about your recipes—for example, “What recipes do I have?”
@@ -154,7 +180,7 @@ export function AssistantChatShell({ children }: { children: ReactNode }) {
           </div>
 
           <AssistantChatInput
-            disabled={status !== "ready"}
+            disabled={inputDisabled}
             onSend={(text) => {
               void sendMessage({ text })
             }}
@@ -205,7 +231,7 @@ function AssistantChatInput({
             }
           }}
         />
-        <Button type="submit" disabled={disabled || !value.trim()}>
+        <Button type="submit" disabled={disabled || !value.trim()} aria-busy={disabled}>
           Send
         </Button>
       </div>

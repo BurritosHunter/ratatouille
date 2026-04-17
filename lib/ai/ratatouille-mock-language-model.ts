@@ -1,0 +1,108 @@
+import type { LanguageModelV3StreamPart, LanguageModelV3Usage } from "@ai-sdk/provider"
+import { MockLanguageModelV3 } from "ai/test"
+import { simulateReadableStream } from "ai"
+
+const mockUsage: LanguageModelV3Usage = {
+  inputTokens: { total: 0, noCache: 0, cacheRead: 0, cacheWrite: 0 },
+  outputTokens: { total: 0, text: 0, reasoning: 0 },
+}
+
+const MOCK_TEXT_BLOCK_ID = "ratatouille-mock-text"
+
+/**
+ * Sentinel values: keep a line in `.env.local` but do not call Anthropic (dev auto-mock still applies).
+ * `RATATOUILLE_AI_DEBUG` only logs — it does not disable Anthropic. Use this file’s rules or `RATATOUILLE_AI_MOCK`.
+ */
+const ANTHROPIC_KEY_DISABLED_SENTINELS = new Set(["mock", "off", "disabled", "false", "placeholder", "none"])
+
+/** True when `ANTHROPIC_API_KEY` is set to a non-placeholder value (real calls use this). */
+export function hasUsableAnthropicApiKey(): boolean {
+  const raw = process.env.ANTHROPIC_API_KEY?.trim()
+  if (!raw) {
+    return false
+  }
+  if (ANTHROPIC_KEY_DISABLED_SENTINELS.has(raw.toLowerCase())) {
+    return false
+  }
+  return true
+}
+
+/**
+ * When true, `/api/chat` uses a mock language model (no Anthropic network calls).
+ *
+ * - `RATATOUILLE_AI_MOCK=true` or `1`: always mock (even if `ANTHROPIC_API_KEY` is set — use this to test locally with a fake key still in the file).
+ * - `RATATOUILLE_AI_MOCK=false`: never mock (requires a real `ANTHROPIC_API_KEY`).
+ * - Otherwise: in production, never mock. In dev, mock if there is no usable key (`ANTHROPIC_API_KEY` empty, or set to a sentinel like `mock`).
+ *
+ * If you put any other non-empty value in `ANTHROPIC_API_KEY`, the real Anthropic client runs; a fake key will fail at the API with “invalid API key”.
+ */
+export function shouldUseRatatouilleMockAi(): boolean {
+  const explicit = process.env.RATATOUILLE_AI_MOCK?.trim().toLowerCase()
+  if (explicit === "false") {
+    return false
+  }
+  if (explicit === "true" || explicit === "1") {
+    return true
+  }
+  if (process.env.NODE_ENV === "production") {
+    return false
+  }
+  return !hasUsableAnthropicApiKey()
+}
+
+function streamMockToolCallStep(): ReadableStream<LanguageModelV3StreamPart> {
+  return simulateReadableStream({
+    chunks: [
+      { type: "stream-start", warnings: [] },
+      {
+        type: "tool-call",
+        toolCallId: "mock-listRecipesForUser",
+        toolName: "listRecipesForUser",
+        input: "{}",
+      },
+      {
+        type: "finish",
+        usage: mockUsage,
+        finishReason: { unified: "tool-calls", raw: "mock" },
+      },
+    ],
+  })
+}
+
+function streamMockAssistantTextStep(): ReadableStream<LanguageModelV3StreamPart> {
+  const text =
+    "This is a mock assistant reply (no Anthropic API call). Add ANTHROPIC_API_KEY to .env.local for the real model. Recipe cards above use your real database."
+  return simulateReadableStream({
+    chunks: [
+      { type: "stream-start", warnings: [] },
+      { type: "text-start", id: MOCK_TEXT_BLOCK_ID },
+      { type: "text-delta", id: MOCK_TEXT_BLOCK_ID, delta: text },
+      { type: "text-end", id: MOCK_TEXT_BLOCK_ID },
+      {
+        type: "finish",
+        usage: mockUsage,
+        finishReason: { unified: "stop", raw: "mock" },
+      },
+    ],
+  })
+}
+
+/**
+ * Two-step mock: (1) emit a fixed tool call so `listRecipesForUser` runs for real, (2) stream canned text.
+ * A new instance per request so the step counter resets.
+ */
+export function createRatatouilleMockLanguageModel(): MockLanguageModelV3 {
+  let stepIndex = 0
+  return new MockLanguageModelV3({
+    provider: "ratatouille-mock",
+    modelId: "mock-claude",
+    doStream: async () => {
+      const index = stepIndex
+      stepIndex += 1
+      if (index === 0) {
+        return { stream: streamMockToolCallStep() }
+      }
+      return { stream: streamMockAssistantTextStep() }
+    },
+  })
+}
