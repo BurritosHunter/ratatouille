@@ -1,0 +1,287 @@
+"use server"
+
+import { revalidatePath } from "next/cache"
+import { redirect } from "next/navigation"
+import { requireUserId } from "@/lib/auth/auth-user"
+import {
+  createRecipe,
+  getRecipeById,
+  getRecipeImageState,
+  restoreRecipe as restoreRecipeRow,
+  softDeleteRecipe,
+  updateRecipe as updateRecipeRow,
+} from "@/lib/data/recipes"
+import {
+  formatIngredientsDisplay,
+  resolveRecipeIngredientPayload,
+  writeRecipeIngredientLines,
+} from "@/lib/data/recipe-ingredients"
+import { parseRecipeIngredientsPayload } from "@/lib/helpers/recipe-ingredients-form"
+import { RecipeImagePatchAction } from "@/lib/constants"
+import type { RecipeImagePatch } from "@/lib/models/recipe"
+import { parseImageUpload } from "@/lib/helpers/image/image-file"
+
+function parseMainImageUrl(raw: unknown): string | null {
+  if (typeof raw !== "string") return null
+
+  const trimmed = raw.trim()
+  if (!trimmed) return null
+
+  try {
+    const parsedUrl = new URL(trimmed)
+    if (parsedUrl.protocol !== "https:" && parsedUrl.protocol !== "http:") return null
+    return trimmed
+    
+  } catch {
+    return null
+  }
+}
+
+export async function addRecipe(formData: FormData) {
+  const userId = await requireUserId("/recipes/new")
+  const title = formData.get("title")
+  const instructions = formData.get("instructions")
+  const payload = parseRecipeIngredientsPayload(formData.get("ingredients_payload"))
+  const file = await parseImageUpload(formData.get("main_image"))
+  const url = parseMainImageUrl(formData.get("main_image_url"))
+  if (typeof title !== "string" || !title.trim()) return
+  if (!payload || payload.length === 0) return
+  if (typeof instructions !== "string" || !instructions.trim()) return
+
+  const resolved = await resolveRecipeIngredientPayload(userId, payload)
+  if (resolved.length === 0) return;
+
+  const ingredientsText = formatIngredientsDisplay(resolved)
+
+  let mainImageUrl: string | null = null
+  let mainImageData: Buffer | null = null
+  let mainImageMime: string | null = null
+  if (file) {
+    mainImageData = file.buffer
+    mainImageMime = file.mime
+  } else {
+    mainImageUrl = url
+  }
+
+  const recipe = await createRecipe(
+    userId,
+    title.trim(),
+    ingredientsText,
+    instructions.trim(),
+    mainImageUrl,
+    mainImageData,
+    mainImageMime,
+  )
+  await writeRecipeIngredientLines(userId, recipe.id, resolved)
+  revalidatePath("/recipes")
+  redirect(`/recipes/${recipe.id}`)
+}
+
+function resolveUpdateImagePatch(
+  formData: FormData,
+  file: Awaited<ReturnType<typeof parseImageUpload>>,
+  urlParsed: string | null,
+  meta: { mainImageUrl: string | null; hasStoredImage: boolean },
+): RecipeImagePatch {
+  if (formData.get("remove_main_image") === "1") 
+    return { action: RecipeImagePatchAction.ClearAll }
+  if (file) 
+    return { action: RecipeImagePatchAction.SetFile, buffer: file.buffer, mime: file.mime }
+  if (urlParsed !== null) 
+    return { action: RecipeImagePatchAction.SetExternalUrl, url: urlParsed }
+  if (meta.mainImageUrl) 
+    return { action: RecipeImagePatchAction.ClearExternalUrlOnly }
+
+  return { action: RecipeImagePatchAction.NoChange }
+}
+
+export async function updateRecipe(formData: FormData) {
+  const idRaw = formData.get("id")
+  const id = typeof idRaw === "string" ? Number.parseInt(idRaw, 10) : Number.NaN
+  if (!Number.isFinite(id)) return
+
+  const userId = await requireUserId(`/recipes/${id}/edit`)
+  const title = formData.get("title")
+  const instructions = formData.get("instructions")
+  const payload = parseRecipeIngredientsPayload(formData.get("ingredients_payload"))
+  if (typeof title !== "string" || !title.trim()) return
+  if (!payload || payload.length === 0) return
+  if (typeof instructions !== "string" || !instructions.trim()) return
+
+  const resolved = await resolveRecipeIngredientPayload(userId, payload)
+  if (resolved.length === 0) return
+  
+  const ingredientsText = formatIngredientsDisplay(resolved)
+
+  const meta = await getRecipeImageState(userId, id)
+  if (!meta) return
+
+  const file = await parseImageUpload(formData.get("main_image"))
+  const urlParsed = parseMainImageUrl(formData.get("main_image_url"))
+  const imagePatch = resolveUpdateImagePatch(formData, file, urlParsed, meta)
+
+  const recipe = await updateRecipeRow(
+    userId,
+    id,
+    {
+      title: title.trim(),
+      ingredients: ingredientsText,
+      instructions: instructions.trim(),
+    },
+    imagePatch,
+  )
+  if (!recipe) return
+
+  await writeRecipeIngredientLines(userId, id, resolved)
+
+  revalidatePath("/recipes")
+  revalidatePath(`/recipes/${id}`)
+  redirect(`/recipes/${id}`)
+}
+
+function revalidateRecipePaths(recipeId: number) {
+  revalidatePath("/recipes")
+  revalidatePath(`/recipes/${recipeId}`)
+  revalidatePath(`/recipes/${recipeId}/edit`)
+}
+
+export type AutosaveResult = { ok: true } | { ok: false; reason?: string }
+
+export async function autosaveRecipeTitle(
+  recipeId: number,
+  title: string,
+): Promise<AutosaveResult> {
+  const userId = await requireUserId(`/recipes/${recipeId}/edit`)
+  const trimmed = title.trim()
+  if (!trimmed) return { ok: false, reason: "empty" }
+
+  const existing = await getRecipeById(userId, recipeId)
+  if (!existing) return { ok: false }
+
+  const recipe = await updateRecipeRow(
+    userId,
+    recipeId,
+    {
+      title: trimmed,
+      ingredients: existing.ingredients,
+      instructions: existing.instructions,
+    },
+    { action: RecipeImagePatchAction.NoChange },
+  )
+  if (!recipe) return { ok: false }
+
+  revalidateRecipePaths(recipeId)
+  return { ok: true }
+}
+
+export async function autosaveRecipeIngredients(
+  recipeId: number,
+  ingredientsPayloadJson: string,
+): Promise<AutosaveResult> {
+  const userId = await requireUserId(`/recipes/${recipeId}/edit`)
+  const existing = await getRecipeById(userId, recipeId)
+  if (!existing) return { ok: false }
+
+  const payload = parseRecipeIngredientsPayload(ingredientsPayloadJson)
+  if (!payload || payload.length === 0) return { ok: false, reason: "ingredients" }
+
+  const resolved = await resolveRecipeIngredientPayload(userId, payload)
+  if (resolved.length === 0) return { ok: false }
+
+  const ingredientsText = formatIngredientsDisplay(resolved)
+
+  const recipe = await updateRecipeRow(
+    userId,
+    recipeId,
+    {
+      title: existing.title,
+      ingredients: ingredientsText,
+      instructions: existing.instructions,
+    },
+    { action: RecipeImagePatchAction.NoChange },
+  )
+  if (!recipe) return { ok: false }
+
+  await writeRecipeIngredientLines(userId, recipeId, resolved)
+  revalidateRecipePaths(recipeId)
+  return { ok: true }
+}
+
+export async function autosaveRecipeImage(formData: FormData): Promise<AutosaveResult> {
+  const idRaw = formData.get("id")
+  const id = typeof idRaw === "string" ? Number.parseInt(idRaw, 10) : Number.NaN
+  if (!Number.isFinite(id)) return { ok: false }
+
+  const userId = await requireUserId(`/recipes/${id}/edit`)
+  const existing = await getRecipeById(userId, id)
+  if (!existing) return { ok: false }
+
+  const meta = await getRecipeImageState(userId, id)
+  if (!meta) return { ok: false }
+
+  const file = await parseImageUpload(formData.get("main_image"))
+  const urlParsed = parseMainImageUrl(formData.get("main_image_url"))
+  const imagePatch = resolveUpdateImagePatch(formData, file, urlParsed, meta)
+
+  const recipe = await updateRecipeRow(
+    userId,
+    id,
+    {
+      title: existing.title,
+      ingredients: existing.ingredients,
+      instructions: existing.instructions,
+    },
+    imagePatch,
+  )
+  if (!recipe) return { ok: false }
+
+  revalidateRecipePaths(id)
+  return { ok: true }
+}
+
+export async function autosaveRecipeInstructions(
+  recipeId: number,
+  instructions: string,
+): Promise<AutosaveResult> {
+  const userId = await requireUserId(`/recipes/${recipeId}/edit`)
+  const existing = await getRecipeById(userId, recipeId)
+  if (!existing) return { ok: false }
+
+  const trimmed = instructions.trim()
+  if (!trimmed) return { ok: false, reason: "empty" }
+
+  const recipe = await updateRecipeRow(
+    userId,
+    recipeId,
+    {
+      title: existing.title,
+      ingredients: existing.ingredients,
+      instructions: trimmed,
+    },
+    { action: RecipeImagePatchAction.NoChange },
+  )
+  if (!recipe) return { ok: false }
+
+  revalidateRecipePaths(recipeId)
+  return { ok: true }
+}
+
+export async function deleteRecipe(formData: FormData) {
+  const idRaw = formData.get("id")
+  const id = typeof idRaw === "string" ? Number.parseInt(idRaw, 10) : Number.NaN
+  if (!Number.isFinite(id)) return
+
+  const userId = await requireUserId(`/recipes/${id}`)
+  await softDeleteRecipe(userId, id)
+  revalidatePath("/recipes")
+  revalidatePath(`/recipes/${id}`)
+  redirect(`/recipes?deleted=${id}`)
+}
+
+export async function restoreDeletedRecipe(recipeId: number) {
+  if (!Number.isFinite(recipeId)) return
+  const userId = await requireUserId("/recipes")
+  await restoreRecipeRow(userId, recipeId)
+  revalidatePath("/recipes")
+  revalidatePath(`/recipes/${recipeId}`)
+}

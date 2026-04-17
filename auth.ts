@@ -7,7 +7,7 @@ import { NextResponse } from "next/server"
 import {
   devLocalhostCredentialsProvider,
   devLocalhostProxyUnauthorizedRedirect,
-} from "@/lib/dev-localhost-auto-login"
+} from "@/lib/auth/dev-localhost-auto-login"
 
 export const { handlers, auth, signIn, signOut } = NextAuth(() => {
   const pool = new Pool({ connectionString: process.env.DATABASE_URL })

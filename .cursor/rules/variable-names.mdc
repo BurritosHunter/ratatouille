@@ -1,0 +1,83 @@
+---
+description: Prefer descriptive full-word variable names; avoid single-letter identifiers
+alwaysApply: true
+priority: high
+---
+
+# Variable Naming
+
+## Rule
+
+Use **full-word, descriptive names** for variables, parameters, and bindings. **Do not** use single-letter identifiers (`x`, `e`, `n`, `t`, `k`, `v`, etc.) except where a language or API **requires** a specific name or an **exception** below applies.
+
+`i` and `j` are **not** covered by this rule when used **only** as loop counters (see **Loop indices**).
+
+## Rationale
+
+Single-letter names hide intent, complicate review, and age poorly when logic grows. Descriptive names document the code with minimal extra effort. Traditional index names `i` / `j` in loops are a narrow, readable exception.
+
+## Examples
+
+### ❌ Avoid
+
+```typescript
+const n = items.length;
+const t = items[0];
+process(t);
+
+items.map((x) => transform(x));
+
+function onClick(e: MouseEvent) {
+  e.preventDefault();
+}
+```
+
+### ✅ Prefer (general)
+
+```typescript
+const itemCount = items.length;
+const first = items[0];
+process(first);
+
+items.map((item) => transform(item));
+
+function onClick(event: MouseEvent) {
+  event.preventDefault();
+}
+```
+
+### ✅ Allowed — loop indices `i` and `j`
+
+Use `i` and `j` for numeric loop counters, including nested loops:
+
+```typescript
+for (let i = 0; i < rows.length; i++) {
+  for (let j = 0; j < rows[i].length; j++) {
+    process(rows[i][j]);
+  }
+}
+
+let i = 0;
+while (i < items.length) {
+  process(items[i]);
+  i++;
+}
+
+items.map((item, i) => transform(item, i));
+```
+
+The same applies to the **numeric index parameter** in `.map` / `.filter` / `.forEach` (and similar) when it is clearly an index: use `i`, or `j` in an inner callback when comparing to an outer row index `i`.
+
+Do **not** reuse `i` / `j` for non-index meanings (e.g. storing a user id or event); use a full-word name there.
+
+## Scope
+
+Applies to **new and edited** code: locals, function parameters, destructuring aliases, catch bindings (`error` not `err` unless matching an external convention), and inline callbacks.
+
+## Exceptions
+
+- **Loop indices**: `i` and `j` as the index variable in `for` / `while` loops (including nested loops: outer `i`, inner `j` is conventional), and as the index argument in array callbacks (`map`, `filter`, `forEach`, etc.) when it denotes a position.
+- **Required by API**: e.g. a library callback signature that must be named a certain way (still prefer wrapping with a descriptive local if it improves clarity).
+- **Mathematical domains** where symbols are universal: use sparingly and only when the symbol is the domain standard (e.g. coordinates in a tight geometric helper may use `x`/`y` if documented).
+
+When in doubt, spell it out.
