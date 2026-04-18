@@ -1,0 +1,78 @@
+---
+description: Single-line if for guard clauses whose body is only return
+globs: "**/*.{ts,tsx}"
+alwaysApply: false
+priority: high
+---
+
+# Inline `if` with only `return`
+
+When an `if` exists **only** to return a value (early exit / guard), put **`if`, condition, and `return` on one line**. Do not use a braced block for a single `return`.
+
+Terminate with a **semicolon** (see `semicolons.mdc`).
+
+## Blank line after the guard
+
+**Immediately after** the line containing the single-line guard, insert **one blank line** before whatever comes next. That separates the guard from the following logic (including another guard).
+
+### Prefer
+
+```typescript
+if (!session?.user?.id) return new Response("Unauthorized", { status: 401 });
+
+const userId = Number.parseInt(session.user.id, 10);
+if (!Number.isFinite(userId)) return new Response("Unauthorized", { status: 401 });
+
+let body: { messages: UIMessage[] };
+```
+
+```typescript
+if (!isAiDebugEnabled()) return;
+
+try {
+  console.log(/* … */);
+} catch (error) {
+  console.error(/* … */);
+}
+```
+
+### Avoid
+
+```typescript
+if (!session?.user?.id) return new Response("Unauthorized", { status: 401 });
+const userId = Number.parseInt(session.user.id, 10);
+```
+
+```typescript
+if (!isAiDebugEnabled()) return;
+try {
+```
+
+## Avoid (multi-line guard)
+
+```typescript
+if (!session?.user?.id) {
+  return new Response("Unauthorized", { status: 401 });
+}
+
+if (!Number.isFinite(userId)) {
+  return new Response("Unauthorized", { status: 401 });
+}
+```
+
+## Exceptions
+
+Use a **braced block** when the `if` body is not *only* a single `return`, or when the **`return` value must span multiple lines** (e.g. a large object literal, JSX, or a chained expression that the formatter breaks across lines). In those cases, normal multi-line formatting is fine. The **blank-line-after-guard** rule applies only to **single-line** `if (…) return …;` guards.
+
+```typescript
+if (error) {
+  return {
+    ok: false,
+    message: error.message,
+  };
+}
+```
+
+## Scope
+
+Applies to **new and edited** code in matched files. When editing legacy code, align touched guard clauses with this rule when it stays readable on one line.

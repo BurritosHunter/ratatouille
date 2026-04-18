@@ -50,7 +50,16 @@ export function shouldUseRatatouilleMockAi(): boolean {
   return !hasUsableAnthropicApiKey()
 }
 
-function streamMockToolCallStep(): ReadableStream<LanguageModelV3StreamPart> {
+/** `RATATOUILLE_AI_MOCK_SCENARIO=surface`: first step emits layout + background + listRecipes tool calls in one model turn (dev testing of merged assistant surface). */
+function getRatatouilleMockScenario(): "recipes" | "surface" {
+  const raw = process.env.RATATOUILLE_AI_MOCK_SCENARIO?.trim().toLowerCase();
+  if (raw === "surface") {
+    return "surface";
+  }
+  return "recipes";
+}
+
+function streamMockListRecipesToolCallStep(): ReadableStream<LanguageModelV3StreamPart> {
   return simulateReadableStream({
     chunks: [
       { type: "stream-start", warnings: [] },
@@ -66,12 +75,45 @@ function streamMockToolCallStep(): ReadableStream<LanguageModelV3StreamPart> {
         finishReason: { unified: "tool-calls", raw: "mock" },
       },
     ],
-  })
+  });
+}
+
+function streamMockSurfaceMultiToolCallStep(): ReadableStream<LanguageModelV3StreamPart> {
+  return simulateReadableStream({
+    chunks: [
+      { type: "stream-start", warnings: [] },
+      {
+        type: "tool-call",
+        toolCallId: "mock-setAssistantLayout",
+        toolName: "setAssistantLayout",
+        input: '{"layout":"twoColumn"}',
+      },
+      {
+        type: "tool-call",
+        toolCallId: "mock-setAssistantBackgroundBlue",
+        toolName: "setAssistantBackgroundBlue",
+        input: "{}",
+      },
+      {
+        type: "tool-call",
+        toolCallId: "mock-listRecipesForUser",
+        toolName: "listRecipesForUser",
+        input: "{}",
+      },
+      {
+        type: "finish",
+        usage: mockUsage,
+        finishReason: { unified: "tool-calls", raw: "mock" },
+      },
+    ],
+  });
 }
 
 function streamMockAssistantTextStep(): ReadableStream<LanguageModelV3StreamPart> {
   const text =
-    "This is a mock assistant reply (no Anthropic API call). Add ANTHROPIC_API_KEY to .env.local for the real model. Recipe cards above use your real database."
+    getRatatouilleMockScenario() === "surface"
+      ? "This is a mock assistant reply (no Anthropic API call). One step emitted three tools: layout (twoColumn), blue square in the first column, and your recipe list—see the strip below the site header. Add ANTHROPIC_API_KEY to .env.local for the real model."
+      : "This is a mock assistant reply (no Anthropic API call). Add ANTHROPIC_API_KEY to .env.local for the real model. Recipe cards above use your real database."
   return simulateReadableStream({
     chunks: [
       { type: "stream-start", warnings: [] },
@@ -88,21 +130,24 @@ function streamMockAssistantTextStep(): ReadableStream<LanguageModelV3StreamPart
 }
 
 /**
- * Two-step mock: (1) emit a fixed tool call so `listRecipesForUser` runs for real, (2) stream canned text.
+ * Two-step mock: (1) emit fixed tool call(s) so tools run for real (`listRecipesForUser`, or layout+background+recipes when `RATATOUILLE_AI_MOCK_SCENARIO=surface`), (2) stream canned text.
  * A new instance per request so the step counter resets.
  */
 export function createRatatouilleMockLanguageModel(): MockLanguageModelV3 {
-  let stepIndex = 0
+  let stepIndex = 0;
+  const scenario = getRatatouilleMockScenario();
   return new MockLanguageModelV3({
     provider: "ratatouille-mock",
     modelId: "mock-claude",
     doStream: async () => {
-      const index = stepIndex
-      stepIndex += 1
+      const index = stepIndex;
+      stepIndex += 1;
       if (index === 0) {
-        return { stream: streamMockToolCallStep() }
+        const stream =
+          scenario === "surface" ? streamMockSurfaceMultiToolCallStep() : streamMockListRecipesToolCallStep();
+        return { stream };
       }
-      return { stream: streamMockAssistantTextStep() }
+      return { stream: streamMockAssistantTextStep() };
     },
-  })
+  });
 }
