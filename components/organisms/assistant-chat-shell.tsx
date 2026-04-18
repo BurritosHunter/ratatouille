@@ -2,9 +2,9 @@
 
 import { useChat } from "@ai-sdk/react";
 import { IconMessageCircle, IconX } from "@tabler/icons-react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import type { ReactNode } from "react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { startTransition, useCallback, useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { AssistantSurfaceContext } from "@/contexts/assistant-surface-context";
@@ -74,7 +74,11 @@ function surfacePatchFromToolPart(
 
 export function AssistantChatShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
+  const pathnameReference = useRef(pathname);
+  pathnameReference.current = pathname;
+  const router = useRouter();
   const previousPathnameReference = useRef<string | undefined>(undefined);
+  const skipSurfaceClearForAssistantRouteNavigationReference = useRef(false);
   const [surface, setSurface] = useState<AssistantSurfacePayload | null>(null);
   const clearSurface = useCallback(() => {
     setSurface(null);
@@ -98,15 +102,21 @@ export function AssistantChatShell({ children }: { children: ReactNode }) {
   useEffect(() => {
     /* Hide tool preview when the user navigates to another view (pathname is the routing source of truth). */
     if (previousPathnameReference.current !== undefined && previousPathnameReference.current !== pathname) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional reset on client route change
-      setSurface(null);
+      if (skipSurfaceClearForAssistantRouteNavigationReference.current) {
+        skipSurfaceClearForAssistantRouteNavigationReference.current = false;
+      } else {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional reset on client route change
+        setSurface(null);
+      }
     }
     previousPathnameReference.current = pathname;
   }, [pathname]);
 
   useEffect(() => {
     /* Sync tool results to layout preview state. Not useMemo(messages): Clear must hide the panel without stripping chat history.
-     * Dedupe by assistant message id + toolCallId so a new turn can reuse the same toolCallId (e.g. mock model) and still merge. */
+     * Dedupe by assistant message id + toolCallId so a new turn can reuse the same toolCallId (e.g. mock model) and still merge.
+     * Navigate to /assistant only when new surface output is applied — not on every render while surface is non-null (that trapped client navigations). */
+    let didRequestAssistantRouteForNewSurface = false;
     for (const message of messages) {
       if (message.role !== "assistant") {
         continue;
@@ -128,16 +138,33 @@ export function AssistantChatShell({ children }: { children: ReactNode }) {
         if (patch === null) {
           continue;
         }
+        if (!didRequestAssistantRouteForNewSurface && pathnameReference.current !== "/assistant") {
+          didRequestAssistantRouteForNewSurface = true;
+          skipSurfaceClearForAssistantRouteNavigationReference.current = true;
+          /* Defer navigation so surface state commits and layout can paint before the route swap. */
+          queueMicrotask(() => {
+            startTransition(() => {
+              router.replace("/assistant");
+            });
+          });
+        }
         // eslint-disable-next-line react-hooks/set-state-in-effect -- see block comment above
         setSurface((previous) => mergeAssistantSurfacePayload(previous, dedupeKey, patch));
       }
     }
-  }, [messages]);
+  }, [messages, router]);
 
   return (
     <AssistantSurfaceContext.Provider value={{ surface, clearSurface }}>
-      <div className="flex h-svh w-full overflow-hidden">
-        <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">{children}</div>
+      <div className="flex h-[100svh] max-h-[100svh] min-h-0 w-full overflow-hidden">
+        <div
+          className={cn(
+            "flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden",
+            panelOpen && "md:pr-[min(28rem,100%)]",
+          )}
+        >
+          {children}
+        </div>
 
         {!panelOpen ? (
           <Button
@@ -163,9 +190,7 @@ export function AssistantChatShell({ children }: { children: ReactNode }) {
             />
             <aside
               className={cn(
-                "flex h-svh shrink-0 flex-col border-l border-border bg-popover shadow-xl",
-                "max-md:fixed max-md:inset-y-0 max-md:right-0 max-md:z-50 max-md:w-full max-md:max-w-md",
-                "md:h-svh md:max-w-md md:flex-none md:basis-[min(28rem,100%)]",
+                "fixed inset-y-0 right-0 z-50 flex h-[100svh] max-h-[100svh] w-full max-w-md shrink-0 flex-col border-l border-border bg-popover shadow-xl",
               )}
               role="dialog"
               aria-label="Assistant chat"
@@ -321,6 +346,7 @@ function AssistantChatInput({
     >
       <div className="flex gap-2">
         <textarea
+          autoFocus
           value={value}
           onChange={(event) => setValue(event.target.value)}
           disabled={disabled}

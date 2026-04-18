@@ -24,12 +24,12 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={cn("antialiased", fontMono.variable, "font-sans", figtree.variable, montserratHeading.variable)}
+      className={cn("h-full antialiased", fontMono.variable, "font-sans", figtree.variable, montserratHeading.variable)}
     >
-      <body>
+      <body className="h-full overflow-hidden">
         <AuthSessionProvider>
           <ThemeProvider>
-            {children}
+            <div className="h-full min-h-0">{children}</div>
             <Toaster position="bottom-right" duration={8000} closeButton />
           </ThemeProvider>
         </AuthSessionProvider>
