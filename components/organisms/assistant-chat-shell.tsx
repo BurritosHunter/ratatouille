@@ -6,7 +6,9 @@ import { usePathname, useRouter } from "next/navigation";
 import type { ReactNode } from "react";
 import { startTransition, useCallback, useEffect, useRef, useState } from "react";
 
+import { AssistantChatInput } from "@/components/organisms/assistant-chat-input";
 import { Button } from "@/components/ui/button";
+import { AssistantChatComposerProvider } from "@/contexts/assistant-chat-composer-context";
 import { AssistantSurfaceContext } from "@/contexts/assistant-surface-context";
 import type { RecipeToolRow } from "@/lib/ai/recipe-tool-rows";
 import {
@@ -98,6 +100,10 @@ export function AssistantChatShell({ children }: { children: ReactNode }) {
   });
 
   const inputDisabled = status === "submitted" || status === "streaming";
+  const sendUserMessage = useCallback((text: string) => {
+    setPanelOpen(true);
+    void sendMessage({ text });
+  }, [sendMessage]);
 
   useEffect(() => {
     /* Hide tool preview when the user navigates to another view (pathname is the routing source of truth). */
@@ -150,6 +156,7 @@ export function AssistantChatShell({ children }: { children: ReactNode }) {
 
   return (
     <AssistantSurfaceContext.Provider value={{ surface, clearSurface }}>
+      <AssistantChatComposerProvider value={{ sendUserMessage, inputDisabled }}>
       <div className="flex h-[100svh] max-h-[100svh] min-h-0 w-full overflow-hidden">
         <div
           className={cn(
@@ -260,16 +267,12 @@ export function AssistantChatShell({ children }: { children: ReactNode }) {
                 )}
               </div>
 
-              <AssistantChatInput
-                disabled={inputDisabled}
-                onSend={(text) => {
-                  void sendMessage({ text });
-                }}
-              />
+              <AssistantChatInput disabled={inputDisabled} onSend={sendUserMessage} />
             </aside>
           </>
         ) : null}
       </div>
+      </AssistantChatComposerProvider>
     </AssistantSurfaceContext.Provider>
   );
 }
@@ -316,52 +319,4 @@ function SurfaceToolPartMessage({ part }: { part: ToolLikePart }) {
     default:
       return null;
   }
-}
-
-function AssistantChatInput({
-  disabled,
-  onSend,
-}: {
-  disabled: boolean;
-  onSend: (text: string) => void;
-}) {
-  const [value, setValue] = useState("");
-
-  return (
-    <form
-      className="shrink-0 border-t border-border p-3"
-      onSubmit={(event) => {
-        event.preventDefault();
-        const trimmed = value.trim();
-        if (!trimmed || disabled) return;
-        onSend(trimmed);
-        setValue("");
-      }}
-    >
-      <div className="flex gap-2">
-        <textarea
-          autoFocus
-          value={value}
-          onChange={(event) => setValue(event.target.value)}
-          disabled={disabled}
-          rows={2}
-          placeholder="Message…"
-          className="border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex min-h-[2.5rem] w-full resize-y rounded-md border px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-          aria-label="Message"
-          onKeyDown={(event) => {
-            if (event.key === "Enter" && !event.shiftKey) {
-              event.preventDefault();
-              const trimmed = value.trim();
-              if (!trimmed || disabled) return;
-              onSend(trimmed);
-              setValue("");
-            }
-          }}
-        />
-        <Button type="submit" disabled={disabled || !value.trim()} aria-busy={disabled}>
-          Send
-        </Button>
-      </div>
-    </form>
-  );
 }
