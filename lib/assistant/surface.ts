@@ -12,7 +12,7 @@ export type AssistantSurfacePayload = {
   backgroundColor?: AssistantBackgroundColorToken;
 };
 
-/** Tool `type` values on UI message parts (`tool-${camelName}`). Keep in sync with `createAssistantChatTools`. */
+/** Tool `type` values on UI message parts (`tool-${camelName}`). Keep in sync with keys returned by `createAssistantTools`. */
 export const ASSISTANT_SURFACE_TOOL_PART_TYPES = [
   "tool-listRecipesForUser",
   "tool-setAssistantLayout",

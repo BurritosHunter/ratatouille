@@ -3,7 +3,7 @@
 import { createContext, useContext, type ReactNode } from "react";
 
 export type AssistantChatComposerContextValue = {
-  sendUserMessage: (text: string) => void;
+  sendUserMessageToAssistant: (text: string) => void;
   inputDisabled: boolean;
 };
 

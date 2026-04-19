@@ -4,7 +4,9 @@
     "send": "Send",
     "search": "Search",
     "profileAria": "Profile",
-    "you": "you"
+    "you": "you",
+    "messagePlaceholder": "Message…",
+    "messageAria": "Message"
   },
   "nav": {
     "explore": "Explore",
@@ -53,8 +55,6 @@
     "roleAssistant": "Assistant",
     "thinking": "Thinking…",
     "stop": "Stop",
-    "messagePlaceholder": "Message…",
-    "messageAria": "Message",
     "toolKind": {
       "recipes": "recipes",
       "layout": "layout",

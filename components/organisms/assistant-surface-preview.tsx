@@ -78,7 +78,7 @@ function AssistantLayoutRegions({ layout, squareColor, recipeBlock }: {
 }
 
 /**
- * Renders modular assistant tool output (layout + color square + recipes) in the main shell layout.
+ * Renders modular assistant tool output (layout + color square + recipes) on the assistant route.
  * Hidden when there is no surface state.
  */
 export function AssistantSurfacePreviewPanel() {

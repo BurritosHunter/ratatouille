@@ -1,18 +1,33 @@
 "use client";
 
-import { AssistantChatInput } from "@/components/organisms/assistant-chat-input";
+import { MessageForm } from "@/components/organisms/message-form";
+import { AssistantSurfacePreviewPanel } from "@/components/organisms/assistant-surface-preview";
 import { useAssistantChatComposer } from "@/contexts/assistant-chat-composer-context";
+import { useAssistantSurface } from "@/contexts/assistant-surface-context";
+import { cn } from "@/lib/helpers/utils";
 import { useTranslation } from "react-i18next";
 
 export default function AssistantPage() {
   const { t } = useTranslation();
-  const { sendUserMessage, inputDisabled } = useAssistantChatComposer();
+  const { surface } = useAssistantSurface();
+  const { sendUserMessageToAssistant, inputDisabled } = useAssistantChatComposer();
 
   return (
-    <section className="mx-auto flex w-full max-w-header flex-col gap-3 px-4 py-4">
-      <h1 className="font-heading text-lg font-semibold text-foreground">{t("assistant.title")}</h1>
-      <p className="text-sm text-muted-foreground">{t("assistant.pageDescription")}</p>
-      <AssistantChatInput disabled={inputDisabled} onSend={sendUserMessage} autoFocus={false} />
-    </section>
+    <div className="mx-auto flex w-full max-w-header min-h-0 flex-1 flex-col">
+      <AssistantSurfacePreviewPanel />
+      <section
+        className={cn(
+          "mx-auto flex w-full max-w-2xl flex-col gap-3 px-4 py-20",
+          surface && "hidden",
+        )}
+        aria-hidden={surface ? true : undefined}
+      >
+        <h1 className="font-heading text-lg font-semibold text-foreground">{t("assistant.title")}</h1>
+        <p className="text-sm text-muted-foreground">{t("assistant.pageDescription")}</p>
+        <div className="mt-3 max-w-lg">
+          <MessageForm disabled={inputDisabled} onSend={sendUserMessageToAssistant} autoFocus={false} />
+        </div>
+      </section>
+    </div>
   );
 }

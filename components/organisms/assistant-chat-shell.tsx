@@ -7,8 +7,7 @@ import type { ReactNode } from "react";
 import { startTransition, useCallback, useEffect, useRef, useState } from "react";
 import type { TFunction } from "i18next";
 import { useTranslation } from "react-i18next";
-
-import { AssistantChatInput } from "@/components/organisms/assistant-chat-input";
+import { MessageForm } from "@/components/organisms/message-form";
 import { Button } from "@/components/ui/button";
 import { AssistantChatComposerProvider } from "@/contexts/assistant-chat-composer-context";
 import { AssistantSurfaceContext } from "@/contexts/assistant-surface-context";
@@ -22,36 +21,33 @@ import {
 import { cn } from "@/lib/helpers/utils";
 import { DefaultChatTransport, type UIDataTypes, type UIMessagePart, type UITools } from "ai";
 
-const SURFACE_TOOL_PART_TYPE_SET = new Set<string>(ASSISTANT_SURFACE_TOOL_PART_TYPES);
-
-function isSurfaceToolPartType(type: string): type is (typeof ASSISTANT_SURFACE_TOOL_PART_TYPES)[number] {
-  return SURFACE_TOOL_PART_TYPE_SET.has(type);
-}
-
-type ToolLikePart = {
+type ToolPart = {
   type: string;
   toolCallId: string;
   state: string;
   errorText?: string;
   output?: unknown;
 };
+function getToolPart(part: UIMessagePart<UIDataTypes, UITools>): ToolPart | null {
+  /* Returns null for text and non-tool parts. */
 
-function asToolLikePart(part: UIMessagePart<UIDataTypes, UITools>): ToolLikePart | null {
-  if (typeof part !== "object" || part === null) {
-    return null;
-  }
-  if (!("toolCallId" in part) || !("state" in part) || !("type" in part)) {
-    return null;
-  }
+  if (typeof part !== "object" || part === null) { return null; }
+
   const candidate = part as Record<string, unknown>;
-  if (typeof candidate.type !== "string" || typeof candidate.toolCallId !== "string" || typeof candidate.state !== "string") {
-    return null;
-  }
-  return part as ToolLikePart;
+  const type = candidate.type;
+  if (typeof type !== "string" || !type.startsWith("tool-")) { return null; }
+  if (typeof candidate.toolCallId !== "string" || typeof candidate.state !== "string") { return null; }
+
+  return part as ToolPart;
+}
+
+const SURFACE_TOOL_PART_TYPE_SET = new Set<string>(ASSISTANT_SURFACE_TOOL_PART_TYPES);
+function isSurfaceToolType(type: string): type is (typeof ASSISTANT_SURFACE_TOOL_PART_TYPES)[number] {
+  return SURFACE_TOOL_PART_TYPE_SET.has(type);
 }
 
 function surfacePatchFromToolPart(
-  part: ToolLikePart,
+  part: ToolPart,
 ): Partial<Pick<AssistantSurfacePayload, "recipes" | "layout" | "backgroundColor">> | null {
   switch (part.type) {
     case "tool-listRecipesForUser": {
@@ -76,90 +72,131 @@ function surfacePatchFromToolPart(
   }
 }
 
+function surfaceToolKindLabel(partType: string, t: TFunction<"translation">): string {
+  switch (partType) {
+    case "tool-listRecipesForUser":
+      return t("assistant.toolKind.recipes");
+    case "tool-setAssistantLayout":
+      return t("assistant.toolKind.layout");
+    case "tool-setAssistantBackgroundRed":
+    case "tool-setAssistantBackgroundBlue":
+    case "tool-setAssistantBackgroundGreen":
+      return t("assistant.toolKind.colorSquare");
+    default:
+      return t("assistant.toolKind.generic");
+  }
+}
+
+function SurfaceToolPartMessage({ part }: { part: ToolPart }) {
+  const { t } = useTranslation();
+  const callId = part.toolCallId;
+  const label = surfaceToolKindLabel(part.type, t);
+
+  switch (part.state) {
+    case "input-streaming":
+    case "input-available":
+      return (
+        <div key={callId} className="text-sm text-muted-foreground">
+          {t("assistant.runningTool", { label })}
+        </div>
+      );
+    case "output-available":
+      return (
+        <p key={callId} className="text-sm text-muted-foreground">
+          {t("assistant.updatedMainLayout", { label })}
+        </p>
+      );
+    case "output-error":
+      return (
+        <p key={callId} className="text-sm text-destructive">
+          {t("assistant.toolFailed", { label, error: part.errorText ?? t("assistant.unknownError") })}
+        </p>
+      );
+    default:
+      return null;
+  }
+}
+
 export function AssistantChatShell({ children }: { children: ReactNode }) {
   const { t } = useTranslation();
-  const pathname = usePathname();
-  const pathnameReference = useRef(pathname);
-  pathnameReference.current = pathname;
   const router = useRouter();
-  const previousPathnameReference = useRef<string | undefined>(undefined);
-  const skipSurfaceClearForAssistantRouteNavigationReference = useRef(false);
+
   const [surface, setSurface] = useState<AssistantSurfacePayload | null>(null);
-  const clearSurface = useCallback(() => {
-    setSurface(null);
-  }, []);
+  const clearSurface = useCallback(() => { setSurface(null); }, []);
   const [panelOpen, setPanelOpen] = useState(false);
-  const processedSurfaceCallIdsReference = useRef<Set<string>>(new Set());
+
   const { messages, sendMessage, status, stop, error, clearError } = useChat({
-    transport: new DefaultChatTransport({
-      api: "/api/chat",
-      credentials: "include",
-    }),
+    transport: new DefaultChatTransport({ api: "/api/chat", credentials: "include" }),
     onError: (chatError) => {
       if (process.env.NODE_ENV === "development") {
         console.error("[assistant]", chatError);
       }
     },
   });
-
   const inputDisabled = status === "submitted" || status === "streaming";
-  const sendUserMessage = useCallback((text: string) => {
+  const sendUserMessageToAssistant = useCallback((text: string) => {
     setPanelOpen(true);
     void sendMessage({ text });
   }, [sendMessage]);
-
+  
+  const pathname = usePathname();
+  const previousPathnameRef = useRef<string | undefined>(undefined);
   useEffect(() => {
-    /* Hide tool preview when the user navigates to another view (pathname is the routing source of truth). */
-    if (previousPathnameReference.current !== undefined && previousPathnameReference.current !== pathname) {
-      if (skipSurfaceClearForAssistantRouteNavigationReference.current) {
-        skipSurfaceClearForAssistantRouteNavigationReference.current = false;
-      } else {
-        // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional reset on client route change
-        setSurface(null);
-      }
+    if (previousPathnameRef.current === "/assistant" && pathname !== "/assistant") {
+      clearSurface(); /* Preview mounts only on /assistant; clear shell state when leaving that route. */
     }
-    previousPathnameReference.current = pathname;
+    previousPathnameRef.current = pathname;
   }, [pathname]);
 
+
+
+
+
+
+
+/* SARAH - Everything above this point is validated */
+
+
+  const processedSurfaceCallIdsReference = useRef<Set<string>>(new Set());
   useEffect(() => {
     /* Sync tool results to layout preview state. Not useMemo(messages): Clear must hide the panel without stripping chat history.
      * Dedupe by assistant message id + toolCallId so a new turn can reuse the same toolCallId (e.g. mock model) and still merge.
-     * Navigate to /assistant only when new surface output is applied — not on every render while surface is non-null (that trapped client navigations). */
-    let didRequestAssistantRouteForNewSurface = false;
+     * Navigate to /assistant only when new surface output is applied — not on every render while surface is non-null (that trapped client navigations).
+     * `pathname` is a dependency so we read the current route when deciding to navigate; already-processed tool parts are skipped. */
+    let changeRouteToAssistantPage = false;
     for (const message of messages) {
       if (message.role !== "assistant") { continue; }
 
       for (const part of message.parts) {
-        const toolLike = asToolLikePart(part);
-        if (!toolLike || !isSurfaceToolPartType(toolLike.type)) { continue; }
-        if (toolLike.state !== "output-available") { continue; }
+        const tool = getToolPart(part);
+        if (!tool || !isSurfaceToolType(tool.type)) { continue; }
+        if (tool.state !== "output-available") { continue; }
 
-        const dedupeKey = `${message.id}:${toolLike.toolCallId}`;
+        const dedupeKey = `${message.id}:${tool.toolCallId}`;
         if (processedSurfaceCallIdsReference.current.has(dedupeKey)) { continue; }
 
         processedSurfaceCallIdsReference.current.add(dedupeKey);
-        const patch = surfacePatchFromToolPart(toolLike);
+        const patch = surfacePatchFromToolPart(tool);
         if (patch === null) { continue; }
         
-        if (!didRequestAssistantRouteForNewSurface && pathnameReference.current !== "/assistant") {
-          didRequestAssistantRouteForNewSurface = true;
-          skipSurfaceClearForAssistantRouteNavigationReference.current = true;
-          /* Defer navigation so surface state commits and layout can paint before the route swap. */
+        if (!changeRouteToAssistantPage && pathname !== "/assistant") {
+          changeRouteToAssistantPage = true;
           queueMicrotask(() => {
             startTransition(() => {
               router.replace("/assistant");
             });
           });
         }
+
         // eslint-disable-next-line react-hooks/set-state-in-effect -- see block comment above
         setSurface((previous) => mergeAssistantSurfacePayload(previous, dedupeKey, patch));
       }
     }
-  }, [messages, router]);
+  }, [messages, pathname, router]);
 
   return (
     <AssistantSurfaceContext.Provider value={{ surface, clearSurface }}>
-      <AssistantChatComposerProvider value={{ sendUserMessage, inputDisabled }}>
+      <AssistantChatComposerProvider value={{ sendUserMessageToAssistant, inputDisabled }}>
       <div className="flex h-[100svh] max-h-[100svh] min-h-0 w-full overflow-hidden">
         <div
           className={cn(
@@ -215,9 +252,7 @@ export function AssistantChatShell({ children }: { children: ReactNode }) {
                   >
                     <p className="font-medium">{t("assistant.errorTitle")}</p>
                     <p className="mt-1 whitespace-pre-wrap text-destructive/90">{error.message}</p>
-                    <Button type="button" variant="outline" size="sm" className="mt-2" onClick={() => clearError()}>
-                      {t("assistant.dismiss")}
-                    </Button>
+                    <Button type="button" variant="outline" size="sm" className="mt-2" onClick={() => clearError()}>{t("assistant.dismiss")}</Button>
                   </div>
                 ) : null}
                 {messages.length === 0 ? (
@@ -248,8 +283,8 @@ export function AssistantChatShell({ children }: { children: ReactNode }) {
                             </div>
                           );
                         }
-                        const toolLike = asToolLikePart(part);
-                        if (toolLike && isSurfaceToolPartType(toolLike.type)) {
+                        const toolLike = getToolPart(part);
+                        if (toolLike && isSurfaceToolType(toolLike.type)) {
                           return <SurfaceToolPartMessage key={toolLike.toolCallId} part={toolLike} />;
                         }
                         return null;
@@ -261,14 +296,12 @@ export function AssistantChatShell({ children }: { children: ReactNode }) {
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <span className="inline-block size-2 animate-pulse rounded-full bg-muted-foreground" aria-hidden />
                     {t("assistant.thinking")}
-                    <Button type="button" variant="link" size="sm" className="h-auto p-0" onClick={() => void stop()}>
-                      {t("assistant.stop")}
-                    </Button>
+                    <Button type="button" variant="link" size="sm" className="h-auto p-0" onClick={() => void stop()}>{t("assistant.stop")}</Button>
                   </div>
                 )}
               </div>
 
-              <AssistantChatInput disabled={inputDisabled} onSend={sendUserMessage} />
+              <MessageForm disabled={inputDisabled} onSend={sendUserMessageToAssistant} className="border-t border-border p-3" />
             </aside>
           </>
         ) : null}
@@ -276,49 +309,4 @@ export function AssistantChatShell({ children }: { children: ReactNode }) {
       </AssistantChatComposerProvider>
     </AssistantSurfaceContext.Provider>
   );
-}
-
-function surfaceToolKindLabel(partType: string, t: TFunction<"translation">): string {
-  switch (partType) {
-    case "tool-listRecipesForUser":
-      return t("assistant.toolKind.recipes");
-    case "tool-setAssistantLayout":
-      return t("assistant.toolKind.layout");
-    case "tool-setAssistantBackgroundRed":
-    case "tool-setAssistantBackgroundBlue":
-    case "tool-setAssistantBackgroundGreen":
-      return t("assistant.toolKind.colorSquare");
-    default:
-      return t("assistant.toolKind.generic");
-  }
-}
-
-function SurfaceToolPartMessage({ part }: { part: ToolLikePart }) {
-  const { t } = useTranslation();
-  const callId = part.toolCallId;
-  const label = surfaceToolKindLabel(part.type, t);
-
-  switch (part.state) {
-    case "input-streaming":
-    case "input-available":
-      return (
-        <div key={callId} className="text-sm text-muted-foreground">
-          {t("assistant.runningTool", { label })}
-        </div>
-      );
-    case "output-available":
-      return (
-        <p key={callId} className="text-sm text-muted-foreground">
-          {t("assistant.updatedMainLayout", { label })}
-        </p>
-      );
-    case "output-error":
-      return (
-        <p key={callId} className="text-sm text-destructive">
-          {t("assistant.toolFailed", { label, error: part.errorText ?? t("assistant.unknownError") })}
-        </p>
-      );
-    default:
-      return null;
-  }
 }
