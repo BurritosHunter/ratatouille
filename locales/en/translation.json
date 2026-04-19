@@ -1,0 +1,76 @@
+{
+  "common": {
+    "appName": "Ratatouille",
+    "send": "Send",
+    "search": "Search",
+    "profileAria": "Profile",
+    "you": "you"
+  },
+  "nav": {
+    "explore": "Explore",
+    "recipes": "Recipes",
+    "ingredients": "Ingredients"
+  },
+  "home": {
+    "signedInAs": "Signed in as {{displayName}}"
+  },
+  "auth": {
+    "signIn": "Sign in",
+    "magicLinkBlurb": "We'll email you a magic link.",
+    "checkEmailBefore": "Check",
+    "checkEmailAfter": "for a sign-in link.",
+    "emailLabel": "Email",
+    "emailPlaceholder": "you@example.com",
+    "sending": "Sending…",
+    "sendMagicLink": "Send magic link",
+    "signUpPrompt": "No account?",
+    "signUp": "Sign up",
+    "devLocal": "Local dev:",
+    "signInAsDev": "Sign in as dev user",
+    "errorSendEmail": "Could not send sign-in email. Check the address and try again."
+  },
+  "recipes": {
+    "title": "Recipes",
+    "createRecipe": "Create recipe",
+    "empty": "No recipes yet",
+    "deletedToast": "Recipe deleted",
+    "restoredToast": "Recipe restored"
+  },
+  "ingredients": {
+    "title": "Ingredients"
+  },
+  "assistant": {
+    "title": "Assistant",
+    "pageDescription": "Ask anything about your recipes—for example, “What recipes do I have?” Tool output (layout, color square, recipes) appears in the main layout above the page.",
+    "drawerEmpty": "Ask anything about your recipes—for example, “What recipes do I have?” Tool output (layout, color square, recipes) appears in the main layout above the page.",
+    "openChatAria": "Open assistant",
+    "closeAssistantAria": "Close assistant",
+    "closeAria": "Close",
+    "chatDialogAria": "Assistant chat",
+    "errorTitle": "Something went wrong",
+    "dismiss": "Dismiss",
+    "roleYou": "You",
+    "roleAssistant": "Assistant",
+    "thinking": "Thinking…",
+    "stop": "Stop",
+    "messagePlaceholder": "Message…",
+    "messageAria": "Message",
+    "toolKind": {
+      "recipes": "recipes",
+      "layout": "layout",
+      "colorSquare": "color square",
+      "generic": "tool"
+    },
+    "runningTool": "Running {{label}} tool…",
+    "updatedMainLayout": "Updated main layout ({{label}}).",
+    "toolFailed": "{{label}} tool failed: {{error}}",
+    "unknownError": "Unknown error.",
+    "surfaceAria": "Assistant tool output",
+    "surfaceHeading": "Assistant tools",
+    "surfaceMeta": "Updated {{date}} (last call: {{lastCallId}})",
+    "layoutLine": "Layout: {{layout}}",
+    "layoutTestSquare": "Layout test square: {{color}}",
+    "layoutTestSquareAria": "Layout test square: {{color}}",
+    "noRecipesInSurface": "No recipes in surface state yet."
+  }
+}

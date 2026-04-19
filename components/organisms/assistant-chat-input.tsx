@@ -3,6 +3,7 @@
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { useTranslation } from "react-i18next";
 
 export function AssistantChatInput({
   disabled,
@@ -13,6 +14,7 @@ export function AssistantChatInput({
   onSend: (text: string) => void;
   autoFocus?: boolean;
 }) {
+  const { t } = useTranslation();
   const [value, setValue] = useState("");
 
   return (
@@ -33,9 +35,9 @@ export function AssistantChatInput({
           onChange={(event) => setValue(event.target.value)}
           disabled={disabled}
           rows={2}
-          placeholder="Message…"
+          placeholder={t("assistant.messagePlaceholder")}
           className="border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex min-h-[2.5rem] w-full resize-y rounded-md border px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-          aria-label="Message"
+          aria-label={t("assistant.messageAria")}
           onKeyDown={(event) => {
             if (event.key === "Enter" && !event.shiftKey) {
               event.preventDefault();
@@ -47,7 +49,7 @@ export function AssistantChatInput({
           }}
         />
         <Button type="submit" disabled={disabled || !value.trim()} aria-busy={disabled}>
-          Send
+          {t("common.send")}
         </Button>
       </div>
     </form>

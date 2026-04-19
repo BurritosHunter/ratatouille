@@ -5,6 +5,8 @@ import { IconMessageCircle, IconX } from "@tabler/icons-react";
 import { usePathname, useRouter } from "next/navigation";
 import type { ReactNode } from "react";
 import { startTransition, useCallback, useEffect, useRef, useState } from "react";
+import type { TFunction } from "i18next";
+import { useTranslation } from "react-i18next";
 
 import { AssistantChatInput } from "@/components/organisms/assistant-chat-input";
 import { Button } from "@/components/ui/button";
@@ -75,6 +77,7 @@ function surfacePatchFromToolPart(
 }
 
 export function AssistantChatShell({ children }: { children: ReactNode }) {
+  const { t } = useTranslation();
   const pathname = usePathname();
   const pathnameReference = useRef(pathname);
   pathnameReference.current = pathname;
@@ -174,7 +177,7 @@ export function AssistantChatShell({ children }: { children: ReactNode }) {
             variant="default"
             className="fixed bottom-6 right-6 z-50 size-12 rounded-full shadow-lg"
             aria-expanded={false}
-            aria-label="Open assistant"
+            aria-label={t("assistant.openChatAria")}
             onClick={() => setPanelOpen(true)}
           >
             <IconMessageCircle className="size-5" aria-hidden />
@@ -186,7 +189,7 @@ export function AssistantChatShell({ children }: { children: ReactNode }) {
             <button
               type="button"
               className="fixed inset-0 z-40 bg-background/80 backdrop-blur-sm md:hidden"
-              aria-label="Close assistant"
+              aria-label={t("assistant.closeAssistantAria")}
               onClick={() => setPanelOpen(false)}
             />
             <aside
@@ -194,12 +197,12 @@ export function AssistantChatShell({ children }: { children: ReactNode }) {
                 "fixed inset-y-0 right-0 z-50 flex h-[100svh] max-h-[100svh] w-full max-w-md shrink-0 flex-col border-l border-border bg-popover shadow-xl",
               )}
               role="dialog"
-              aria-label="Assistant chat"
+              aria-label={t("assistant.chatDialogAria")}
               aria-modal="true"
             >
               <div className="flex shrink-0 items-center justify-between border-b border-border px-4 py-3">
-                <h2 className="font-heading text-sm font-semibold">Assistant</h2>
-                <Button type="button" variant="ghost" size="icon-sm" aria-label="Close" onClick={() => setPanelOpen(false)}>
+                <h2 className="font-heading text-sm font-semibold">{t("assistant.title")}</h2>
+                <Button type="button" variant="ghost" size="icon-sm" aria-label={t("assistant.closeAria")} onClick={() => setPanelOpen(false)}>
                   <IconX className="size-4" aria-hidden />
                 </Button>
               </div>
@@ -210,22 +213,20 @@ export function AssistantChatShell({ children }: { children: ReactNode }) {
                     role="alert"
                     className="rounded-md border border-destructive/50 bg-destructive/10 px-3 py-2 text-sm text-destructive"
                   >
-                    <p className="font-medium">Something went wrong</p>
+                    <p className="font-medium">{t("assistant.errorTitle")}</p>
                     <p className="mt-1 whitespace-pre-wrap text-destructive/90">{error.message}</p>
                     <Button type="button" variant="outline" size="sm" className="mt-2" onClick={() => clearError()}>
-                      Dismiss
+                      {t("assistant.dismiss")}
                     </Button>
                   </div>
                 ) : null}
                 {messages.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">
-                    Ask anything about your recipes—for example, “What recipes do I have?” Tool output (layout, color square, recipes) appears in the main layout above the page.
-                  </p>
+                  <p className="text-sm text-muted-foreground">{t("assistant.drawerEmpty")}</p>
                 ) : (
                   messages.map((message) => (
                     <div key={message.id} className="space-y-2">
                       <span className="text-xs font-medium text-muted-foreground">
-                        {message.role === "user" ? "You" : "Assistant"}
+                        {message.role === "user" ? t("assistant.roleYou") : t("assistant.roleAssistant")}
                       </span>
                       {message.parts.map((part, partIndex) => {
                         if (part.type === "text") {
@@ -259,9 +260,9 @@ export function AssistantChatShell({ children }: { children: ReactNode }) {
                 {(status === "submitted" || status === "streaming") && (
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <span className="inline-block size-2 animate-pulse rounded-full bg-muted-foreground" aria-hidden />
-                    Thinking…
+                    {t("assistant.thinking")}
                     <Button type="button" variant="link" size="sm" className="h-auto p-0" onClick={() => void stop()}>
-                      Stop
+                      {t("assistant.stop")}
                     </Button>
                   </div>
                 )}
@@ -277,43 +278,44 @@ export function AssistantChatShell({ children }: { children: ReactNode }) {
   );
 }
 
-function surfaceToolLabel(partType: string): string {
+function surfaceToolKindLabel(partType: string, t: TFunction<"translation">): string {
   switch (partType) {
     case "tool-listRecipesForUser":
-      return "recipes";
+      return t("assistant.toolKind.recipes");
     case "tool-setAssistantLayout":
-      return "layout";
+      return t("assistant.toolKind.layout");
     case "tool-setAssistantBackgroundRed":
     case "tool-setAssistantBackgroundBlue":
     case "tool-setAssistantBackgroundGreen":
-      return "color square";
+      return t("assistant.toolKind.colorSquare");
     default:
-      return "tool";
+      return t("assistant.toolKind.generic");
   }
 }
 
 function SurfaceToolPartMessage({ part }: { part: ToolLikePart }) {
+  const { t } = useTranslation();
   const callId = part.toolCallId;
-  const label = surfaceToolLabel(part.type);
+  const label = surfaceToolKindLabel(part.type, t);
 
   switch (part.state) {
     case "input-streaming":
     case "input-available":
       return (
         <div key={callId} className="text-sm text-muted-foreground">
-          Running {label} tool…
+          {t("assistant.runningTool", { label })}
         </div>
       );
     case "output-available":
       return (
         <p key={callId} className="text-sm text-muted-foreground">
-          Updated main layout ({label}).
+          {t("assistant.updatedMainLayout", { label })}
         </p>
       );
     case "output-error":
       return (
         <p key={callId} className="text-sm text-destructive">
-          {label} tool failed: {part.errorText ?? "Unknown error."}
+          {t("assistant.toolFailed", { label, error: part.errorText ?? t("assistant.unknownError") })}
         </p>
       );
     default:

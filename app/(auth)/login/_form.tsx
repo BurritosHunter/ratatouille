@@ -5,12 +5,14 @@ import { signIn } from "next-auth/react"
 import { useEffect, useState } from "react"
 
 import { Button } from "@/components/ui/button"
+import { useTranslation } from "react-i18next"
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 
 const RESEND_PROVIDER_ID = "resend"
 
 export function LoginForm() {
+  const { t } = useTranslation()
   const [email, setEmail] = useState("")
   const [status, setStatus] = useState<"idle" | "loading" | "sent" | "error">("idle")
   const [errorMessage, setErrorMessage] = useState("")
@@ -32,7 +34,7 @@ export function LoginForm() {
     })
     if (result?.error) {
       setStatus("error")
-      setErrorMessage("Could not send sign-in email. Check the address and try again.")
+      setErrorMessage(t("auth.errorSendEmail"))
       return
     }
     setStatus("sent")
@@ -41,19 +43,21 @@ export function LoginForm() {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-2 text-center">
-        <h1 className="font-heading text-xl font-semibold tracking-tight">Sign in</h1>
-        <p className="text-sm text-muted-foreground">We&apos;ll email you a magic link.</p>
+        <h1 className="font-heading text-xl font-semibold tracking-tight">{t("auth.signIn")}</h1>
+        <p className="text-sm text-muted-foreground">{t("auth.magicLinkBlurb")}</p>
       </div>
 
       {status === "sent" ? (
         <p className="text-center text-sm text-muted-foreground">
-          Check <span className="font-medium text-foreground">{email}</span> for a sign-in link.
+          {t("auth.checkEmailBefore")}{" "}
+          <span className="font-medium text-foreground">{email}</span>{" "}
+          {t("auth.checkEmailAfter")}
         </p>
       ) : (
         <form onSubmit={onSubmit} className="flex flex-col gap-6">
           <FieldGroup>
             <Field>
-              <FieldLabel htmlFor="login-email">Email</FieldLabel>
+              <FieldLabel htmlFor="login-email">{t("auth.emailLabel")}</FieldLabel>
               <Input
                 id="login-email"
                 name="email"
@@ -62,7 +66,7 @@ export function LoginForm() {
                 required
                 value={email}
                 onChange={(ev) => setEmail(ev.target.value)}
-                placeholder="you@example.com"
+                placeholder={t("auth.emailPlaceholder")}
                 disabled={status === "loading"}
               />
             </Field>
@@ -73,26 +77,26 @@ export function LoginForm() {
             </p>
           ) : null}
           <Button type="submit" disabled={status === "loading"}>
-            {status === "loading" ? "Sending…" : "Send magic link"}
+            {status === "loading" ? t("auth.sending") : t("auth.sendMagicLink")}
           </Button>
         </form>
       )}
 
       <p className="text-center text-sm text-muted-foreground">
-        No account?{" "}
+        {t("auth.signUpPrompt")}{" "}
         <Link href="/signup" className="font-medium text-foreground underline-offset-4 hover:underline">
-          Sign up
+          {t("auth.signUp")}
         </Link>
       </p>
 
       {showDevLink ? (
         <p className="text-center text-sm text-muted-foreground">
-          Local dev:{" "}
+          {t("auth.devLocal")}{" "}
           <Link
             href="/api/auth/dev-auto?callbackUrl=%2F"
             className="font-medium text-foreground underline-offset-4 hover:underline"
           >
-            Sign in as dev user
+            {t("auth.signInAsDev")}
           </Link>
         </p>
       ) : null}

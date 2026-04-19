@@ -10,6 +10,7 @@ import type {
   AssistantLayoutOption,
 } from "@/lib/assistant/surface";
 import { cn } from "@/lib/helpers/utils";
+import { useTranslation } from "react-i18next";
 
 function colorSquareFillClass(color: AssistantBackgroundColorToken): string {
   switch (color) {
@@ -25,13 +26,14 @@ function colorSquareFillClass(color: AssistantBackgroundColorToken): string {
 }
 
 function LayoutColorSquare({ color }: { color: AssistantBackgroundColorToken }) {
+  const { t } = useTranslation();
   return (
       <div
         className={cn(
           "size-24 shrink-0 rounded-md border border-border shadow-sm",
           colorSquareFillClass(color),
         )}
-        aria-label={`Layout test square: ${color}`}
+        aria-label={t("assistant.layoutTestSquareAria", { color })}
       />
   );
 }
@@ -80,13 +82,14 @@ function AssistantLayoutRegions({ layout, squareColor, recipeBlock }: {
  * Hidden when there is no surface state.
  */
 export function AssistantSurfacePreviewPanel() {
+  const { t } = useTranslation();
   const { surface } = useAssistantSurface();
   if (!surface) { return null; }
 
   const recipeRows: RecipeToolRow[] = surface.recipes ?? [];
   const recipeBlock =
     recipeRows.length === 0 ? (
-      <p className="text-sm text-muted-foreground">No recipes in surface state yet.</p>
+      <p className="text-sm text-muted-foreground">{t("assistant.noRecipesInSurface")}</p>
     ) : (
       <ul className="flex flex-col gap-2">
         {recipeRows.map((recipe) => (
@@ -100,14 +103,25 @@ export function AssistantSurfacePreviewPanel() {
   return (
     <section
       className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto overflow-x-hidden border-b border-border bg-muted/30"
-      aria-label="Assistant tool output"
+      aria-label={t("assistant.surfaceAria")}
     >
       <div className="mx-auto flex w-full max-w-header flex-col gap-3 px-4 py-3">
         <div className="flex flex-col gap-2 border-b border-border/60 pb-3">
-          <h2 className="font-heading font-semibold text-foreground">Assistant tools</h2>
-          <p className="text-xs text-muted-foreground -mt-2">Updated {new Date(surface.generatedAtIso).toLocaleString()} (last call: {surface.lastCallId})</p>
-          {surface.layout ? <p className="text-xs font-medium text-foreground">Layout: {surface.layout}</p> : null}
-          {surface.backgroundColor ? <p className="text-xs font-medium text-foreground -mt-2">Layout test square: {surface.backgroundColor}</p> : null}
+          <h2 className="font-heading font-semibold text-foreground">{t("assistant.surfaceHeading")}</h2>
+          <p className="text-xs text-muted-foreground -mt-2">
+            {t("assistant.surfaceMeta", {
+              date: new Date(surface.generatedAtIso).toLocaleString(),
+              lastCallId: surface.lastCallId,
+            })}
+          </p>
+          {surface.layout ? (
+            <p className="text-xs font-medium text-foreground">{t("assistant.layoutLine", { layout: surface.layout })}</p>
+          ) : null}
+          {surface.backgroundColor ? (
+            <p className="text-xs font-medium text-foreground -mt-2">
+              {t("assistant.layoutTestSquare", { color: surface.backgroundColor })}
+            </p>
+          ) : null}
         </div>
         <AssistantLayoutRegions
           layout={surface.layout}
