@@ -118,26 +118,20 @@ export function AssistantChatShell({ children }: { children: ReactNode }) {
      * Navigate to /assistant only when new surface output is applied — not on every render while surface is non-null (that trapped client navigations). */
     let didRequestAssistantRouteForNewSurface = false;
     for (const message of messages) {
-      if (message.role !== "assistant") {
-        continue;
-      }
+      if (message.role !== "assistant") { continue; }
+
       for (const part of message.parts) {
         const toolLike = asToolLikePart(part);
-        if (!toolLike || !isSurfaceToolPartType(toolLike.type)) {
-          continue;
-        }
-        if (toolLike.state !== "output-available") {
-          continue;
-        }
+        if (!toolLike || !isSurfaceToolPartType(toolLike.type)) { continue; }
+        if (toolLike.state !== "output-available") { continue; }
+
         const dedupeKey = `${message.id}:${toolLike.toolCallId}`;
-        if (processedSurfaceCallIdsReference.current.has(dedupeKey)) {
-          continue;
-        }
+        if (processedSurfaceCallIdsReference.current.has(dedupeKey)) { continue; }
+
         processedSurfaceCallIdsReference.current.add(dedupeKey);
         const patch = surfacePatchFromToolPart(toolLike);
-        if (patch === null) {
-          continue;
-        }
+        if (patch === null) { continue; }
+        
         if (!didRequestAssistantRouteForNewSurface && pathnameReference.current !== "/assistant") {
           didRequestAssistantRouteForNewSurface = true;
           skipSurfaceClearForAssistantRouteNavigationReference.current = true;

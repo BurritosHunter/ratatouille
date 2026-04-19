@@ -1,8 +1,12 @@
+import {
+  assistantLayoutSchema,
+  layoutToolResult,
+  type AssistantLayoutToolInput
+} from "@/lib/ai/assistant-layout-tool";
 import { recipesToToolRows } from "@/lib/ai/recipe-tool-rows";
 import { listRecipes } from "@/lib/data/recipes";
 import { z } from "zod";
 
-const assistantLayoutSchema = z.object({ layout: z.enum(["singleColumn", "twoColumn", "fullWidth"]) });
 export function createAssistantChatTools(userId: number) {
   return {
     listRecipesForUser: {
@@ -16,7 +20,7 @@ export function createAssistantChatTools(userId: number) {
     setAssistantLayout: {
       description: "Set the modular layout preview in the main app shell (below the site header): singleColumn (stacked), twoColumn (side-by-side regions), or fullWidth (one wide content band). Use when the user asks to change the tool layout preview.",
       inputSchema: assistantLayoutSchema,
-      execute: async (input: z.infer<typeof assistantLayoutSchema>) => ({ layout: input.layout }),
+      execute: async (input: AssistantLayoutToolInput) => layoutToolResult(input),
     },
     setAssistantBackgroundRed: {
       description: "Show a solid red square inside the first column of the modular layout preview in the main shell (not the whole page). Call when the user asks for a red square or red swatch in that preview.",
