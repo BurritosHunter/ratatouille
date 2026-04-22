@@ -71,6 +71,12 @@
     "layoutLine": "Mise en page : {{layout}}",
     "layoutTestSquare": "Carré de test de mise en page : {{color}}",
     "layoutTestSquareAria": "Carré de test de mise en page : {{color}}",
-    "noRecipesInSurface": "Aucune recette dans l'aperçu pour le moment."
+    "noRecipesInSurface": "Aucune recette dans l'aperçu pour le moment.",
+    "recipeListSummaryEmpty": "Vous n'avez aucune recette enregistrée.",
+    "recipeListSummaryItem": "• {{title}}",
+    "recipeListSummaryWithList": "Vous avez {{count}} recette(s) enregistrée(s) :\n\n{{list}}",
+    "recipeListFetchError": "Impossible de charger votre liste de recettes.",
+    "recipeListFetchUnauthorized": "Vous n'êtes pas connecté·e ou votre session a expiré.",
+    "recipeListFetchLine": "Liste des recettes : {{error}}"
   }
 }

@@ -112,8 +112,8 @@ function streamMockSurfaceMultiToolCallStep(): ReadableStream<LanguageModelV3Str
 function streamMockAssistantTextStep(): ReadableStream<LanguageModelV3StreamPart> {
   const text =
     getRatatouilleMockScenario() === "surface"
-      ? "This is a mock assistant reply (no Anthropic API call). One step emitted three tools: layout (twoColumn), blue square in the first column, and your recipe list—see the strip below the site header. Add ANTHROPIC_API_KEY to .env.local for the real model."
-      : "This is a mock assistant reply (no Anthropic API call). Add ANTHROPIC_API_KEY to .env.local for the real model. Recipe cards above use your real database."
+      ? "This is a mock assistant reply (no Anthropic API call). One step emitted three tools: layout (twoColumn), blue square in the first column, and a signal to load your recipes—the app fetches the list and shows the strip below the site header. Add ANTHROPIC_API_KEY to .env.local for the real model."
+      : "This is a mock assistant reply (no Anthropic API call). The app loads your saved recipes in the layout preview and adds a short summary in this chat (no recipe data in the model tool result). Add ANTHROPIC_API_KEY to .env.local for the real model."
   return simulateReadableStream({
     chunks: [
       { type: "stream-start", warnings: [] },

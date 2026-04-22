@@ -19,7 +19,13 @@ import {
   type AssistantSurfacePayload,
 } from "@/lib/assistant/surface";
 import { cn } from "@/lib/helpers/utils";
-import { DefaultChatTransport, type UIDataTypes, type UIMessagePart, type UITools } from "ai";
+import {
+  DefaultChatTransport,
+  type UIDataTypes,
+  type UIMessage,
+  type UIMessagePart,
+  type UITools,
+} from "ai";
 
 type ToolPart = {
   type: string;
@@ -50,10 +56,9 @@ function surfacePatchFromToolPart(
   part: ToolPart,
 ): Partial<Pick<AssistantSurfacePayload, "recipes" | "layout" | "backgroundColor">> | null {
   switch (part.type) {
-    case "tool-listRecipesForUser": {
-      const output = part.output as { recipes?: RecipeToolRow[] };
-      return { recipes: output.recipes ?? [] };
-    }
+    case "tool-listRecipesForUser":
+      /* Client loads recipes from GET /api/recipes/summary; tool output is only a signal. */
+      return null;
     case "tool-setAssistantLayout": {
       const output = part.output as { layout?: AssistantLayoutOption };
       if (!output.layout) {
@@ -70,6 +75,16 @@ function surfacePatchFromToolPart(
     default:
       return null;
   }
+}
+
+function buildRecipeListSummary(t: TFunction<"translation">, rows: RecipeToolRow[]): string {
+  if (rows.length === 0) {
+    return t("assistant.recipeListSummaryEmpty");
+  }
+  const list = rows
+    .map((row) => t("assistant.recipeListSummaryItem", { title: row.title }))
+    .join("\n");
+  return t("assistant.recipeListSummaryWithList", { count: rows.length, list });
 }
 
 function surfaceToolKindLabel(partType: string, t: TFunction<"translation">): string {
@@ -123,9 +138,10 @@ export function AssistantChatShell({ children }: { children: ReactNode }) {
 
   const [surface, setSurface] = useState<AssistantSurfacePayload | null>(null);
   const clearSurface = useCallback(() => { setSurface(null); }, []);
+  const [clientRecipeListError, setClientRecipeListError] = useState<string | null>(null);
   const [panelOpen, setPanelOpen] = useState(false);
 
-  const { messages, sendMessage, status, stop, error, clearError } = useChat({
+  const { messages, sendMessage, setMessages, status, stop, error, clearError } = useChat({
     transport: new DefaultChatTransport({ api: "/api/chat", credentials: "include" }),
     onError: (chatError) => {
       if (process.env.NODE_ENV === "development") {
@@ -175,10 +191,10 @@ export function AssistantChatShell({ children }: { children: ReactNode }) {
         const dedupeKey = `${message.id}:${tool.toolCallId}`;
         if (processedSurfaceCallIdsReference.current.has(dedupeKey)) { continue; }
 
-        processedSurfaceCallIdsReference.current.add(dedupeKey);
         const patch = surfacePatchFromToolPart(tool);
         if (patch === null) { continue; }
-        
+
+        processedSurfaceCallIdsReference.current.add(dedupeKey);
         if (!changeRouteToAssistantPage && pathname !== "/assistant") {
           changeRouteToAssistantPage = true;
           queueMicrotask(() => {
@@ -193,6 +209,102 @@ export function AssistantChatShell({ children }: { children: ReactNode }) {
       }
     }
   }, [messages, pathname, router]);
+
+  const processedRecipeListKeysReference = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    for (const message of messages) {
+      if (message.role !== "assistant") {
+        continue;
+      }
+      for (const part of message.parts) {
+        const tool = getToolPart(part);
+        if (!tool || tool.type !== "tool-listRecipesForUser") {
+          continue;
+        }
+        if (tool.state !== "output-available") {
+          continue;
+        }
+        const dedupeKey = `${message.id}:${tool.toolCallId}`;
+        if (processedRecipeListKeysReference.current.has(dedupeKey)) {
+          continue;
+        }
+        processedRecipeListKeysReference.current.add(dedupeKey);
+
+        if (pathname !== "/assistant") {
+          queueMicrotask(() => {
+            startTransition(() => {
+              router.replace("/assistant");
+            });
+          });
+        }
+
+        void (async () => {
+          setClientRecipeListError(null);
+          const targetId = message.id;
+          try {
+            const res = await fetch("/api/recipes/summary", { credentials: "include" });
+            if (!res.ok) {
+              const line: string =
+                res.status === 401
+                  ? t("assistant.recipeListFetchUnauthorized")
+                  : t("assistant.recipeListFetchError");
+              setClientRecipeListError(line);
+              setMessages((previous: UIMessage[]) =>
+                previous.map((m) => {
+                  if (m.id !== targetId) {
+                    return m;
+                  }
+                  return {
+                    ...m,
+                    parts: [
+                      ...m.parts,
+                      { type: "text" as const, text: t("assistant.recipeListFetchLine", { error: line }) },
+                    ],
+                  };
+                }),
+              );
+              return;
+            }
+            const data = (await res.json()) as { recipes?: RecipeToolRow[] };
+            const recipeRows = data.recipes ?? [];
+            setSurface((previous) => mergeAssistantSurfacePayload(previous, dedupeKey, { recipes: recipeRows }));
+            setMessages((previous: UIMessage[]) =>
+              previous.map((m) => {
+                if (m.id !== targetId) {
+                  return m;
+                }
+                return {
+                  ...m,
+                  parts: [
+                    ...m.parts,
+                    { type: "text" as const, text: buildRecipeListSummary(t, recipeRows) },
+                  ],
+                };
+              }),
+            );
+          } catch (caught) {
+            const errMessage: string =
+              caught instanceof Error ? caught.message : t("assistant.recipeListFetchError");
+            setClientRecipeListError(errMessage);
+            setMessages((previous: UIMessage[]) =>
+              previous.map((m) => {
+                if (m.id !== targetId) {
+                  return m;
+                }
+                return {
+                  ...m,
+                  parts: [
+                    ...m.parts,
+                    { type: "text" as const, text: t("assistant.recipeListFetchLine", { error: errMessage }) },
+                  ],
+                };
+              }),
+            );
+          }
+        })();
+      }
+    }
+  }, [messages, pathname, router, t, setMessages, setSurface]);
 
   return (
     <AssistantSurfaceContext.Provider value={{ surface, clearSurface }}>
@@ -253,6 +365,25 @@ export function AssistantChatShell({ children }: { children: ReactNode }) {
                     <p className="font-medium">{t("assistant.errorTitle")}</p>
                     <p className="mt-1 whitespace-pre-wrap text-destructive/90">{error.message}</p>
                     <Button type="button" variant="outline" size="sm" className="mt-2" onClick={() => clearError()}>{t("assistant.dismiss")}</Button>
+                  </div>
+                ) : null}
+                {clientRecipeListError && !error ? (
+                  <div
+                    role="alert"
+                    className="rounded-md border border-destructive/50 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+                  >
+                    <p className="whitespace-pre-wrap text-destructive/90">{clientRecipeListError}</p>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="mt-2"
+                      onClick={() => {
+                        setClientRecipeListError(null);
+                      }}
+                    >
+                      {t("assistant.dismiss")}
+                    </Button>
                   </div>
                 ) : null}
                 {messages.length === 0 ? (

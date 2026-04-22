@@ -71,6 +71,12 @@
     "layoutLine": "Layout: {{layout}}",
     "layoutTestSquare": "Layout test square: {{color}}",
     "layoutTestSquareAria": "Layout test square: {{color}}",
-    "noRecipesInSurface": "No recipes in surface state yet."
+    "noRecipesInSurface": "No recipes in surface state yet.",
+    "recipeListSummaryEmpty": "You have no saved recipes.",
+    "recipeListSummaryItem": "• {{title}}",
+    "recipeListSummaryWithList": "You have {{count}} saved recipe(s):\n\n{{list}}",
+    "recipeListFetchError": "Could not load your recipe list.",
+    "recipeListFetchUnauthorized": "You are not signed in or your session has expired.",
+    "recipeListFetchLine": "Recipe list: {{error}}"
   }
 }
