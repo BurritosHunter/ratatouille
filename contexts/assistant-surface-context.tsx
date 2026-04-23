@@ -13,8 +13,7 @@ export const AssistantSurfaceContext = createContext<AssistantSurfaceContextValu
 
 export function useAssistantSurface(): AssistantSurfaceContextValue {
   const context = useContext(AssistantSurfaceContext);
-  if (!context) {
-    throw new Error("useAssistantSurface must be used within AssistantChatShell");
-  }
+  if (!context) { throw new Error("useAssistantSurface must be used within AssistantChatShell"); }
+  
   return context;
 }

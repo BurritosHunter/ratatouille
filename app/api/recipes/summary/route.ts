@@ -7,14 +7,10 @@ export const maxDuration = 30;
 
 export async function GET() {
   const session = await auth();
-  if (!session?.user?.id) {
-    return new NextResponse("Unauthorized", { status: 401 });
-  }
+  if (!session?.user?.id) { return new NextResponse("Unauthorized", { status: 401 }); }
 
   const userId = Number.parseInt(session.user.id, 10);
-  if (!Number.isFinite(userId)) {
-    return new NextResponse("Unauthorized", { status: 401 });
-  }
+  if (!Number.isFinite(userId)) { return new NextResponse("Unauthorized", { status: 401 }); }
 
   const summaries = await listRecipes(userId);
   return NextResponse.json({ recipes: recipesToToolRows(summaries) });

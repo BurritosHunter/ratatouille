@@ -1,4 +1,9 @@
 import {
+  assistantBackgroundSchema,
+  backgroundToolResult,
+  type AssistantBackgroundToolInput,
+} from "@/lib/ai/assistant-background-tool";
+import {
   assistantLayoutSchema,
   layoutToolResult,
   type AssistantLayoutToolInput,
@@ -25,20 +30,10 @@ export function createAssistantTools(): Record<string, AssistantChatTool> {
       inputSchema: assistantLayoutSchema,
       execute: async (input: unknown) => layoutToolResult(input as AssistantLayoutToolInput),
     },
-    setAssistantBackgroundRed: {
-      description: "Show a solid red square inside the first column of the modular layout preview in the main shell (not the whole page). Call when the user asks for a red square or red swatch in that preview.",
-      inputSchema: emptyInputSchema,
-      execute: async () => ({ backgroundColor: "red" }),
-    },
-    setAssistantBackgroundBlue: {
-      description: "Show a solid blue square inside the first column of the modular layout preview in the main shell (not the whole page). Call when the user asks for a blue square or blue swatch in that preview.",
-      inputSchema: emptyInputSchema,
-      execute: async () => ({ backgroundColor: "blue" }),
-    },
-    setAssistantBackgroundGreen: {
-      description: "Show a solid green square inside the first column of the modular layout preview in the main shell (not the whole page). Call when the user asks for a green square or green swatch in that preview.",
-      inputSchema: emptyInputSchema,
-      execute: async () => ({ backgroundColor: "green" }),
+    setAssistantBackground: {
+      description: "Show a solid colored square inside the first column of the modular layout preview in the main shell (not the whole page). Use the color input: red, blue, or green—choose the one that matches the user's request, or the best option when they ask for a swatch or colored square without naming a color. The square is not the full page background.",
+      inputSchema: assistantBackgroundSchema,
+      execute: async (input: unknown) => backgroundToolResult(input as AssistantBackgroundToolInput),
     },
   };
 }

@@ -8,21 +8,20 @@ import {
 import { convertToModelMessages, stepCountIs, streamText, type UIMessage } from "ai";
 
 export const maxDuration = 30;
-const ASSISTANT_CHAT_SYSTEM_PROMPT = "You are a helpful assistant for the Ratatouille recipe app. When the user asks what recipes they have, to list their recipes, or similar, call the listRecipesForUser tool. That tool only signals the app to load recipes in the main layout preview and to add a factual recipe summary in the chat—the tool result does not include recipe titles. Do not invent or guess recipe names; you may say briefly that the list and summary are shown in the app. When the user asks to change the modular tool layout preview (below the site header), call setAssistantLayout with the best matching option. When the user asks for a colored square or swatch in that preview (red, blue, or green), call the corresponding setAssistantBackground* tool—those tools insert a square in a layout column, not the full page background. You may call multiple tools in the same assistant turn when it fits the request—for example, to update the preview with layout, a color square, and the user's recipes together (parallel tool calls in one step are allowed).";
+const ASSISTANT_CHAT_SYSTEM_PROMPT = "You are a helpful assistant for the Ratatouille recipe app. When the user asks what recipes they have, to list their recipes, or similar, call the listRecipesForUser tool. That tool only signals the app to load recipes in the main layout preview and to add a factual recipe summary in the chat—the tool result does not include recipe titles. Do not invent or guess recipe names; you may say briefly that the list and summary are shown in the app. When the user asks to change the modular tool layout preview (below the site header), call setAssistantLayout with the best matching option. When the user asks for a colored square or swatch in that preview, call setAssistantBackground with a color of red, blue, or green (you choose: match their request, or pick a default if they do not specify). That tool shows a square in a layout column, not the full page background. You may call multiple tools in the same assistant turn when it fits the request—for example, to update the preview with layout, a color square, and the user's recipes together (parallel tool calls in one step are allowed).";
 
 
-/** Set `RATATOUILLE_AI_DEBUG=true` in `.env.local` to log prompts, tools, and SDK steps (dev only; includes user message text). */
+/** logAiDebugJson **/
 function isAiDebugEnabled(): boolean {
+  /** Set `RATATOUILLE_AI_DEBUG=true` in `.env.local` to log prompts, tools, and SDK steps (dev only; includes user message text). */
   const raw = process.env.RATATOUILLE_AI_DEBUG;
   return raw === "1" || raw === "true";
 }
-
 function jsonSerializationReplacer(_key: string, value: unknown): unknown {
   if (typeof value === "bigint") return value.toString();
   if (value instanceof Error) return { name: value.name, message: value.message, stack: value.stack };
   return value;
 }
-
 function logAiDebugJson(label: string, data: unknown): void {
   if (!isAiDebugEnabled()) return;
 
@@ -37,9 +36,7 @@ function logAiDebugJson(label: string, data: unknown): void {
 
 export async function POST(request: Request) {
   const session = await auth();
-  if (!session?.user?.id) return new Response("Unauthorized", { status: 401 });
-
-  if (!Number.isFinite(Number.parseInt(session.user.id, 10))) {
+  if (!session?.user?.id || !Number.isFinite(Number.parseInt(session.user.id, 10))) {
     return new Response("Unauthorized", { status: 401 });
   }
 

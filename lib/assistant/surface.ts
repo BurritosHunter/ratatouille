@@ -1,7 +1,6 @@
 import type { RecipeToolRow } from "@/lib/ai/recipe-tool-rows";
 
 export type AssistantLayoutOption = "singleColumn" | "twoColumn" | "fullWidth";
-
 export type AssistantBackgroundColorToken = "red" | "blue" | "green";
 
 export type AssistantSurfacePayload = {
@@ -16,9 +15,7 @@ export type AssistantSurfacePayload = {
 export const ASSISTANT_SURFACE_TOOL_PART_TYPES = [
   "tool-listRecipesForUser",
   "tool-setAssistantLayout",
-  "tool-setAssistantBackgroundRed",
-  "tool-setAssistantBackgroundBlue",
-  "tool-setAssistantBackgroundGreen",
+  "tool-setAssistantBackground",
 ] as const;
 
 export type AssistantSurfaceToolPartType = (typeof ASSISTANT_SURFACE_TOOL_PART_TYPES)[number];

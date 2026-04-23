@@ -15,17 +15,12 @@ import type { RecipeToolRow } from "@/lib/ai/recipe-tool-rows";
 import {
   ASSISTANT_SURFACE_TOOL_PART_TYPES,
   mergeAssistantSurfacePayload,
+  type AssistantBackgroundColorToken,
   type AssistantLayoutOption,
   type AssistantSurfacePayload,
 } from "@/lib/assistant/surface";
 import { cn } from "@/lib/helpers/utils";
-import {
-  DefaultChatTransport,
-  type UIDataTypes,
-  type UIMessage,
-  type UIMessagePart,
-  type UITools,
-} from "ai";
+import { DefaultChatTransport, type UIDataTypes, type UIMessage, type UIMessagePart, type UITools } from "ai";
 
 type ToolPart = {
   type: string;
@@ -57,7 +52,7 @@ function surfacePatchFromToolPart(
 ): Partial<Pick<AssistantSurfacePayload, "recipes" | "layout" | "backgroundColor">> | null {
   switch (part.type) {
     case "tool-listRecipesForUser":
-      /* Client loads recipes from GET /api/recipes/summary; tool output is only a signal. */
+      /* Client loads recipes from GET /api/recipes/summary; tool output is only a signal. sarah */
       return null;
     case "tool-setAssistantLayout": {
       const output = part.output as { layout?: AssistantLayoutOption };
@@ -66,24 +61,21 @@ function surfacePatchFromToolPart(
       }
       return { layout: output.layout };
     }
-    case "tool-setAssistantBackgroundRed":
-      return { backgroundColor: "red" };
-    case "tool-setAssistantBackgroundBlue":
-      return { backgroundColor: "blue" };
-    case "tool-setAssistantBackgroundGreen":
-      return { backgroundColor: "green" };
+    case "tool-setAssistantBackground": {
+      const output = part.output as { backgroundColor?: AssistantBackgroundColorToken };
+      if (!output.backgroundColor) { return null; }
+      
+      return { backgroundColor: output.backgroundColor };
+    }
     default:
       return null;
   }
 }
 
 function buildRecipeListSummary(t: TFunction<"translation">, rows: RecipeToolRow[]): string {
-  if (rows.length === 0) {
-    return t("assistant.recipeListSummaryEmpty");
-  }
-  const list = rows
-    .map((row) => t("assistant.recipeListSummaryItem", { title: row.title }))
-    .join("\n");
+  if (rows.length === 0) { return t("assistant.recipeListSummaryEmpty"); }
+
+  const list = rows.map((row) => t("assistant.recipeListSummaryItem", { title: row.title })).join("\n");
   return t("assistant.recipeListSummaryWithList", { count: rows.length, list });
 }
 
@@ -93,9 +85,7 @@ function surfaceToolKindLabel(partType: string, t: TFunction<"translation">): st
       return t("assistant.toolKind.recipes");
     case "tool-setAssistantLayout":
       return t("assistant.toolKind.layout");
-    case "tool-setAssistantBackgroundRed":
-    case "tool-setAssistantBackgroundBlue":
-    case "tool-setAssistantBackgroundGreen":
+    case "tool-setAssistantBackground":
       return t("assistant.toolKind.colorSquare");
     default:
       return t("assistant.toolKind.generic");
@@ -144,9 +134,7 @@ export function AssistantChatShell({ children }: { children: ReactNode }) {
   const { messages, sendMessage, setMessages, status, stop, error, clearError } = useChat({
     transport: new DefaultChatTransport({ api: "/api/chat", credentials: "include" }),
     onError: (chatError) => {
-      if (process.env.NODE_ENV === "development") {
-        console.error("[assistant]", chatError);
-      }
+      if (process.env.NODE_ENV === "development") { console.error("[assistant]", chatError); }
     },
   });
   const inputDisabled = status === "submitted" || status === "streaming";
@@ -163,15 +151,6 @@ export function AssistantChatShell({ children }: { children: ReactNode }) {
     }
     previousPathnameRef.current = pathname;
   }, [pathname]);
-
-
-
-
-
-
-
-/* SARAH - Everything above this point is validated */
-
 
   const processedSurfaceCallIdsReference = useRef<Set<string>>(new Set());
   useEffect(() => {
@@ -213,21 +192,15 @@ export function AssistantChatShell({ children }: { children: ReactNode }) {
   const processedRecipeListKeysReference = useRef<Set<string>>(new Set());
   useEffect(() => {
     for (const message of messages) {
-      if (message.role !== "assistant") {
-        continue;
-      }
+      if (message.role !== "assistant") { continue; }
+
       for (const part of message.parts) {
         const tool = getToolPart(part);
-        if (!tool || tool.type !== "tool-listRecipesForUser") {
-          continue;
-        }
-        if (tool.state !== "output-available") {
-          continue;
-        }
+        if (!tool || tool.type !== "tool-listRecipesForUser") { continue; }
+        if (tool.state !== "output-available") { continue; }
+
         const dedupeKey = `${message.id}:${tool.toolCallId}`;
-        if (processedRecipeListKeysReference.current.has(dedupeKey)) {
-          continue;
-        }
+        if (processedRecipeListKeysReference.current.has(dedupeKey)) { continue; }
         processedRecipeListKeysReference.current.add(dedupeKey);
 
         if (pathname !== "/assistant") {
@@ -244,16 +217,11 @@ export function AssistantChatShell({ children }: { children: ReactNode }) {
           try {
             const res = await fetch("/api/recipes/summary", { credentials: "include" });
             if (!res.ok) {
-              const line: string =
-                res.status === 401
-                  ? t("assistant.recipeListFetchUnauthorized")
-                  : t("assistant.recipeListFetchError");
+              const line: string = res.status === 401 ? t("assistant.recipeListFetchUnauthorized") : t("assistant.recipeListFetchError");
               setClientRecipeListError(line);
               setMessages((previous: UIMessage[]) =>
                 previous.map((m) => {
-                  if (m.id !== targetId) {
-                    return m;
-                  }
+                  if (m.id !== targetId) { return m; }
                   return {
                     ...m,
                     parts: [
@@ -270,9 +238,7 @@ export function AssistantChatShell({ children }: { children: ReactNode }) {
             setSurface((previous) => mergeAssistantSurfacePayload(previous, dedupeKey, { recipes: recipeRows }));
             setMessages((previous: UIMessage[]) =>
               previous.map((m) => {
-                if (m.id !== targetId) {
-                  return m;
-                }
+                if (m.id !== targetId) { return m; }
                 return {
                   ...m,
                   parts: [
@@ -283,14 +249,11 @@ export function AssistantChatShell({ children }: { children: ReactNode }) {
               }),
             );
           } catch (caught) {
-            const errMessage: string =
-              caught instanceof Error ? caught.message : t("assistant.recipeListFetchError");
+            const errMessage: string = caught instanceof Error ? caught.message : t("assistant.recipeListFetchError");
             setClientRecipeListError(errMessage);
             setMessages((previous: UIMessage[]) =>
               previous.map((m) => {
-                if (m.id !== targetId) {
-                  return m;
-                }
+                if (m.id !== targetId) { return m; }
                 return {
                   ...m,
                   parts: [
@@ -310,12 +273,7 @@ export function AssistantChatShell({ children }: { children: ReactNode }) {
     <AssistantSurfaceContext.Provider value={{ surface, clearSurface }}>
       <AssistantChatComposerProvider value={{ sendUserMessageToAssistant, inputDisabled }}>
       <div className="flex h-[100svh] max-h-[100svh] min-h-0 w-full overflow-hidden">
-        <div
-          className={cn(
-            "flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden",
-            panelOpen && "md:pr-[min(28rem,100%)]",
-          )}
-        >
+        <div className={cn("flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden", panelOpen && "md:pr-[min(28rem,100%)]" )}>
           {children}
         </div>
 
@@ -342,9 +300,7 @@ export function AssistantChatShell({ children }: { children: ReactNode }) {
               onClick={() => setPanelOpen(false)}
             />
             <aside
-              className={cn(
-                "fixed inset-y-0 right-0 z-50 flex h-[100svh] max-h-[100svh] w-full max-w-md shrink-0 flex-col border-l border-border bg-popover shadow-xl",
-              )}
+              className={cn("fixed inset-y-0 right-0 z-50 flex h-[100svh] max-h-[100svh] w-full max-w-md shrink-0 flex-col border-l border-border bg-popover shadow-xl")}
               role="dialog"
               aria-label={t("assistant.chatDialogAria")}
               aria-modal="true"
@@ -358,20 +314,14 @@ export function AssistantChatShell({ children }: { children: ReactNode }) {
 
               <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-4">
                 {error ? (
-                  <div
-                    role="alert"
-                    className="rounded-md border border-destructive/50 bg-destructive/10 px-3 py-2 text-sm text-destructive"
-                  >
+                  <div role="alert" className="rounded-md border border-destructive/50 bg-destructive/10 px-3 py-2 text-sm text-destructive">
                     <p className="font-medium">{t("assistant.errorTitle")}</p>
                     <p className="mt-1 whitespace-pre-wrap text-destructive/90">{error.message}</p>
                     <Button type="button" variant="outline" size="sm" className="mt-2" onClick={() => clearError()}>{t("assistant.dismiss")}</Button>
                   </div>
                 ) : null}
                 {clientRecipeListError && !error ? (
-                  <div
-                    role="alert"
-                    className="rounded-md border border-destructive/50 bg-destructive/10 px-3 py-2 text-sm text-destructive"
-                  >
+                  <div role="alert" className="rounded-md border border-destructive/50 bg-destructive/10 px-3 py-2 text-sm text-destructive">
                     <p className="whitespace-pre-wrap text-destructive/90">{clientRecipeListError}</p>
                     <Button
                       type="button"
@@ -397,10 +347,7 @@ export function AssistantChatShell({ children }: { children: ReactNode }) {
                       {message.parts.map((part, partIndex) => {
                         if (part.type === "text") {
                           return (
-                            <div
-                              key={partIndex}
-                              className={cn("flex", message.role === "user" ? "justify-end" : "justify-start")}
-                            >
+                            <div key={partIndex} className={cn("flex", message.role === "user" ? "justify-end" : "justify-start")}>
                               <div
                                 className={cn(
                                   "max-w-[95%] whitespace-pre-wrap rounded-lg px-3 py-2 text-sm",
@@ -414,10 +361,12 @@ export function AssistantChatShell({ children }: { children: ReactNode }) {
                             </div>
                           );
                         }
+
                         const toolLike = getToolPart(part);
                         if (toolLike && isSurfaceToolType(toolLike.type)) {
                           return <SurfaceToolPartMessage key={toolLike.toolCallId} part={toolLike} />;
                         }
+                        
                         return null;
                       })}
                     </div>
