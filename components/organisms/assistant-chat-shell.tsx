@@ -13,10 +13,11 @@ import { AssistantChatComposerProvider } from "@/contexts/assistant-chat-compose
 import { AssistantSurfaceContext } from "@/contexts/assistant-surface-context";
 import type { RecipeToolRow } from "@/lib/ai/recipe-tool-rows";
 import {
-  ASSISTANT_SURFACE_TOOL_PART_TYPES,
+  SUPPORTED_TOOL_TYPES,
   mergeAssistantSurfacePayload,
   type AssistantBackgroundColorToken,
   type AssistantLayoutOption,
+  type AssistantSurfaceDataFields,
   type AssistantSurfacePayload,
 } from "@/lib/assistant/surface";
 import { cn } from "@/lib/helpers/utils";
@@ -42,29 +43,23 @@ function getToolPart(part: UIMessagePart<UIDataTypes, UITools>): ToolPart | null
   return part as ToolPart;
 }
 
-const SURFACE_TOOL_PART_TYPE_SET = new Set<string>(ASSISTANT_SURFACE_TOOL_PART_TYPES);
-function isSurfaceToolType(type: string): type is (typeof ASSISTANT_SURFACE_TOOL_PART_TYPES)[number] {
+const SURFACE_TOOL_PART_TYPE_SET = new Set<string>(SUPPORTED_TOOL_TYPES);
+function isToolTypeValid(type: string): type is (typeof SUPPORTED_TOOL_TYPES)[number] {
   return SURFACE_TOOL_PART_TYPE_SET.has(type);
 }
 
-function surfacePatchFromToolPart(
-  part: ToolPart,
-): Partial<Pick<AssistantSurfacePayload, "recipes" | "layout" | "backgroundColor">> | null {
+function dataFieldsFromToolPart(part: ToolPart): AssistantSurfaceDataFields | null {
   switch (part.type) {
     case "tool-listRecipesForUser":
-      /* Client loads recipes from GET /api/recipes/summary; tool output is only a signal. sarah */
       return null;
     case "tool-setAssistantLayout": {
       const output = part.output as { layout?: AssistantLayoutOption };
-      if (!output.layout) {
-        return null;
-      }
+      if (!output.layout) { return null; }
       return { layout: output.layout };
     }
     case "tool-setAssistantBackground": {
       const output = part.output as { backgroundColor?: AssistantBackgroundColorToken };
       if (!output.backgroundColor) { return null; }
-      
       return { backgroundColor: output.backgroundColor };
     }
     default:
@@ -152,30 +147,29 @@ export function AssistantChatShell({ children }: { children: ReactNode }) {
     previousPathnameRef.current = pathname;
   }, [pathname]);
 
-  const processedSurfaceCallIdsReference = useRef<Set<string>>(new Set());
+  const processedToolIds = useRef<Set<string>>(new Set());
   useEffect(() => {
     /* Sync tool results to layout preview state. Not useMemo(messages): Clear must hide the panel without stripping chat history.
      * Dedupe by assistant message id + toolCallId so a new turn can reuse the same toolCallId (e.g. mock model) and still merge.
      * Navigate to /assistant only when new surface output is applied — not on every render while surface is non-null (that trapped client navigations).
      * `pathname` is a dependency so we read the current route when deciding to navigate; already-processed tool parts are skipped. */
-    let changeRouteToAssistantPage = false;
+    let routeChangedToAssistantPage = false;
     for (const message of messages) {
       if (message.role !== "assistant") { continue; }
 
       for (const part of message.parts) {
         const tool = getToolPart(part);
-        if (!tool || !isSurfaceToolType(tool.type)) { continue; }
-        if (tool.state !== "output-available") { continue; }
+        if (!tool || !isToolTypeValid(tool.type) || tool.state !== "output-available") { continue; }
 
-        const dedupeKey = `${message.id}:${tool.toolCallId}`;
-        if (processedSurfaceCallIdsReference.current.has(dedupeKey)) { continue; }
+        const currentKey = `${message.id}:${tool.toolCallId}`;
+        if (processedToolIds.current.has(currentKey)) { continue; }
 
-        const patch = surfacePatchFromToolPart(tool);
-        if (patch === null) { continue; }
+        const dataFields = dataFieldsFromToolPart(tool);
+        if (dataFields === null) { continue; }
 
-        processedSurfaceCallIdsReference.current.add(dedupeKey);
-        if (!changeRouteToAssistantPage && pathname !== "/assistant") {
-          changeRouteToAssistantPage = true;
+        processedToolIds.current.add(currentKey);
+        if (!routeChangedToAssistantPage && pathname !== "/assistant") {
+          routeChangedToAssistantPage = true;
           queueMicrotask(() => {
             startTransition(() => {
               router.replace("/assistant");
@@ -183,8 +177,7 @@ export function AssistantChatShell({ children }: { children: ReactNode }) {
           });
         }
 
-        // eslint-disable-next-line react-hooks/set-state-in-effect -- see block comment above
-        setSurface((previous) => mergeAssistantSurfacePayload(previous, dedupeKey, patch));
+        setSurface((previous) => mergeAssistantSurfacePayload(previous, currentKey, dataFields));
       }
     }
   }, [messages, pathname, router]);
@@ -363,7 +356,7 @@ export function AssistantChatShell({ children }: { children: ReactNode }) {
                         }
 
                         const toolLike = getToolPart(part);
-                        if (toolLike && isSurfaceToolType(toolLike.type)) {
+                        if (toolLike && isToolTypeValid(toolLike.type)) {
                           return <SurfaceToolPartMessage key={toolLike.toolCallId} part={toolLike} />;
                         }
                         

@@ -11,23 +11,22 @@ export type AssistantSurfacePayload = {
   backgroundColor?: AssistantBackgroundColorToken;
 };
 
-/** Tool `type` values on UI message parts (`tool-${camelName}`). Keep in sync with keys returned by `createAssistantTools`. */
-export const ASSISTANT_SURFACE_TOOL_PART_TYPES = [
+export type AssistantSurfaceDataFields = Partial<Pick<AssistantSurfacePayload, "recipes" | "layout" | "backgroundColor">>;
+
+export const SUPPORTED_TOOL_TYPES = [
   "tool-listRecipesForUser",
   "tool-setAssistantLayout",
   "tool-setAssistantBackground",
 ] as const;
 
-export type AssistantSurfaceToolPartType = (typeof ASSISTANT_SURFACE_TOOL_PART_TYPES)[number];
-
 export function mergeAssistantSurfacePayload(
   previous: AssistantSurfacePayload | null,
   callId: string,
-  patch: Partial<Pick<AssistantSurfacePayload, "recipes" | "layout" | "backgroundColor">>,
+  dataFields: AssistantSurfaceDataFields,
 ): AssistantSurfacePayload {
   return {
     ...(previous ?? {}),
-    ...patch,
+    ...dataFields,
     generatedAtIso: new Date().toISOString(),
     lastCallId: callId,
   };
