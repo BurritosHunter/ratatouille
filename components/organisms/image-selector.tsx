@@ -1,33 +1,33 @@
-"use client"
+"use client";
 
-import { IconLink, IconTrash, IconUpload } from "@tabler/icons-react"
-import { useRef, useState } from "react"
-import { Field, FieldLabel } from "@/components/ui/field"
-import { Input } from "@/components/ui/input"
-import { cn } from "@/lib/helpers/utils"
+import { IconLink, IconTrash, IconUpload } from "@tabler/icons-react";
+import { useRef, useState } from "react";
+import { Field, FieldLabel } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/helpers/utils";
 
-const fileAccept = "image/jpeg,image/png,image/webp,image/gif"
-const previewZoneIconClassName = "size-8 shrink-0 text-foreground"
-const previewZoneTitleClassName = "flex flex-col flex-1 justify-start gap-3 rounded bg-background/60 p-4 text-left text-base font-semibold transition-colors duration-150 group-hover:bg-background/86 group-focus-within:bg-background/86"
-const previewZoneGrowSectionClassName = "group flex flex-col h-full min-w-0 flex-1 cursor-pointer items-stretch justify-stretch p-1.5 rounded-md focus-visible:outline-none "
-const previewZoneDeleteSectionClassName = "group flex flex-col h-full w-fit shrink-0 cursor-pointer items-stretch justify-stretch p-1.5 rounded-md focus-visible:outline-none"
-const removeImageActionLabel = "Remove image completely"
-const uploadZoneLabelAdd = "Add image with a file"
-const urlShowZoneLabelAdd = "Add image with URL"
-const fileFormatHelpText = "JPEG, PNG, or GIF\n(up to 2MB)"
+const fileAccept = "image/jpeg,image/png,image/webp,image/gif";
+const previewZoneIconClassName = "size-8 shrink-0 text-foreground";
+const previewZoneTitleClassName = "flex flex-col flex-1 justify-start gap-3 rounded bg-background/60 p-4 text-left text-base font-semibold transition-colors duration-150 group-hover:bg-background/86 group-focus-within:bg-background/86";
+const previewZoneGrowSectionClassName = "group flex flex-col h-full min-w-0 flex-1 cursor-pointer items-stretch justify-stretch p-1.5 rounded-md focus-visible:outline-none ";
+const previewZoneDeleteSectionClassName = "group flex flex-col h-full w-fit shrink-0 cursor-pointer items-stretch justify-stretch p-1.5 rounded-md focus-visible:outline-none";
+const removeImageActionLabel = "Remove image completely";
+const uploadZoneLabelAdd = "Add image with a file";
+const urlShowZoneLabelAdd = "Add image with URL";
+const fileFormatHelpText = "JPEG, PNG, or GIF\n(up to 2MB)";
 
 type ImageSelectorProps = {
-  previewSrc: string | null
-  defaultImageUrl: string
-  fileInputName?: string
-  urlInputName?: string
-  removeInputName?: string
-  uploadZoneLabel?: string
-  urlShowZoneLabel?: string
-  selectorLabel?: string
+  previewSrc: string | null;
+  defaultImageUrl: string;
+  fileInputName?: string;
+  urlInputName?: string;
+  removeInputName?: string;
+  uploadZoneLabel?: string;
+  urlShowZoneLabel?: string;
+  selectorLabel?: string;
   /** Called after file chosen, URL field blurred, or remove toggled — e.g. submit a wrapping form. */
-  onPersistRequest?: () => void
-}
+  onPersistRequest?: () => void;
+};
 
 export function ImageSelector({
   previewSrc,
@@ -40,19 +40,20 @@ export function ImageSelector({
   urlShowZoneLabel = "Replace image with URL",
   onPersistRequest,
 }: ImageSelectorProps) {
-  const fileInputRef = useRef<HTMLInputElement>(null)
-  const [removeImageRequested, setRemoveImageRequested] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [removeImageRequested, setRemoveImageRequested] = useState(false);
 
   function onUploadZoneClick() {
-    fileInputRef.current?.click()
+    fileInputRef.current?.click();
   }
 
   return (
     <>
       <Field key={previewSrc ?? "no-preview"}>
         {selectorLabel ? <FieldLabel>{selectorLabel}</FieldLabel> : null}
-        <div className="relative w-full max-h-40 overflow-hidden rounded-md border aspect-video">
+        <div className="relative aspect-video max-h-40 w-full overflow-hidden rounded-md border">
           {previewSrc ? (
+            // eslint-disable-next-line @next/next/no-img-element -- Supports data URLs and user-provided remote URLs without Next image host configuration.
             <img
               src={previewSrc}
               alt=""
@@ -63,26 +64,22 @@ export function ImageSelector({
             <div className="pointer-events-none h-full w-full bg-muted" aria-hidden />
           )}
           <div className="absolute inset-0 z-10 flex min-h-0">
-            <button
-              type="button"
-              className={previewZoneGrowSectionClassName}
-              onClick={onUploadZoneClick}
-            >
+            <button type="button" className={previewZoneGrowSectionClassName} onClick={onUploadZoneClick}>
               <span className={previewZoneTitleClassName}>
                 <IconUpload className={previewZoneIconClassName} aria-hidden />
                 <span>
                   <span>{previewSrc ? uploadZoneLabel : uploadZoneLabelAdd}</span>
-                  <p className="whitespace-pre-line text-sm font-normal text-muted-foreground">{fileFormatHelpText}</p>
+                  <p className="text-sm font-normal whitespace-pre-line text-muted-foreground">{fileFormatHelpText}</p>
                 </span>
               </span>
             </button>
-            <label
-              className={previewZoneGrowSectionClassName}
-            >
+            <label className={previewZoneGrowSectionClassName}>
               <span className={previewZoneTitleClassName}>
                 <IconLink className={previewZoneIconClassName} aria-hidden />
                 <span>
-                  <span>{previewSrc ? urlShowZoneLabel : urlShowZoneLabelAdd}</span>
+                  <span>
+                    {previewSrc ? urlShowZoneLabel : urlShowZoneLabelAdd}
+                  </span>
                   <Input
                     id={urlInputName}
                     name={urlInputName}
@@ -105,22 +102,22 @@ export function ImageSelector({
                 aria-label={removeImageActionLabel}
                 aria-pressed={removeImageRequested}
                 onClick={() => {
-                  setRemoveImageRequested((previous) => !previous)
+                  setRemoveImageRequested((previous) => !previous);
                   if (onPersistRequest) {
-                    setTimeout(() => onPersistRequest(), 0)
+                    setTimeout(() => onPersistRequest(), 0);
                   }
                 }}
               >
                 <span
                   className={cn(
-                    "rounded bg-background/60 p-1 transition-colors duration-150 group-hover:bg-background/86 group-focus-within:bg-background/86",
-                    removeImageRequested && "bg-destructive/20 group-hover:bg-destructive/25",
+                    "rounded bg-background/60 p-1 transition-colors duration-150 group-focus-within:bg-background/86 group-hover:bg-background/86",
+                    removeImageRequested && "bg-destructive/20 group-hover:bg-destructive/25"
                   )}
                 >
                   <IconTrash
                     className={cn(
                       "size-6 shrink-0",
-                      removeImageRequested ? "text-destructive" : "text-muted-foreground",
+                      removeImageRequested ? "text-destructive" : "text-muted-foreground"
                     )}
                     aria-hidden
                   />
@@ -145,5 +142,5 @@ export function ImageSelector({
         </div>
       </Field>
     </>
-  )
+  );
 }

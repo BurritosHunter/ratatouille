@@ -5,6 +5,7 @@ import { RecipeListRowLink } from "@/components/molecules/recipe-list-row-link"
 import { UndoDeleteToast } from "@/components/molecules/toast-undo-delete"
 import { Button } from "@/components/ui/button"
 import { requireUserId } from "@/lib/auth/auth-user"
+import { getServerT } from "@/lib/i18n/server"
 import { listRecipes } from "@/lib/data/recipes"
 import { imageSrcFromStoredOrExternal } from "@/lib/helpers/image/stored-or-external-src"
 
@@ -15,6 +16,7 @@ type PageProps = {
 }
 
 export default async function RecipesPage({ searchParams }: PageProps) {
+  const t = getServerT()
   const userId = await requireUserId("/recipes")
   const recipes = await listRecipes(userId)
 
@@ -29,23 +31,23 @@ export default async function RecipesPage({ searchParams }: PageProps) {
         deletedId={deletedRecipeId}
         replacePath="/recipes"
         scope="recipe"
-        message="Recipe deleted"
-        restoredMessage="Recipe restored"
+        message={t("recipes.deletedToast")}
+        restoredMessage={t("recipes.restoredToast")}
         onUndo={restoreDeletedRecipe}
       />
       <div className="flex flex-col gap-6 mb-30">
         <div className="flex flex-wrap items-center justify-between gap-4">
-          <h1 className="font-medium">Recipes</h1>
+          <h1 className="font-medium">{t("recipes.title")}</h1>
           <Button asChild size="sm">
-            <Link href="/recipes/new">Create recipe</Link>
+            <Link href="/recipes/new">{t("recipes.createRecipe")}</Link>
           </Button>
         </div>
 
         {recipes.length === 0 ? (
           <div className="flex flex-col gap-2 items-center">
-            <p className="text-sm text-muted-foreground">No recipes yet</p>
+            <p className="text-sm text-muted-foreground">{t("recipes.empty")}</p>
             <Button asChild size="sm">
-              <Link href="/recipes/new">Create recipe</Link>
+              <Link href="/recipes/new">{t("recipes.createRecipe")}</Link>
             </Button>
           </div>
         ) : (

@@ -11,23 +11,25 @@ import {
   InputGroupInput,
 } from "@/components/ui/input-group"
 import { Separator } from "@/components/ui/separator"
+import { useTranslation } from "react-i18next"
 
 export function SiteHeader() {
+  const { t } = useTranslation();
   return (
     <header className="flex flex-col">
       <div className="flex gap-4 h-14 w-full max-w-screen-xl mx-auto px-4">
         <div className="flex min-w-0 flex-1 flex-row items-center gap-1">
           <Button asChild variant="ghost" className="shrink-0 font-heading text-base font-semibold -ml-2">
-            <Link href="/">Ratatouille</Link>
+            <Link href="/">{t("common.appName")}</Link>
           </Button>
           <Button asChild variant="ghost">
-            <Link href="/">Explore</Link>
+            <Link href="/">{t("nav.explore")}</Link>
           </Button>
           <Button asChild variant="ghost">
-            <Link href="/recipes">Recipes</Link>
+            <Link href="/recipes">{t("nav.recipes")}</Link>
           </Button>
           <Button asChild variant="ghost">
-            <Link href="/ingredients">Ingredients</Link>
+            <Link href="/ingredients">{t("nav.ingredients")}</Link>
           </Button>
         </div>
         <div className="flex shrink-0 flex-row items-center gap-2">
@@ -35,10 +37,10 @@ export function SiteHeader() {
             <InputGroupAddon align="inline-start">
               <IconSearch aria-hidden />
             </InputGroupAddon>
-            <InputGroupInput placeholder="Search" type="search" aria-label="Search" />
+            <InputGroupInput placeholder={t("common.search")} type="search" aria-label={t("common.search")} />
           </InputGroup>
           <ThemeToggle />
-          <Button type="button" variant="outline" size="icon" aria-label="Profile">
+          <Button type="button" variant="outline" size="icon" aria-label={t("common.profileAria")}>
             <IconUser aria-hidden />
           </Button>
         </div>

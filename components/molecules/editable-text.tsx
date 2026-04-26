@@ -53,9 +53,11 @@ export function EditableText(props: EditableTextProps) {
   const commitFromKeyboardReference = useRef(false); /* Avoids firing `onCommit` twice when Enter triggers both keydown and blur */
   const cancelFromKeyboardReference = useRef(false); /* Avoids committing when Escape dismisses the input (blur still runs) */
   const [isEditing, setIsEditing] = useState(false);
-  const [formCommitted, setFormCommitted] = useState(() => isFormMode ? props.defaultValue ?? "" : "");
+  const [formCommitted, setFormCommitted] = useState(() => isFormMode ? (props.defaultValue ?? "") : "");
+  const [draftOverride, setDraftOverride] = useState<string | null>(null);
 
   const value = isFormMode ? formCommitted : props.value;
+  const draft = draftOverride ?? value;
   const isEmpty = value.trim() === "";
   const showInput = !props.disabled && (isEditing || isEmpty);
 
@@ -71,16 +73,9 @@ export function EditableText(props: EditableTextProps) {
     [isFormMode, props]
   );
 
-  const [draft, setDraft] = useState(value);
-
-  useEffect(() => {
-    if (isEditing) return;
-    setDraft(value);
-  }, [value, isEditing]);
-
   const enterEdit = useCallback(() => {
     if (props.disabled) return;
-    setDraft(value);
+    setDraftOverride(value);
     setIsEditing(true);
   }, [props.disabled, value]);
 
@@ -111,6 +106,7 @@ export function EditableText(props: EditableTextProps) {
   const commit = useCallback(() => {
     const trimmed = draft.trim();
     onCommit(trimmed);
+    setDraftOverride(null);
     setIsEditing(false);
   }, [draft, onCommit]);
 
@@ -128,10 +124,10 @@ export function EditableText(props: EditableTextProps) {
 
   const cancel = useCallback(() => {
     cancelFromKeyboardReference.current = true;
-    setDraft(value);
+    setDraftOverride(null);
     setIsEditing(false);
     props.onCancel?.();
-  }, [props, value]);
+  }, [props]);
 
   const hiddenFormValue = isFormMode ? (showInput ? draft : formCommitted) : null;
 
@@ -140,11 +136,11 @@ export function EditableText(props: EditableTextProps) {
       <input type="hidden" name={props.name} value={hiddenFormValue ?? ""} />
     ) : null;
 
-  const displayText = value.trim() === "" ? props.placeholder ?? "—" : value;
+  const displayText = value.trim() === "" ? (props.placeholder ?? "—") : value;
 
   const variantTag = props.variant ?? "p";
   const displaySurfaceClassName = cn(
-    "inline-flex max-w-full min-w-0 cursor-text rounded-md text-left text-base outline-none transition-colors hover:bg-accent/60 focus-visible:ring-2 focus-visible:ring-ring/50",
+    "inline-flex max-w-full min-w-0 cursor-text rounded-md text-left text-base transition-colors outline-none hover:bg-accent/60 focus-visible:ring-2 focus-visible:ring-ring/50",
     props.disabled && "cursor-not-allowed opacity-50 hover:bg-transparent",
     value.trim() === "" && "text-muted-foreground",
     props.className
@@ -158,12 +154,8 @@ export function EditableText(props: EditableTextProps) {
       placeholder={draft.trim() === "" ? props.placeholder : undefined}
       disabled={props.disabled}
       aria-label={props.ariaLabel ?? "Edit text"}
-      className={cn(
-        "h-auto min-h-9 py-1",
-        props.className,
-        props.typoOverride
-      )}
-      onChange={(event) => setDraft(event.target.value)}
+      className={cn("h-auto min-h-9 py-1", props.className, props.typoOverride)}
+      onChange={(event) => setDraftOverride(event.target.value)}
       onBlur={handleBlur}
       onKeyDown={(event) => {
         if (event.key === "Enter") {
@@ -189,7 +181,7 @@ export function EditableText(props: EditableTextProps) {
         "aria-label": props.ariaLabel ?? "Edit text",
         onClick: enterEdit,
         onFocus: handleDisplayFocus,
-        onKeyDown: handleDisplayKeyDown
+        onKeyDown: handleDisplayKeyDown,
       },
       <span className={cn("min-w-0 truncate", props.typoOverride)}>{displayText}</span>
     )
@@ -201,11 +193,5 @@ export function EditableText(props: EditableTextProps) {
       {control}
     </>
   );
-  return (
-    withField ? (
-      <Field>{inner}</Field>
-    ) : (
-      inner
-    )
-  );
+  return withField ? <Field>{inner}</Field> : inner;
 }

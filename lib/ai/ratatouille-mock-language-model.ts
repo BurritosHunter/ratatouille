@@ -15,8 +15,8 @@ const MOCK_TEXT_BLOCK_ID = "ratatouille-mock-text"
  */
 const ANTHROPIC_KEY_DISABLED_SENTINELS = new Set(["mock", "off", "disabled", "false", "placeholder", "none"])
 
-/** True when `ANTHROPIC_API_KEY` is set to a non-placeholder value (real calls use this). */
 export function hasUsableAnthropicApiKey(): boolean {
+  /** True when `ANTHROPIC_API_KEY` is set to a non-placeholder value (real calls use this). */
   const raw = process.env.ANTHROPIC_API_KEY?.trim()
   if (!raw) {
     return false
@@ -27,16 +27,16 @@ export function hasUsableAnthropicApiKey(): boolean {
   return true
 }
 
-/**
- * When true, `/api/chat` uses a mock language model (no Anthropic network calls).
- *
- * - `RATATOUILLE_AI_MOCK=true` or `1`: always mock (even if `ANTHROPIC_API_KEY` is set — use this to test locally with a fake key still in the file).
- * - `RATATOUILLE_AI_MOCK=false`: never mock (requires a real `ANTHROPIC_API_KEY`).
- * - Otherwise: in production, never mock. In dev, mock if there is no usable key (`ANTHROPIC_API_KEY` empty, or set to a sentinel like `mock`).
- *
- * If you put any other non-empty value in `ANTHROPIC_API_KEY`, the real Anthropic client runs; a fake key will fail at the API with “invalid API key”.
- */
 export function shouldUseRatatouilleMockAi(): boolean {
+  /**
+   * When true, `/api/chat` uses a mock language model (no Anthropic network calls).
+   *
+   * - `RATATOUILLE_AI_MOCK=true` or `1`: always mock (even if `ANTHROPIC_API_KEY` is set — use this to test locally with a fake key still in the file).
+   * - `RATATOUILLE_AI_MOCK=false`: never mock (requires a real `ANTHROPIC_API_KEY`).
+   * - Otherwise: in production, never mock. In dev, mock if there is no usable key (`ANTHROPIC_API_KEY` empty, or set to a sentinel like `mock`).
+   *
+   * If you put any other non-empty value in `ANTHROPIC_API_KEY`, the real Anthropic client runs; a fake key will fail at the API with “invalid API key”.
+   */
   const explicit = process.env.RATATOUILLE_AI_MOCK?.trim().toLowerCase()
   if (explicit === "false") {
     return false
@@ -50,7 +50,16 @@ export function shouldUseRatatouilleMockAi(): boolean {
   return !hasUsableAnthropicApiKey()
 }
 
-function streamMockToolCallStep(): ReadableStream<LanguageModelV3StreamPart> {
+function getRatatouilleMockScenario(): "recipes" | "surface" {
+  /** `RATATOUILLE_AI_MOCK_SCENARIO=surface`: first step emits layout + background + listRecipes tool calls in one model turn (dev testing of merged assistant surface). */
+  const raw = process.env.RATATOUILLE_AI_MOCK_SCENARIO?.trim().toLowerCase();
+  if (raw === "surface") {
+    return "surface";
+  }
+  return "recipes";
+}
+
+function streamMockListRecipesToolCallStep(): ReadableStream<LanguageModelV3StreamPart> {
   return simulateReadableStream({
     chunks: [
       { type: "stream-start", warnings: [] },
@@ -66,12 +75,45 @@ function streamMockToolCallStep(): ReadableStream<LanguageModelV3StreamPart> {
         finishReason: { unified: "tool-calls", raw: "mock" },
       },
     ],
-  })
+  });
+}
+
+function streamMockSurfaceMultiToolCallStep(): ReadableStream<LanguageModelV3StreamPart> {
+  return simulateReadableStream({
+    chunks: [
+      { type: "stream-start", warnings: [] },
+      {
+        type: "tool-call",
+        toolCallId: "mock-setAssistantLayout",
+        toolName: "setAssistantLayout",
+        input: '{"layout":"twoColumn"}',
+      },
+      {
+        type: "tool-call",
+        toolCallId: "mock-setAssistantBackground",
+        toolName: "setAssistantBackground",
+        input: '{"color":"green"}',
+      },
+      {
+        type: "tool-call",
+        toolCallId: "mock-listRecipesForUser",
+        toolName: "listRecipesForUser",
+        input: "{}",
+      },
+      {
+        type: "finish",
+        usage: mockUsage,
+        finishReason: { unified: "tool-calls", raw: "mock" },
+      },
+    ],
+  });
 }
 
 function streamMockAssistantTextStep(): ReadableStream<LanguageModelV3StreamPart> {
   const text =
-    "This is a mock assistant reply (no Anthropic API call). Add ANTHROPIC_API_KEY to .env.local for the real model. Recipe cards above use your real database."
+    getRatatouilleMockScenario() === "surface"
+      ? "This is a mock assistant reply (no Anthropic API call). One step emitted three tools: layout (twoColumn), setAssistantBackground with color green for the first-column square, and listRecipesForUser with recipe rows for the generated UI preview below the site header. Add ANTHROPIC_API_KEY to .env.local for the real model."
+      : "This is a mock assistant reply (no Anthropic API call). The listRecipesForUser tool returns your saved recipes for the generated UI preview, and the app adds a short summary in this chat. Add ANTHROPIC_API_KEY to .env.local for the real model."
   return simulateReadableStream({
     chunks: [
       { type: "stream-start", warnings: [] },
@@ -88,21 +130,23 @@ function streamMockAssistantTextStep(): ReadableStream<LanguageModelV3StreamPart
 }
 
 /**
- * Two-step mock: (1) emit a fixed tool call so `listRecipesForUser` runs for real, (2) stream canned text.
+ * Two-step mock: (1) emit fixed tool call(s) so tools run for real (`listRecipesForUser`, or layout+background+recipes when `RATATOUILLE_AI_MOCK_SCENARIO=surface`), (2) stream canned text.
  * A new instance per request so the step counter resets.
  */
 export function createRatatouilleMockLanguageModel(): MockLanguageModelV3 {
-  let stepIndex = 0
+  let stepIndex = 0;
+  const scenario = getRatatouilleMockScenario();
   return new MockLanguageModelV3({
     provider: "ratatouille-mock",
     modelId: "mock-claude",
     doStream: async () => {
-      const index = stepIndex
-      stepIndex += 1
+      const index = stepIndex;
+      stepIndex += 1;
       if (index === 0) {
-        return { stream: streamMockToolCallStep() }
+        const stream = scenario === "surface" ? streamMockSurfaceMultiToolCallStep() : streamMockListRecipesToolCallStep();
+        return { stream };
       }
-      return { stream: streamMockAssistantTextStep() }
+      return { stream: streamMockAssistantTextStep() };
     },
-  })
+  });
 }

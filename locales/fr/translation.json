@@ -1,0 +1,82 @@
+{
+  "common": {
+    "appName": "Ratatouille",
+    "send": "Envoyer",
+    "search": "Rechercher",
+    "profileAria": "Profil",
+    "you": "vous",
+    "messagePlaceholder": "Message…",
+    "messageAria": "Message"
+  },
+  "nav": {
+    "explore": "Explorer",
+    "recipes": "Recettes",
+    "ingredients": "Ingrédients"
+  },
+  "home": {
+    "signedInAs": "Connecté(e) en tant que {{displayName}}"
+  },
+  "auth": {
+    "signIn": "Se connecter",
+    "magicLinkBlurb": "Nous vous enverrons un lien magique par e-mail.",
+    "checkEmailBefore": "Vérifiez",
+    "checkEmailAfter": "pour recevoir le lien de connexion.",
+    "emailLabel": "E-mail",
+    "emailPlaceholder": "vous@exemple.com",
+    "sending": "Envoi en cours…",
+    "sendMagicLink": "Envoyer le lien magique",
+    "signUpPrompt": "Pas encore de compte ?",
+    "signUp": "S'inscrire",
+    "devLocal": "Développement local :",
+    "signInAsDev": "Se connecter en tant qu'utilisateur de développement",
+    "errorSendEmail": "Impossible d'envoyer l'e-mail de connexion. Vérifiez l'adresse et réessayez."
+  },
+  "recipes": {
+    "title": "Recettes",
+    "createRecipe": "Créer une recette",
+    "empty": "Aucune recette pour le moment",
+    "deletedToast": "Recette supprimée",
+    "restoredToast": "Recette restaurée"
+  },
+  "ingredients": {
+    "title": "Ingrédients"
+  },
+  "assistant": {
+    "title": "Assistant",
+    "pageDescription": "Posez vos questions sur vos recettes — par exemple : « Quelles recettes ai-je ? » Les résultats des outils (mise en page, carré de couleur, recettes) s'affichent dans la zone principale au-dessus de la page.",
+    "drawerEmpty": "Posez vos questions sur vos recettes — par exemple : « Quelles recettes ai-je ? » Les résultats des outils (mise en page, carré de couleur, recettes) s'affichent dans la zone principale au-dessus de la page.",
+    "openChatAria": "Ouvrir l'assistant",
+    "closeAssistantAria": "Fermer l'assistant",
+    "closeAria": "Fermer",
+    "chatDialogAria": "Discussion avec l'assistant",
+    "errorTitle": "Un problème est survenu",
+    "dismiss": "Fermer",
+    "roleYou": "Vous",
+    "roleAssistant": "Assistant",
+    "thinking": "Réflexion en cours…",
+    "stop": "Arrêter",
+    "toolKind": {
+      "recipes": "recettes",
+      "layout": "mise en page",
+      "colorSquare": "carré de couleur",
+      "generic": "outil"
+    },
+    "runningTool": "Exécution de l'outil {{label}}…",
+    "updatedMainLayout": "Mise à jour de la zone principale ({{label}}).",
+    "toolFailed": "Échec de l'outil {{label}} : {{error}}",
+    "unknownError": "Erreur inconnue.",
+    "surfaceAria": "Résultat des outils de l'assistant",
+    "surfaceHeading": "Outils de l'assistant",
+    "surfaceMeta": "Mis à jour le {{date}} (dernier appel : {{lastCallId}})",
+    "layoutLine": "Mise en page : {{layout}}",
+    "layoutTestSquare": "Carré de test de mise en page : {{color}}",
+    "layoutTestSquareAria": "Carré de test de mise en page : {{color}}",
+    "noRecipesInSurface": "Aucune recette dans l'aperçu pour le moment.",
+    "recipeListSummaryEmpty": "Vous n'avez aucune recette enregistrée.",
+    "recipeListSummaryItem": "• {{title}}",
+    "recipeListSummaryWithList": "Vous avez {{count}} recette(s) enregistrée(s) :\n\n{{list}}",
+    "recipeListFetchError": "Impossible de charger votre liste de recettes.",
+    "recipeListFetchUnauthorized": "Vous n'êtes pas connecté·e ou votre session a expiré.",
+    "recipeListFetchLine": "Liste des recettes : {{error}}"
+  }
+}

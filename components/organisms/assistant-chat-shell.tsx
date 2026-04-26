@@ -1,240 +1,451 @@
-"use client"
+"use client";
 
-import { useChat } from "@ai-sdk/react"
-import { IconMessageCircle, IconX } from "@tabler/icons-react"
-import type { ReactNode } from "react"
-import { useState } from "react"
+import { useChat } from "@ai-sdk/react";
+import { IconMessageCircle, IconX } from "@tabler/icons-react";
+import { usePathname, useRouter } from "next/navigation";
+import type { ReactNode } from "react";
+import {
+  startTransition,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+import type { TFunction } from "i18next";
+import { useTranslation } from "react-i18next";
+import { MessageForm } from "@/components/organisms/message-form";
+import { Button } from "@/components/ui/button";
+import { AssistantChatComposerProvider } from "@/contexts/assistant-chat-composer-context";
+import { AssistantGeneratedUIContext } from "@/contexts/assistant-generated-ui-context";
+import type { RecipeToolRow } from "@/lib/ai/recipe-tool-rows";
+import {
+  getGeneratedUIDataFieldsFromToolOutput,
+  SUPPORTED_TOOL_TYPES,
+  mergeAssistantGeneratedUIPayload,
+  type AssistantGeneratedUIPayload,
+} from "@/lib/assistant/generated-ui";
+import { cn } from "@/lib/helpers/utils";
+import {
+  DefaultChatTransport,
+  type UIDataTypes,
+  type UIMessage,
+  type UIMessagePart,
+  type UITools,
+} from "ai";
 
-import { RecipeListRowLink } from "@/components/molecules/recipe-list-row-link"
-import { Button } from "@/components/ui/button"
-import { cn } from "@/lib/helpers/utils"
-import { DefaultChatTransport } from "ai"
+type ToolPart = {
+  type: string;
+  toolCallId: string;
+  state: string;
+  errorText?: string;
+  output?: unknown;
+};
+function getToolPart(
+  part: UIMessagePart<UIDataTypes, UITools>
+): ToolPart | null {
+  /* Returns null for text and non-tool parts. */
+
+  if (typeof part !== "object" || part === null) {
+    return null;
+  }
+
+  const candidate = part as Record<string, unknown>;
+  const type = candidate.type;
+  if (typeof type !== "string" || !type.startsWith("tool-")) {
+    return null;
+  }
+  if (
+    typeof candidate.toolCallId !== "string" ||
+    typeof candidate.state !== "string"
+  ) {
+    return null;
+  }
+
+  return part as ToolPart;
+}
+
+/* Utility */
+function appendTextPartToMessage(targetMessageId: string, text: string) {
+  return (previous: UIMessage[]) =>
+    previous.map((message) => {
+      if (message.id !== targetMessageId) {
+        return message;
+      }
+      return {
+        ...message,
+        parts: [...message.parts, { type: "text" as const, text }],
+      };
+    });
+}
+
+/* Surface tools */
+const SURFACE_TOOL_PART_TYPE_SET = new Set<string>(SUPPORTED_TOOL_TYPES);
+function isToolTypeValid(
+  type: string
+): type is (typeof SUPPORTED_TOOL_TYPES)[number] {
+  return SURFACE_TOOL_PART_TYPE_SET.has(type);
+}
+
+function surfaceToolKindLabel(
+  partType: string,
+  t: TFunction<"translation">
+): string {
+  switch (partType) {
+    case "tool-listRecipesForUser":
+      return t("assistant.toolKind.recipes");
+    case "tool-setAssistantLayout":
+      return t("assistant.toolKind.layout");
+    case "tool-setAssistantBackground":
+      return t("assistant.toolKind.colorSquare");
+    default:
+      return t("assistant.toolKind.generic");
+  }
+}
+
+function SurfaceToolPartMessage({ part }: { part: ToolPart }) {
+  const { t } = useTranslation();
+  const callId = part.toolCallId;
+  const label = surfaceToolKindLabel(part.type, t);
+
+  switch (part.state) {
+    case "input-streaming":
+    case "input-available":
+      return (
+        <div key={callId} className="text-sm text-muted-foreground">
+          {t("assistant.runningTool", { label })}
+        </div>
+      );
+    case "output-available":
+      return (
+        <p key={callId} className="text-sm text-muted-foreground">
+          {t("assistant.updatedMainLayout", { label })}
+        </p>
+      );
+    case "output-error":
+      return (
+        <p key={callId} className="text-sm text-destructive">
+          {t("assistant.toolFailed", {
+            label,
+            error: part.errorText ?? t("assistant.unknownError"),
+          })}
+        </p>
+      );
+    default:
+      return null;
+  }
+}
+
+/* Recipes */
+function buildRecipeListSummary(
+  t: TFunction<"translation">,
+  rows: RecipeToolRow[]
+): string {
+  if (rows.length === 0) {
+    return t("assistant.recipeListSummaryEmpty");
+  }
+
+  const list = rows
+    .map((row) => t("assistant.recipeListSummaryItem", { title: row.title }))
+    .join("\n");
+  return t("assistant.recipeListSummaryWithList", { count: rows.length, list });
+}
 
 export function AssistantChatShell({ children }: { children: ReactNode }) {
-  const [panelOpen, setPanelOpen] = useState(false)
-  const { messages, sendMessage, status, stop, error, clearError } = useChat({
+  const { t } = useTranslation();
+  const router = useRouter();
+
+  const [generatedUI, setGeneratedUI] =
+    useState<AssistantGeneratedUIPayload | null>(null);
+  const clearSurface = useCallback(() => {
+    setGeneratedUI(null);
+  }, []);
+  const [panelOpen, setPanelOpen] = useState(false);
+
+  /* Chat */
+  const {
+    messages,
+    sendMessage,
+    setMessages,
+    status,
+    stop,
+    error,
+    clearError,
+  } = useChat({
     transport: new DefaultChatTransport({
       api: "/api/chat",
       credentials: "include",
     }),
     onError: (chatError) => {
       if (process.env.NODE_ENV === "development") {
-        console.error("[assistant]", chatError)
+        console.error("[assistant]", chatError);
       }
     },
-  })
+  });
+  const inputDisabled = status === "submitted" || status === "streaming";
+  const sendUserMessageToAssistant = useCallback(
+    (text: string) => {
+      setPanelOpen(true);
+      void sendMessage({ text });
+    },
+    [sendMessage]
+  );
 
-  const inputDisabled = status === "submitted" || status === "streaming"
+  /* Pathname */
+  const pathname = usePathname();
+  const previousPathnameRef = useRef<string | undefined>(undefined);
+  useEffect(() => {
+    if (
+      previousPathnameRef.current === "/assistant" &&
+      pathname !== "/assistant"
+    ) {
+      /* Preview mounts only on /assistant; clear shell state when leaving that route. */
+      queueMicrotask(() => setGeneratedUI(null));
+    }
+    previousPathnameRef.current = pathname;
+  }, [pathname]);
+
+  /* On tool outputs */
+  const processedToolIds = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    let routeChangedToAssistantPage = false;
+    const navigateToAssistantPageIfNeeded = () => {
+      if (routeChangedToAssistantPage || pathname === "/assistant") {
+        return;
+      }
+      routeChangedToAssistantPage = true;
+      queueMicrotask(() => {
+        startTransition(() => {
+          router.replace("/assistant");
+        });
+      });
+    };
+    const processSurfaceToolOutput = (
+      messageId: string,
+      toolType: (typeof SUPPORTED_TOOL_TYPES)[number],
+      toolOutput: unknown,
+      currentKey: string
+    ) => {
+      if (processedToolIds.current.has(currentKey)) {
+        return;
+      }
+      processedToolIds.current.add(currentKey);
+      navigateToAssistantPageIfNeeded();
+
+      const dataFields = getGeneratedUIDataFieldsFromToolOutput(
+        toolType,
+        toolOutput
+      );
+      if (dataFields === null) {
+        return;
+      }
+      setGeneratedUI((previous) =>
+        mergeAssistantGeneratedUIPayload(previous, currentKey, dataFields)
+      );
+
+      if (toolType !== "tool-listRecipesForUser" || !dataFields.recipes) {
+        return;
+      }
+      setMessages(
+        appendTextPartToMessage(
+          messageId,
+          buildRecipeListSummary(t, dataFields.recipes)
+        )
+      );
+    };
+
+    for (const message of messages) {
+      if (message.role !== "assistant") {
+        continue;
+      }
+
+      for (const part of message.parts) {
+        /* Validate tool */
+        const tool = getToolPart(part);
+        if (
+          !tool ||
+          !isToolTypeValid(tool.type) ||
+          tool.state !== "output-available"
+        ) {
+          continue;
+        }
+
+        const currentKey = `${message.id}:${tool.toolCallId}`;
+        processSurfaceToolOutput(
+          message.id,
+          tool.type,
+          tool.output,
+          currentKey
+        );
+      }
+    }
+  }, [messages, pathname, router, setGeneratedUI, setMessages, t]);
 
   return (
-    <div className="flex h-svh w-full overflow-hidden">
-      <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">{children}</div>
-
-      {!panelOpen ? (
-        <Button
-          type="button"
-          size="icon"
-          variant="default"
-          className="fixed bottom-6 right-6 z-50 size-12 rounded-full shadow-lg"
-          aria-expanded={false}
-          aria-label="Open assistant"
-          onClick={() => setPanelOpen(true)}
-        >
-          <IconMessageCircle className="size-5" aria-hidden />
-        </Button>
-      ) : null}
-
-      {panelOpen ? (
-        <>
-          <button
-            type="button"
-            className="fixed inset-0 z-40 bg-background/80 backdrop-blur-sm md:hidden"
-            aria-label="Close assistant"
-            onClick={() => setPanelOpen(false)}
-          />
-          <aside
+    <AssistantGeneratedUIContext.Provider value={{ generatedUI, clearSurface }}>
+      <AssistantChatComposerProvider
+        value={{ sendUserMessageToAssistant, inputDisabled }}
+      >
+        <div className="flex h-[100svh] max-h-[100svh] min-h-0 w-full overflow-hidden">
+          <div
             className={cn(
-              "flex h-svh w-full max-w-md shrink-0 flex-col border-l border-border bg-popover shadow-xl",
-              "max-md:fixed max-md:inset-y-0 max-md:right-0 max-md:z-50",
+              "flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden",
+              panelOpen && "md:pr-[min(28rem,100%)]"
             )}
-            role="dialog"
-            aria-label="Assistant chat"
-            aria-modal="true"
           >
-          <div className="flex shrink-0 items-center justify-between border-b border-border px-4 py-3">
-            <h2 className="font-heading text-sm font-semibold">Assistant</h2>
-            <Button type="button" variant="ghost" size="icon-sm" aria-label="Close" onClick={() => setPanelOpen(false)}>
-              <IconX className="size-4" aria-hidden />
+            {children}
+          </div>
+
+          {!panelOpen ? (
+            <Button
+              type="button"
+              size="icon"
+              variant="default"
+              className="fixed right-6 bottom-6 z-50 size-12 rounded-full shadow-lg"
+              aria-expanded={false}
+              aria-label={t("assistant.openChatAria")}
+              onClick={() => setPanelOpen(true)}
+            >
+              <IconMessageCircle className="size-5" aria-hidden />
             </Button>
-          </div>
+          ) : null}
 
-          <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-4">
-            {error ? (
-              <div
-                role="alert"
-                className="rounded-md border border-destructive/50 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+          {panelOpen ? (
+            <>
+              <button
+                type="button"
+                className="fixed inset-0 z-40 bg-background/80 backdrop-blur-sm md:hidden"
+                aria-label={t("assistant.closeAssistantAria")}
+                onClick={() => setPanelOpen(false)}
+              />
+              <aside
+                className={cn(
+                  "fixed inset-y-0 right-0 z-50 flex h-[100svh] max-h-[100svh] w-full max-w-md shrink-0 flex-col border-l border-border bg-popover shadow-xl"
+                )}
+                role="dialog"
+                aria-label={t("assistant.chatDialogAria")}
+                aria-modal="true"
               >
-                <p className="font-medium">Something went wrong</p>
-                <p className="mt-1 whitespace-pre-wrap text-destructive/90">{error.message}</p>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="mt-2"
-                  onClick={() => clearError()}
-                >
-                  Dismiss
-                </Button>
-              </div>
-            ) : null}
-            {messages.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                Ask anything about your recipes—for example, “What recipes do I have?”
-              </p>
-            ) : (
-              messages.map((message) => (
-                <div key={message.id} className="space-y-2">
-                  <span className="text-xs font-medium text-muted-foreground">
-                    {message.role === "user" ? "You" : "Assistant"}
-                  </span>
-                  {message.parts.map((part, partIndex) => {
-                    if (part.type === "text") {
-                      return (
-                        <div
-                          key={partIndex}
-                          className={cn("flex", message.role === "user" ? "justify-end" : "justify-start")}
-                        >
-                          <div
-                            className={cn(
-                              "max-w-[95%] whitespace-pre-wrap rounded-lg px-3 py-2 text-sm",
-                              message.role === "user"
-                                ? "bg-primary text-primary-foreground"
-                                : "bg-muted text-foreground",
-                            )}
-                          >
-                            {part.text}
-                          </div>
-                        </div>
-                      )
-                    }
-                    if (part.type === "tool-listRecipesForUser") {
-                      const callId = part.toolCallId
-                      switch (part.state) {
-                        case "input-streaming":
-                        case "input-available":
-                          return (
-                            <div key={callId} className="text-sm text-muted-foreground">
-                              Loading recipes…
-                            </div>
-                          )
-                        case "output-available": {
-                          const output = part.output as {
-                            recipes: { recipeId: number; title: string; thumbSrc: string | null }[]
-                          }
-                          const recipes = output.recipes ?? []
-                          if (recipes.length === 0) {
-                            return (
-                              <p key={callId} className="text-sm text-muted-foreground">
-                                No recipes yet.
-                              </p>
-                            )
-                          }
-                          return (
-                            <ul key={callId} className="flex flex-col gap-2">
-                              {recipes.map((recipe) => (
-                                <li key={recipe.recipeId}>
-                                  <RecipeListRowLink
-                                    recipeId={recipe.recipeId}
-                                    title={recipe.title}
-                                    thumbSrc={recipe.thumbSrc}
-                                  />
-                                </li>
-                              ))}
-                            </ul>
-                          )
-                        }
-                        case "output-error":
-                          return (
-                            <p key={callId} className="text-sm text-destructive">
-                              {part.errorText ?? "Could not load recipes."}
-                            </p>
-                          )
-                        default:
-                          return null
-                      }
-                    }
-                    return null
-                  })}
+                <div className="flex shrink-0 items-center justify-between border-b border-border px-4 py-3">
+                  <h2 className="font-heading text-sm font-semibold">
+                    {t("assistant.title")}
+                  </h2>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon-sm"
+                    aria-label={t("assistant.closeAria")}
+                    onClick={() => setPanelOpen(false)}
+                  >
+                    <IconX className="size-4" aria-hidden />
+                  </Button>
                 </div>
-              ))
-            )}
-            {(status === "submitted" || status === "streaming") && (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <span className="inline-block size-2 animate-pulse rounded-full bg-muted-foreground" aria-hidden />
-                Thinking…
-                <Button type="button" variant="link" size="sm" className="h-auto p-0" onClick={() => void stop()}>
-                  Stop
-                </Button>
-              </div>
-            )}
-          </div>
 
-          <AssistantChatInput
-            disabled={inputDisabled}
-            onSend={(text) => {
-              void sendMessage({ text })
-            }}
-          />
-          </aside>
-        </>
-      ) : null}
-    </div>
-  )
-}
+                <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-4">
+                  {error ? (
+                    <div
+                      role="alert"
+                      className="rounded-md border border-destructive/50 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+                    >
+                      <p className="font-medium">{t("assistant.errorTitle")}</p>
+                      <p className="mt-1 whitespace-pre-wrap text-destructive/90">
+                        {error.message}
+                      </p>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="mt-2"
+                        onClick={() => clearError()}
+                      >
+                        {t("assistant.dismiss")}
+                      </Button>
+                    </div>
+                  ) : null}
 
-function AssistantChatInput({
-  disabled,
-  onSend,
-}: {
-  disabled: boolean
-  onSend: (text: string) => void
-}) {
-  const [value, setValue] = useState("")
+                  {messages.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">
+                      {t("assistant.drawerEmpty")}
+                    </p>
+                  ) : (
+                    messages.map((message) => (
+                      <div key={message.id} className="space-y-2">
+                        <span className="text-xs font-medium text-muted-foreground">
+                          {message.role === "user"
+                            ? t("assistant.roleYou")
+                            : t("assistant.roleAssistant")}
+                        </span>
+                        {message.parts.map((part, partIndex) => {
+                          if (part.type === "text") {
+                            return (
+                              <div
+                                key={partIndex}
+                                className={cn(
+                                  "flex",
+                                  message.role === "user"
+                                    ? "justify-end"
+                                    : "justify-start"
+                                )}
+                              >
+                                <div
+                                  className={cn(
+                                    "max-w-[95%] rounded-lg px-3 py-2 text-sm whitespace-pre-wrap",
+                                    message.role === "user"
+                                      ? "bg-primary text-primary-foreground"
+                                      : "bg-muted text-foreground"
+                                  )}
+                                >
+                                  {part.text}
+                                </div>
+                              </div>
+                            );
+                          }
 
-  return (
-    <form
-      className="shrink-0 border-t border-border p-3"
-      onSubmit={(event) => {
-        event.preventDefault()
-        const trimmed = value.trim()
-        if (!trimmed || disabled) return
-        onSend(trimmed)
-        setValue("")
-      }}
-    >
-      <div className="flex gap-2">
-        <textarea
-          value={value}
-          onChange={(event) => setValue(event.target.value)}
-          disabled={disabled}
-          rows={2}
-          placeholder="Message…"
-          className="border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex min-h-[2.5rem] w-full resize-y rounded-md border px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-          aria-label="Message"
-          onKeyDown={(event) => {
-            if (event.key === "Enter" && !event.shiftKey) {
-              event.preventDefault()
-              const trimmed = value.trim()
-              if (!trimmed || disabled) return
-              onSend(trimmed)
-              setValue("")
-            }
-          }}
-        />
-        <Button type="submit" disabled={disabled || !value.trim()} aria-busy={disabled}>
-          Send
-        </Button>
-      </div>
-    </form>
-  )
+                          const toolLike = getToolPart(part);
+                          if (toolLike && isToolTypeValid(toolLike.type)) {
+                            return (
+                              <SurfaceToolPartMessage
+                                key={toolLike.toolCallId}
+                                part={toolLike}
+                              />
+                            );
+                          }
+
+                          return null;
+                        })}
+                      </div>
+                    ))
+                  )}
+
+                  {(status === "submitted" || status === "streaming") && (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <span
+                        className="inline-block size-2 animate-pulse rounded-full bg-muted-foreground"
+                        aria-hidden
+                      />
+                      {t("assistant.thinking")}
+                      <Button
+                        type="button"
+                        variant="link"
+                        size="sm"
+                        className="h-auto p-0"
+                        onClick={() => void stop()}
+                      >
+                        {t("assistant.stop")}
+                      </Button>
+                    </div>
+                  )}
+                </div>
+
+                <MessageForm
+                  disabled={inputDisabled}
+                  onSend={sendUserMessageToAssistant}
+                  className="border-t border-border p-3"
+                />
+              </aside>
+            </>
+          ) : null}
+        </div>
+      </AssistantChatComposerProvider>
+    </AssistantGeneratedUIContext.Provider>
+  );
 }
