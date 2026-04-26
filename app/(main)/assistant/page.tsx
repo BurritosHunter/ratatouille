@@ -1,7 +1,7 @@
 "use client";
 
 import { MessageForm } from "@/components/organisms/message-form";
-import { AssistantGeneratedUI } from "@/components/organisms/assistant-generated-ui";
+import { AssistantGeneratedUI } from "./_assistant-generated-ui";
 import { useAssistantChatComposer } from "@/contexts/assistant-chat-composer-context";
 import { useAssistantGeneratedUI } from "@/contexts/assistant-generated-ui-context";
 import { cn } from "@/lib/helpers/utils";
