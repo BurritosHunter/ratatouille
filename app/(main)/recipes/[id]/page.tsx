@@ -1,32 +1,32 @@
-import Link from "next/link"
-import { notFound } from "next/navigation"
+import Link from "next/link";
+import { notFound } from "next/navigation";
 
-import { deleteRecipe } from "../actions"
-import { Button } from "@/components/ui/button"
-import { requireUserId } from "@/lib/auth/auth-user"
-import { getRecipeById } from "@/lib/data/recipes"
-import { imageSrcFromStoredOrExternal } from "@/lib/helpers/image/stored-or-external-src"
+import { deleteRecipe } from "../actions";
+import { Button } from "@/components/ui/button";
+import { requireUserId } from "@/lib/auth/auth-user";
+import { getRecipeById } from "@/lib/data/recipes";
+import { imageSrcFromStoredOrExternal } from "@/lib/helpers/image/stored-or-external-src";
 
-export const dynamic = "force-dynamic"
+export const dynamic = "force-dynamic";
 
 type PageProps = {
-  params: Promise<{ id: string }>
-}
+  params: Promise<{ id: string }>;
+};
 
 export default async function RecipeDetailPage({ params }: PageProps) {
-  const { id: idParam } = await params
-  const recipeId = Number.parseInt(idParam, 10)
-  if (!Number.isFinite(recipeId)) notFound()
+  const { id: idParam } = await params;
+  const recipeId = Number.parseInt(idParam, 10);
+  if (!Number.isFinite(recipeId)) notFound();
 
-  const callbackPath = `/recipes/${recipeId}`
-  const userId = await requireUserId(callbackPath)
-  const recipe = await getRecipeById(userId, recipeId)
-  if (!recipe) notFound()
+  const callbackPath = `/recipes/${recipeId}`;
+  const userId = await requireUserId(callbackPath);
+  const recipe = await getRecipeById(userId, recipeId);
+  if (!recipe) notFound();
   const imageSrc = imageSrcFromStoredOrExternal({
     hasStored: recipe.hasStoredImage,
     storedSrc: `/api/recipes/${recipe.id}/image`,
     externalUrl: recipe.mainImageUrl,
-  })
+  });
 
   return (
     <div className="max-w-header mb-15 gap-8">
@@ -80,5 +80,5 @@ export default async function RecipeDetailPage({ params }: PageProps) {
         </section>
       </article>
     </div>
-  )
+  );
 }

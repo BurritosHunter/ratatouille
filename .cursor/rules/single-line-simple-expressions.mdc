@@ -1,0 +1,96 @@
+---
+description: Keep simple declarations, signatures, ternaries, and JSX tags on one line
+globs: "**/*.{ts,tsx,js,jsx}"
+alwaysApply: false
+priority: high
+---
+
+# Single-line simple expressions
+
+## Rule
+
+When a statement or JSX tag is simple enough to read on one line, keep it on one line. Do not introduce manual line breaks just because a formatter permits wrapping.
+
+Prefer single-line formatting for:
+
+- Short `const` / `let` / `var` initializers, including simple strings and one-call expressions.
+- `useRef(false)` / `useState(() => value)` style hook initializers with short comments after the semicolon.
+- Short function declarations, component parameter destructuring, and prop types.
+- Simple ternaries where both branches are short.
+- JSX tags whose props fit comfortably on one line.
+- Single-line `if` guards with only `return` (see `inline-if-return.mdc`).
+
+## Prefer
+
+```typescript
+const ASSISTANT_CHAT_SYSTEM_PROMPT = "You are a helpful assistant for the Ratatouille recipe app. …";
+const commitFromKeyboardReference = useRef(false); /* Avoids firing `onCommit` twice when Enter triggers both keydown and blur */
+const [formCommitted, setFormCommitted] = useState(() => isFormMode ? props.defaultValue ?? "" : "");
+const hiddenFormValue = isFormMode ? (showInput ? draft : formCommitted) : null;
+```
+
+```tsx
+export function RecipeListRowLink({ recipeId, title, thumbSrc }: RecipeListRowLinkProps) {
+  return null;
+}
+
+<button type="button" className={previewZoneGrowSectionClassName} onClick={onUploadZoneClick}>
+  <span className={previewZoneTitleClassName}>
+    <IconUpload className={previewZoneIconClassName} aria-hidden />
+  </span>
+</button>
+
+<label className={previewZoneGrowSectionClassName}>
+  <span className={previewZoneTitleClassName}>
+    <IconLink className={previewZoneIconClassName} aria-hidden />
+  </span>
+</label>
+```
+
+## Avoid
+
+```typescript
+const ASSISTANT_CHAT_SYSTEM_PROMPT =
+  "You are a helpful assistant for the Ratatouille recipe app. …";
+
+const commitFromKeyboardReference =
+  useRef(
+    false
+  ); /* Avoids firing `onCommit` twice when Enter triggers both keydown and blur */
+
+const [formCommitted, setFormCommitted] = useState(() =>
+  isFormMode ? (props.defaultValue ?? "") : ""
+);
+
+const hiddenFormValue = isFormMode
+  ? showInput
+    ? draft
+    : formCommitted
+  : null;
+```
+
+```tsx
+export function RecipeListRowLink({
+  recipeId,
+  title,
+  thumbSrc,
+}: RecipeListRowLinkProps) {
+  return null;
+}
+
+<button
+  type="button"
+  className={previewZoneGrowSectionClassName}
+  onClick={onUploadZoneClick}
+>
+```
+
+## Exceptions
+
+- Complex expressions, long object literals, long JSX prop lists, and multi-line JSX children can use normal multi-line formatting.
+- Do not fight automated formatting for generated files. For hand-edited code, prefer a concise one-line form when it stays readable.
+- If a line is genuinely too long to review comfortably, split at a meaningful boundary instead of splitting a trivial expression into many lines.
+
+## Scope
+
+Applies to **new and edited** code in matched files. When editing existing code, avoid churn outside the touched expressions.

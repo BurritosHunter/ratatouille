@@ -1,16 +1,12 @@
-import Link from "next/link"
+import Link from "next/link";
 
 type RecipeListRowLinkProps = {
-  recipeId: number
-  title: string
-  thumbSrc: string | null
-}
+  recipeId: number;
+  title: string;
+  thumbSrc: string | null;
+};
 
-export function RecipeListRowLink({
-  recipeId,
-  title,
-  thumbSrc,
-}: RecipeListRowLinkProps) {
+export function RecipeListRowLink({ recipeId, title, thumbSrc }: RecipeListRowLinkProps) {
   return (
     <Link
       href={`/recipes/${recipeId}`}
@@ -30,5 +26,5 @@ export function RecipeListRowLink({
       )}
       <span className="min-w-0 text-sm font-medium">{title}</span>
     </Link>
-  )
+  );
 }

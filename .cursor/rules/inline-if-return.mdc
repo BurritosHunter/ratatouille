@@ -1,13 +1,24 @@
 ---
-description: Single-line if for guard clauses whose body is only return
+description: Keep simple conditional guards and short conditional expressions on one line
 globs: "**/*.{ts,tsx}"
 alwaysApply: false
 priority: high
 ---
 
-# Inline `if` with only `return`
+# Single-line simple conditionals
 
 When an `if` exists **only** to return a value (early exit / guard), put **`if`, condition, and `return` on one line**. Do not use a braced block for a single `return`.
+
+Keep simple light-condition expressions on one line when they are readable:
+
+- Short ternaries like `const languageModel = useMockAi ? createRatatouilleMockLanguageModel() : anthropic("claude-sonnet-4-20250514");`
+- Short conditional initializers like `const [formCommitted, setFormCommitted] = useState(() => isFormMode ? props.defaultValue ?? "" : "");`
+- Short hidden-value ternaries like `const hiddenFormValue = isFormMode ? (showInput ? draft : formCommitted) : null;`
+- Short component signatures/destructuring like `export function RecipeListRowLink({ recipeId, title, thumbSrc }: RecipeListRowLinkProps) {`
+- Short class-name constants such as `const previewZoneTitleClassName = "flex flex-col flex-1 justify-start gap-3 rounded bg-background/60 p-4 text-left text-base font-semibold transition-colors duration-150 group-hover:bg-background/86 group-focus-within:bg-background/86";`
+- Short JSX tags with only a few props, such as `<button type="button" className={previewZoneGrowSectionClassName} onClick={onUploadZoneClick}>`
+- Short labels/tags with a single `className`, such as `<label className={previewZoneGrowSectionClassName}>`
+- Short icon JSX, such as `<IconUpload className={previewZoneIconClassName} aria-hidden />`
 
 Terminate with a **semicolon** (see `semicolons.mdc`).
 
@@ -36,6 +47,18 @@ try {
 }
 ```
 
+```typescript
+const [formCommitted, setFormCommitted] = useState(() => isFormMode ? props.defaultValue ?? "" : "");
+const hiddenFormValue = isFormMode ? (showInput ? draft : formCommitted) : null;
+const languageModel = useMockAi ? createRatatouilleMockLanguageModel() : anthropic("claude-sonnet-4-20250514");
+```
+
+```tsx
+export function RecipeListRowLink({ recipeId, title, thumbSrc }: RecipeListRowLinkProps) {
+  return <IconUpload className={previewZoneIconClassName} aria-hidden />;
+}
+```
+
 ### Avoid
 
 ```typescript
@@ -60,9 +83,38 @@ if (!Number.isFinite(userId)) {
 }
 ```
 
+## Avoid (unnecessary wrapping)
+
+```typescript
+const [formCommitted, setFormCommitted] = useState(() =>
+  isFormMode ? (props.defaultValue ?? "") : ""
+);
+
+const languageModel = useMockAi
+  ? createRatatouilleMockLanguageModel()
+  : anthropic("claude-sonnet-4-20250514");
+```
+
+```tsx
+export function RecipeListRowLink({
+  recipeId,
+  title,
+  thumbSrc,
+}: RecipeListRowLinkProps) {
+  return (
+    <IconUpload
+      className={previewZoneIconClassName}
+      aria-hidden
+    />
+  );
+}
+```
+
 ## Exceptions
 
 Use a **braced block** when the `if` body is not *only* a single `return`, or when the **`return` value must span multiple lines** (e.g. a large object literal, JSX, or a chained expression that the formatter breaks across lines). In those cases, normal multi-line formatting is fine. The **blank-line-after-guard** rule applies only to **single-line** `if (…) return …;` guards.
+
+Use normal multi-line formatting for long JSX with many props, nested children, object literals, or expressions that become hard to scan on one line.
 
 ```typescript
 if (error) {
