@@ -10,16 +10,16 @@ import { useTranslation } from "react-i18next";
 import { MessageForm } from "@/components/organisms/message-form";
 import { Button } from "@/components/ui/button";
 import { AssistantChatComposerProvider } from "@/contexts/assistant-chat-composer-context";
-import { AssistantSurfaceContext } from "@/contexts/assistant-surface-context";
+import { AssistantGeneratedUIContext } from "@/contexts/assistant-generated-ui-context";
 import type { RecipeToolRow } from "@/lib/ai/recipe-tool-rows";
 import {
   SUPPORTED_TOOL_TYPES,
-  mergeAssistantSurfacePayload,
+  mergeAssistantGeneratedUIPayload,
   type AssistantBackgroundColorToken,
+  type AssistantGeneratedUIDataFields,
+  type AssistantGeneratedUIPayload,
   type AssistantLayoutOption,
-  type AssistantSurfaceDataFields,
-  type AssistantSurfacePayload,
-} from "@/lib/assistant/surface";
+} from "@/lib/assistant/generated-ui";
 import { cn } from "@/lib/helpers/utils";
 import { DefaultChatTransport, type UIDataTypes, type UIMessage, type UIMessagePart, type UITools } from "ai";
 
@@ -44,17 +44,22 @@ function getToolPart(part: UIMessagePart<UIDataTypes, UITools>): ToolPart | null
 }
 
 
-
-
-const SURFACE_TOOL_PART_TYPE_SET = new Set<string>(SUPPORTED_TOOL_TYPES);
-function isToolTypeValid(type: string): type is (typeof SUPPORTED_TOOL_TYPES)[number] {
-  return SURFACE_TOOL_PART_TYPE_SET.has(type);
+/* Utility */
+function appendTextPartToMessage(targetMessageId: string, text: string) {
+  return (previous: UIMessage[]) =>
+    previous.map((message) => {
+      if (message.id !== targetMessageId) { return message; }
+      return {
+        ...message,
+        parts: [
+          ...message.parts,
+          { type: "text" as const, text },
+        ],
+      };
+    });
 }
 
-
-
-
-function getDataFieldsFromToolPart(part: ToolPart): AssistantSurfaceDataFields | null {
+function getDataFieldsFromToolPart(part: ToolPart): AssistantGeneratedUIDataFields | null {
   switch (part.type) {
     case "tool-listRecipesForUser":
       return null;
@@ -74,26 +79,12 @@ function getDataFieldsFromToolPart(part: ToolPart): AssistantSurfaceDataFields |
 }
 
 
-/* SARAH - TO VALIDATE */
-function buildRecipeListSummary(t: TFunction<"translation">, rows: RecipeToolRow[]): string {
-  if (rows.length === 0) { return t("assistant.recipeListSummaryEmpty"); }
+/* Surface tools */
+const SURFACE_TOOL_PART_TYPE_SET = new Set<string>(SUPPORTED_TOOL_TYPES);
+function isToolTypeValid(type: string): type is (typeof SUPPORTED_TOOL_TYPES)[number] {
+  return SURFACE_TOOL_PART_TYPE_SET.has(type);
+}
 
-  const list = rows.map((row) => t("assistant.recipeListSummaryItem", { title: row.title })).join("\n");
-  return t("assistant.recipeListSummaryWithList", { count: rows.length, list });
-}
-function appendTextPartToMessage(targetMessageId: string, text: string) {
-  return (previous: UIMessage[]) =>
-    previous.map((message) => {
-      if (message.id !== targetMessageId) { return message; }
-      return {
-        ...message,
-        parts: [
-          ...message.parts,
-          { type: "text" as const, text },
-        ],
-      };
-    });
-}
 function surfaceToolKindLabel(partType: string, t: TFunction<"translation">): string {
   switch (partType) {
     case "tool-listRecipesForUser":
@@ -106,6 +97,7 @@ function surfaceToolKindLabel(partType: string, t: TFunction<"translation">): st
       return t("assistant.toolKind.generic");
   }
 }
+
 function SurfaceToolPartMessage({ part }: { part: ToolPart }) {
   const { t } = useTranslation();
   const callId = part.toolCallId;
@@ -135,15 +127,24 @@ function SurfaceToolPartMessage({ part }: { part: ToolPart }) {
       return null;
   }
 }
-/* SARAH - TO VALIDATE */
+
+
+/* Recipes */
+function buildRecipeListSummary(t: TFunction<"translation">, rows: RecipeToolRow[]): string {
+  if (rows.length === 0) { return t("assistant.recipeListSummaryEmpty"); }
+
+  const list = rows.map((row) => t("assistant.recipeListSummaryItem", { title: row.title })).join("\n");
+  return t("assistant.recipeListSummaryWithList", { count: rows.length, list });
+}
+
 
 
 export function AssistantChatShell({ children }: { children: ReactNode }) {
   const { t } = useTranslation();
   const router = useRouter();
 
-  const [surface, setSurface] = useState<AssistantSurfacePayload | null>(null);
-  const clearSurface = useCallback(() => { setSurface(null); }, []);
+  const [generatedUI, setGeneratedUI] = useState<AssistantGeneratedUIPayload | null>(null);
+  const clearSurface = useCallback(() => { setGeneratedUI(null); }, []);
   const [clientRecipeListError, setClientRecipeListError] = useState<string | null>(null);
   const [panelOpen, setPanelOpen] = useState(false);
 
@@ -187,7 +188,7 @@ export function AssistantChatShell({ children }: { children: ReactNode }) {
 
       const data = (await response.json()) as { recipes?: RecipeToolRow[] };
       const recipeRows = data.recipes ?? [];
-      setSurface((previous) => mergeAssistantSurfacePayload(previous, currentKey, { recipes: recipeRows }));
+      setGeneratedUI((previous) => mergeAssistantGeneratedUIPayload(previous, currentKey, { recipes: recipeRows }));
       setMessages(appendTextPartToMessage(targetMessageId, buildRecipeListSummary(t, recipeRows)));
 
     } catch (caught) {
@@ -195,7 +196,7 @@ export function AssistantChatShell({ children }: { children: ReactNode }) {
       setClientRecipeListError(errorMessage);
       setMessages(appendTextPartToMessage(targetMessageId, t("assistant.recipeListFetchLine", { error: errorMessage })));
     }
-  }, [setMessages, setSurface, t]);
+  }, [setGeneratedUI, setMessages, t]);
 
   useEffect(() => {
     let routeChangedToAssistantPage = false;
@@ -215,7 +216,7 @@ export function AssistantChatShell({ children }: { children: ReactNode }) {
 
       const dataFields = getDataFieldsFromToolPart(tool);
       if (dataFields === null) { return; }
-      setSurface((previous) => mergeAssistantSurfacePayload(previous, currentKey, dataFields));
+      setGeneratedUI((previous) => mergeAssistantGeneratedUIPayload(previous, currentKey, dataFields));
     };
     const processRecipeListToolOutput = (targetMessageId: string, currentKey: string) => {
       if (processedRecipeListKeys.current.has(currentKey)) { return; }
@@ -241,10 +242,10 @@ export function AssistantChatShell({ children }: { children: ReactNode }) {
         processRecipeListToolOutput(message.id, currentKey);
       }
     }
-  }, [fetchRecipesForTool, messages, pathname, router, setSurface]);
+  }, [fetchRecipesForTool, messages, pathname, router, setGeneratedUI]);
 
   return (
-    <AssistantSurfaceContext.Provider value={{ surface, clearSurface }}>
+    <AssistantGeneratedUIContext.Provider value={{ generatedUI, clearSurface }}>
       <AssistantChatComposerProvider value={{ sendUserMessageToAssistant, inputDisabled }}>
       <div className="flex h-[100svh] max-h-[100svh] min-h-0 w-full overflow-hidden">
         <div className={cn("flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden", panelOpen && "md:pr-[min(28rem,100%)]" )}>
@@ -364,6 +365,6 @@ export function AssistantChatShell({ children }: { children: ReactNode }) {
         ) : null}
       </div>
       </AssistantChatComposerProvider>
-    </AssistantSurfaceContext.Provider>
+    </AssistantGeneratedUIContext.Provider>
   );
 }

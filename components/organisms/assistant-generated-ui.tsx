@@ -1,50 +1,24 @@
 "use client";
 
 import type { ReactNode } from "react";
-
 import { RecipeListRowLink } from "@/components/molecules/recipe-list-row-link";
-import { useAssistantSurface } from "@/contexts/assistant-surface-context";
+import { useAssistantGeneratedUI } from "@/contexts/assistant-generated-ui-context";
 import type { RecipeToolRow } from "@/lib/ai/recipe-tool-rows";
-import type {
-  AssistantBackgroundColorToken,
-  AssistantLayoutOption,
-} from "@/lib/assistant/surface";
+import type { AssistantBackgroundColorToken, AssistantLayoutOption } from "@/lib/assistant/generated-ui";
 import { cn } from "@/lib/helpers/utils";
 import { useTranslation } from "react-i18next";
 
-function colorSquareFillClass(color: AssistantBackgroundColorToken): string {
-  switch (color) {
-    case "red":
-      return "bg-red-500";
-    case "blue":
-      return "bg-blue-500";
-    case "green":
-      return "bg-green-600";
-    default:
-      return "bg-muted";
-  }
-}
 
-function LayoutColorSquare({ color }: { color: AssistantBackgroundColorToken }) {
-  const { t } = useTranslation();
-  return (
-      <div
-        className={cn(
-          "size-24 shrink-0 rounded-md border border-border shadow-sm",
-          colorSquareFillClass(color),
-        )}
-        aria-label={t("assistant.layoutTestSquareAria", { color })}
-      />
-  );
-}
-
+/* SARAH - TO VALIDATE */
 function AssistantLayoutRegions({ layout, squareColor, recipeBlock }: {
   layout: AssistantLayoutOption | undefined;
   squareColor: AssistantBackgroundColorToken | undefined;
   recipeBlock: ReactNode;
 }) {
+  
   const resolvedLayout: AssistantLayoutOption = layout ?? "singleColumn";
-  const square = squareColor ? <LayoutColorSquare color={squareColor} /> : null;
+  const square = squareColor ? <div className={cn("size-24 shrink-0 rounded-md border border-border shadow-sm bg-blue-500")} /> : null;
+
   if (resolvedLayout === "twoColumn") {
     return (
       <div className="grid min-h-[12rem] grid-cols-1 gap-4 md:grid-cols-2">
@@ -76,17 +50,20 @@ function AssistantLayoutRegions({ layout, squareColor, recipeBlock }: {
     </div>
   );
 }
+/* SARAH - TO VALIDATE */
+
+
 
 /**
- * Renders modular assistant tool output (layout + color square + recipes) on the assistant route.
- * Hidden when there is no surface state.
+ * Renders modular assistant tool output  on the /assistant route.
+ * Hidden when there is no generatedUI state.
  */
-export function AssistantSurfacePreviewPanel() {
+export function AssistantGeneratedUI() {
   const { t } = useTranslation();
-  const { surface } = useAssistantSurface();
-  if (!surface) { return null; }
+  const { generatedUI } = useAssistantGeneratedUI();
+  if (!generatedUI) { return null; }
 
-  const recipeRows: RecipeToolRow[] = surface.recipes ?? [];
+  const recipeRows: RecipeToolRow[] = generatedUI.recipes ?? [];
   const recipeBlock =
     recipeRows.length === 0 ? (
       <p className="text-sm text-muted-foreground">{t("assistant.noRecipesInSurface")}</p>
@@ -110,22 +87,22 @@ export function AssistantSurfacePreviewPanel() {
           <h2 className="font-heading font-semibold text-foreground">{t("assistant.surfaceHeading")}</h2>
           <p className="text-xs text-muted-foreground -mt-2">
             {t("assistant.surfaceMeta", {
-              date: new Date(surface.generatedAtIso).toLocaleString(),
-              lastCallId: surface.lastCallId,
+              date: new Date(generatedUI.generatedAtIso).toLocaleString(),
+              lastCallId: generatedUI.lastCallId,
             })}
           </p>
-          {surface.layout ? (
-            <p className="text-xs font-medium text-foreground">{t("assistant.layoutLine", { layout: surface.layout })}</p>
+          {generatedUI.layout ? (
+            <p className="text-xs font-medium text-foreground">{t("assistant.layoutLine", { layout: generatedUI.layout })}</p>
           ) : null}
-          {surface.backgroundColor ? (
+          {generatedUI.backgroundColor ? (
             <p className="text-xs font-medium text-foreground -mt-2">
-              {t("assistant.layoutTestSquare", { color: surface.backgroundColor })}
+              {t("assistant.layoutTestSquare", { color: generatedUI.backgroundColor })}
             </p>
           ) : null}
         </div>
         <AssistantLayoutRegions
-          layout={surface.layout}
-          squareColor={surface.backgroundColor}
+          layout={generatedUI.layout}
+          squareColor={generatedUI.backgroundColor}
           recipeBlock={recipeBlock}
         />
       </div>

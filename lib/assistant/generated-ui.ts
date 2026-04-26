@@ -3,7 +3,7 @@ import type { RecipeToolRow } from "@/lib/ai/recipe-tool-rows";
 export type AssistantLayoutOption = "singleColumn" | "twoColumn" | "fullWidth";
 export type AssistantBackgroundColorToken = "red" | "blue" | "green";
 
-export type AssistantSurfacePayload = {
+export type AssistantGeneratedUIPayload = {
   generatedAtIso: string;
   lastCallId: string;
   recipes?: RecipeToolRow[];
@@ -11,7 +11,7 @@ export type AssistantSurfacePayload = {
   backgroundColor?: AssistantBackgroundColorToken;
 };
 
-export type AssistantSurfaceDataFields = Partial<Pick<AssistantSurfacePayload, "recipes" | "layout" | "backgroundColor">>;
+export type AssistantGeneratedUIDataFields = Partial<Pick<AssistantGeneratedUIPayload, "recipes" | "layout" | "backgroundColor">>;
 
 export const SUPPORTED_TOOL_TYPES = [
   "tool-listRecipesForUser",
@@ -19,11 +19,11 @@ export const SUPPORTED_TOOL_TYPES = [
   "tool-setAssistantBackground",
 ] as const;
 
-export function mergeAssistantSurfacePayload(
-  previous: AssistantSurfacePayload | null,
+export function mergeAssistantGeneratedUIPayload(
+  previous: AssistantGeneratedUIPayload | null,
   callId: string,
-  dataFields: AssistantSurfaceDataFields,
-): AssistantSurfacePayload {
+  dataFields: AssistantGeneratedUIDataFields,
+): AssistantGeneratedUIPayload {
   return {
     ...(previous ?? {}),
     ...dataFields,

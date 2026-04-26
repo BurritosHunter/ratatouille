@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { AssistantLayoutOption } from "@/lib/assistant/surface";
+import type { AssistantLayoutOption } from "@/lib/assistant/generated-ui";
 
 export const assistantLayoutSchema = z.object({
   layout: z.enum(["singleColumn", "twoColumn", "fullWidth"]),

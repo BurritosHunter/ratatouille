@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { AssistantBackgroundColorToken } from "@/lib/assistant/surface";
+import type { AssistantBackgroundColorToken } from "@/lib/assistant/generated-ui";
 
 export const assistantBackgroundSchema = z.object({ color: z.enum(["red", "blue", "green"]) });
 
