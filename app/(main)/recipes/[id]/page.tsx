@@ -62,21 +62,13 @@ export default async function RecipeDetailPage({ params }: PageProps) {
         </header>
 
         <section className="flex flex-col gap-2">
-          <h2 className="text-sm font-medium text-muted-foreground">
-            Ingredients
-          </h2>
-          <div className="text-sm leading-relaxed whitespace-pre-wrap">
-            {recipe.ingredients}
-          </div>
+          <h2 className="text-sm font-medium text-muted-foreground">Ingredients</h2>
+          <div className="text-sm leading-relaxed whitespace-pre-wrap">{recipe.ingredients}</div>
         </section>
 
         <section className="flex flex-col gap-2">
-          <h2 className="text-sm font-medium text-muted-foreground">
-            Instructions
-          </h2>
-          <div className="text-sm leading-relaxed whitespace-pre-wrap">
-            {recipe.instructions}
-          </div>
+          <h2 className="text-sm font-medium text-muted-foreground">Instructions</h2>
+          <div className="text-sm leading-relaxed whitespace-pre-wrap">{recipe.instructions}</div>
         </section>
       </article>
     </div>

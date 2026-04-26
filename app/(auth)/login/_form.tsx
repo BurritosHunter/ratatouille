@@ -52,9 +52,7 @@ export function LoginForm() {
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-2 text-center">
         <h1 className="font-heading text-xl font-semibold tracking-tight">{t("auth.signIn")}</h1>
-        <p className="text-sm text-muted-foreground">
-          {t("auth.magicLinkBlurb")}
-        </p>
+        <p className="text-sm text-muted-foreground">{t("auth.magicLinkBlurb")}</p>
       </div>
 
       {status === "sent" ? (

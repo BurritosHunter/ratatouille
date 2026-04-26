@@ -25,6 +25,8 @@ Prefer single-line formatting for:
 - Single-line `if` guards with only `return`.
 - Short conditional JSX children, including translation calls and simple ternaries.
 - Short mapped expressions and short inline callback updates.
+- Simple JSX elements whose only child is a short expression, including translated copy and route data.
+- Short function prop types, including single-argument callback types with comments.
 
 ## Prefer
 
@@ -44,10 +46,13 @@ const [lines, setLines] = useState<InternalLine[]>(() => withIds(initialLines));
 
 ```tsx
 <h1 className="font-heading text-xl font-semibold tracking-tight">{t("auth.signIn")}</h1>
+<p className="text-sm text-muted-foreground">{t("auth.magicLinkBlurb")}</p>
 <FieldLabel htmlFor="login-email">{t("auth.emailLabel")}</FieldLabel>
 <Link href="/signup" className="font-medium text-foreground underline-offset-4 hover:underline">
   {t("auth.signUp")}
 </Link>
+<h2 className="text-sm font-medium text-muted-foreground">Ingredients</h2>
+<div className="text-sm leading-relaxed whitespace-pre-wrap">{recipe.ingredients}</div>
 
 export function RecipeListRowLink({ recipeId, title, thumbSrc }: RecipeListRowLinkProps) {
   return null;
@@ -101,12 +106,17 @@ const pantryOptions = useMemo(
   () => catalog.map((entry) => ({ value: String(entry.id), label: entry.name })),
   [catalog]
 );
+
+onIngredientsPayloadChange?: (payloadJson: string) => void;
 ```
 
 ```tsx
 <h1 className="font-heading text-xl font-semibold tracking-tight">
   {t("auth.signIn")}
 </h1>
+<p className="text-sm text-muted-foreground">
+  {t("auth.magicLinkBlurb")}
+</p>
 
 export function RecipeListRowLink({
   recipeId,

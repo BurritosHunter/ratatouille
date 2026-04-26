@@ -25,9 +25,7 @@ type Props = {
   initialLines: MealIngredientEditorLine[];
   triggerLabel?: string;
   listMode?: SearchableMultiSelectListMode; /** How the pantry picker lists options: split sections, one checklist, or hide already-picked rows. */
-  onIngredientsPayloadChange?: (
-    payloadJson: string
-  ) => void; /** Called when the serialized ingredients payload changes (e.g. for autosave). */
+  onIngredientsPayloadChange?: (payloadJson: string) => void; /** Called when the serialized ingredients payload changes (e.g. for autosave). */
 };
 
 type InternalLine = MealIngredientEditorLine & { lineId: string };
