@@ -1,43 +1,51 @@
-"use client"
+"use client";
 
-import Link from "next/link"
-import { signIn } from "next-auth/react"
-import { useEffect, useState } from "react"
+import Link from "next/link";
+import { signIn } from "next-auth/react";
+import { useState, useSyncExternalStore } from "react";
 
-import { Button } from "@/components/ui/button"
-import { useTranslation } from "react-i18next"
-import { Field, FieldGroup, FieldLabel } from "@/components/ui/field"
-import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button";
+import { useTranslation } from "react-i18next";
+import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
 
-const RESEND_PROVIDER_ID = "resend"
+const RESEND_PROVIDER_ID = "resend";
+const subscribeToNoopStore = () => () => {};
+
+function browserIsLocalhost() {
+  if (typeof window === "undefined") return false;
+  const { hostname } = window.location;
+  return hostname === "localhost" || hostname === "127.0.0.1";
+}
 
 export function LoginForm() {
-  const { t } = useTranslation()
-  const [email, setEmail] = useState("")
-  const [status, setStatus] = useState<"idle" | "loading" | "sent" | "error">("idle")
-  const [errorMessage, setErrorMessage] = useState("")
-  const [showDevLink, setShowDevLink] = useState(false)
-
-  useEffect(() => {
-    const hostname = window.location.hostname
-    if (hostname === "localhost" || hostname === "127.0.0.1") setShowDevLink(true)
-  }, [])
+  const { t } = useTranslation();
+  const [email, setEmail] = useState("");
+  const [status, setStatus] = useState<"idle" | "loading" | "sent" | "error">(
+    "idle"
+  );
+  const [errorMessage, setErrorMessage] = useState("");
+  const showDevLink = useSyncExternalStore(
+    subscribeToNoopStore,
+    browserIsLocalhost,
+    () => false
+  );
 
   async function onSubmit(event: React.FormEvent) {
-    event.preventDefault()
-    if (!email.trim()) return
-    setStatus("loading")
-    setErrorMessage("")
+    event.preventDefault();
+    if (!email.trim()) return;
+    setStatus("loading");
+    setErrorMessage("");
     const result = await signIn(RESEND_PROVIDER_ID, {
       email: email.trim(),
       redirect: false,
-    })
+    });
     if (result?.error) {
-      setStatus("error")
-      setErrorMessage(t("auth.errorSendEmail"))
-      return
+      setStatus("error");
+      setErrorMessage(t("auth.errorSendEmail"));
+      return;
     }
-    setStatus("sent")
+    setStatus("sent");
   }
 
   return (
@@ -101,5 +109,5 @@ export function LoginForm() {
         </p>
       ) : null}
     </div>
-  )
+  );
 }

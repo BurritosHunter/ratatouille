@@ -1,28 +1,36 @@
-"use client"
+"use client";
 
-import { IconMoon, IconSun } from "@tabler/icons-react"
-import { useTheme } from "next-themes"
-import { useEffect, useState } from "react"
+import { IconMoon, IconSun } from "@tabler/icons-react";
+import { useTheme } from "next-themes";
+import { useSyncExternalStore } from "react";
 
-import { Button } from "@/components/ui/button"
+import { Button } from "@/components/ui/button";
+
+const subscribeToNoopStore = () => () => {};
 
 export function ThemeToggle() {
-  const { resolvedTheme, setTheme } = useTheme()
-  const [mounted, setMounted] = useState(false)
-
-  useEffect(() => {
-    setMounted(true)
-  }, [])
+  const { resolvedTheme, setTheme } = useTheme();
+  const mounted = useSyncExternalStore(
+    subscribeToNoopStore,
+    () => true,
+    () => false
+  );
 
   if (!mounted) {
     return (
-      <Button type="button" variant="outline" size="icon" disabled aria-label="Toggle theme">
+      <Button
+        type="button"
+        variant="outline"
+        size="icon"
+        disabled
+        aria-label="Toggle theme"
+      >
         <IconMoon className="size-5" aria-hidden />
       </Button>
-    )
+    );
   }
 
-  const isDark = resolvedTheme === "dark"
+  const isDark = resolvedTheme === "dark";
 
   return (
     <Button
@@ -34,5 +42,5 @@ export function ThemeToggle() {
     >
       {isDark ? <IconSun className="size-5" aria-hidden /> : <IconMoon className="size-5" aria-hidden />}
     </Button>
-  )
+  );
 }

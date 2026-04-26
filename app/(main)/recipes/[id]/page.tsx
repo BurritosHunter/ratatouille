@@ -1,35 +1,35 @@
-import Link from "next/link"
-import { notFound } from "next/navigation"
+import Link from "next/link";
+import { notFound } from "next/navigation";
 
-import { deleteRecipe } from "../actions"
-import { Button } from "@/components/ui/button"
-import { requireUserId } from "@/lib/auth/auth-user"
-import { getRecipeById } from "@/lib/data/recipes"
-import { imageSrcFromStoredOrExternal } from "@/lib/helpers/image/stored-or-external-src"
+import { deleteRecipe } from "../actions";
+import { Button } from "@/components/ui/button";
+import { requireUserId } from "@/lib/auth/auth-user";
+import { getRecipeById } from "@/lib/data/recipes";
+import { imageSrcFromStoredOrExternal } from "@/lib/helpers/image/stored-or-external-src";
 
-export const dynamic = "force-dynamic"
+export const dynamic = "force-dynamic";
 
 type PageProps = {
-  params: Promise<{ id: string }>
-}
+  params: Promise<{ id: string }>;
+};
 
 export default async function RecipeDetailPage({ params }: PageProps) {
-  const { id: idParam } = await params
-  const recipeId = Number.parseInt(idParam, 10)
-  if (!Number.isFinite(recipeId)) notFound()
+  const { id: idParam } = await params;
+  const recipeId = Number.parseInt(idParam, 10);
+  if (!Number.isFinite(recipeId)) notFound();
 
-  const callbackPath = `/recipes/${recipeId}`
-  const userId = await requireUserId(callbackPath)
-  const recipe = await getRecipeById(userId, recipeId)
-  if (!recipe) notFound()
+  const callbackPath = `/recipes/${recipeId}`;
+  const userId = await requireUserId(callbackPath);
+  const recipe = await getRecipeById(userId, recipeId);
+  if (!recipe) notFound();
   const imageSrc = imageSrcFromStoredOrExternal({
     hasStored: recipe.hasStoredImage,
     storedSrc: `/api/recipes/${recipe.id}/image`,
     externalUrl: recipe.mainImageUrl,
-  })
+  });
 
   return (
-    <div className="max-w-header gap-8 mb-15">
+    <div className="max-w-header mb-15 gap-8">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <Button asChild variant="outline" size="sm">
           <Link href="/recipes">All recipes</Link>
@@ -48,26 +48,29 @@ export default async function RecipeDetailPage({ params }: PageProps) {
       </div>
       <article className="mx-auto flex w-full max-w-2xl flex-col gap-8">
         <header className="flex flex-col gap-4">
-          <h1 className="font-heading text-2xl font-semibold tracking-tight">{recipe.title}</h1>
+          <h1 className="font-heading text-2xl font-semibold tracking-tight">
+            {recipe.title}
+          </h1>
           {imageSrc ? (
+            // eslint-disable-next-line @next/next/no-img-element -- Images may be stored as data URLs or arbitrary user-provided URLs.
             <img
               src={imageSrc}
               alt=""
-              className="aspect-video w-full max-h-[min(24rem,50vh)] rounded-lg border object-cover"
+              className="aspect-video max-h-[min(24rem,50vh)] w-full rounded-lg border object-cover"
             />
           ) : null}
         </header>
 
         <section className="flex flex-col gap-2">
           <h2 className="text-sm font-medium text-muted-foreground">Ingredients</h2>
-          <div className="whitespace-pre-wrap text-sm leading-relaxed">{recipe.ingredients}</div>
+          <div className="text-sm leading-relaxed whitespace-pre-wrap">{recipe.ingredients}</div>
         </section>
 
         <section className="flex flex-col gap-2">
           <h2 className="text-sm font-medium text-muted-foreground">Instructions</h2>
-          <div className="whitespace-pre-wrap text-sm leading-relaxed">{recipe.instructions}</div>
+          <div className="text-sm leading-relaxed whitespace-pre-wrap">{recipe.instructions}</div>
         </section>
       </article>
     </div>
-  )
+  );
 }
