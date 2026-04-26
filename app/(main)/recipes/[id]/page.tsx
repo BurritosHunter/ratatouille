@@ -29,7 +29,7 @@ export default async function RecipeDetailPage({ params }: PageProps) {
   })
 
   return (
-    <div className="max-w-header gap-8 mb-15">
+    <div className="max-w-header mb-15 gap-8">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <Button asChild variant="outline" size="sm">
           <Link href="/recipes">All recipes</Link>
@@ -48,24 +48,35 @@ export default async function RecipeDetailPage({ params }: PageProps) {
       </div>
       <article className="mx-auto flex w-full max-w-2xl flex-col gap-8">
         <header className="flex flex-col gap-4">
-          <h1 className="font-heading text-2xl font-semibold tracking-tight">{recipe.title}</h1>
+          <h1 className="font-heading text-2xl font-semibold tracking-tight">
+            {recipe.title}
+          </h1>
           {imageSrc ? (
+            // eslint-disable-next-line @next/next/no-img-element -- Images may be stored as data URLs or arbitrary user-provided URLs.
             <img
               src={imageSrc}
               alt=""
-              className="aspect-video w-full max-h-[min(24rem,50vh)] rounded-lg border object-cover"
+              className="aspect-video max-h-[min(24rem,50vh)] w-full rounded-lg border object-cover"
             />
           ) : null}
         </header>
 
         <section className="flex flex-col gap-2">
-          <h2 className="text-sm font-medium text-muted-foreground">Ingredients</h2>
-          <div className="whitespace-pre-wrap text-sm leading-relaxed">{recipe.ingredients}</div>
+          <h2 className="text-sm font-medium text-muted-foreground">
+            Ingredients
+          </h2>
+          <div className="text-sm leading-relaxed whitespace-pre-wrap">
+            {recipe.ingredients}
+          </div>
         </section>
 
         <section className="flex flex-col gap-2">
-          <h2 className="text-sm font-medium text-muted-foreground">Instructions</h2>
-          <div className="whitespace-pre-wrap text-sm leading-relaxed">{recipe.instructions}</div>
+          <h2 className="text-sm font-medium text-muted-foreground">
+            Instructions
+          </h2>
+          <div className="text-sm leading-relaxed whitespace-pre-wrap">
+            {recipe.instructions}
+          </div>
         </section>
       </article>
     </div>

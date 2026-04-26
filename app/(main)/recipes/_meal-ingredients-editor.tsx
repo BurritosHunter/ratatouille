@@ -5,7 +5,10 @@ import { IconTrash } from "@tabler/icons-react"
 import { Fragment } from "react/jsx-runtime"
 
 import { quickCreateIngredient } from "@/app/(main)/ingredients/actions"
-import { SearchableMultiSelect, type SearchableMultiSelectListMode } from "@/components/molecules/searchable-multi-select"
+import {
+  SearchableMultiSelect,
+  type SearchableMultiSelectListMode,
+} from "@/components/molecules/searchable-multi-select"
 import { Button } from "@/components/ui/button"
 import { Field, FieldGroup } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
@@ -22,7 +25,9 @@ type Props = {
   initialLines: MealIngredientEditorLine[]
   triggerLabel?: string
   listMode?: SearchableMultiSelectListMode /** How the pantry picker lists options: split sections, one checklist, or hide already-picked rows. */
-  onIngredientsPayloadChange?: (payloadJson: string) => void /** Called when the serialized ingredients payload changes (e.g. for autosave). */
+  onIngredientsPayloadChange?: (
+    payloadJson: string
+  ) => void /** Called when the serialized ingredients payload changes (e.g. for autosave). */
 }
 
 type InternalLine = MealIngredientEditorLine & { lineId: string }
@@ -48,7 +53,7 @@ function pickIdsFromLines(lineList: InternalLine[]): string[] {
 
 function removeLastLineWithIngredientIdFromLines(
   previousLines: InternalLine[],
-  idString: string,
+  idString: string
 ): InternalLine[] {
   const id = Number.parseInt(idString, 10)
   if (!Number.isFinite(id)) return previousLines
@@ -69,10 +74,12 @@ export function MealIngredientsEditor({
 }: Props) {
   const [catalog, setCatalog] = useState(() =>
     [...catalogProp].sort((left, right) =>
-      left.name.localeCompare(right.name, undefined, { sensitivity: "base" }),
-    ),
+      left.name.localeCompare(right.name, undefined, { sensitivity: "base" })
+    )
   )
-  const [lines, setLines] = useState<InternalLine[]>(() => withIds(initialLines))
+  const [lines, setLines] = useState<InternalLine[]>(() =>
+    withIds(initialLines)
+  )
   const nextLineId = useRef(initialLines.length)
   const skipNextPayloadNotificationReference = useRef(true)
 
@@ -85,9 +92,9 @@ export function MealIngredientsEditor({
           ingredientId,
           name,
           quantityNote,
-        })),
+        }))
       ),
-    [lines],
+    [lines]
   )
 
   useEffect(() => {
@@ -99,12 +106,16 @@ export function MealIngredientsEditor({
   }, [payloadJson, onIngredientsPayloadChange])
 
   const pantryOptions = useMemo(
-    () => catalog.map((entry) => ({ value: String(entry.id), label: entry.name })),
-    [catalog],
+    () =>
+      catalog.map((entry) => ({ value: String(entry.id), label: entry.name })),
+    [catalog]
   )
 
   function appendLine(row: MealIngredientEditorLine) {
-    setLines((prev) => [...prev, { ...row, lineId: `ln-${nextLineId.current++}` }])
+    setLines((prev) => [
+      ...prev,
+      { ...row, lineId: `ln-${nextLineId.current++}` },
+    ])
   }
 
   const handlePickIdsChange = useCallback(
@@ -134,40 +145,34 @@ export function MealIngredientsEditor({
         }
         for (const idString of currentPickIds) {
           if (!nextSet.has(idString)) {
-            nextLines = removeLastLineWithIngredientIdFromLines(nextLines, idString)
+            nextLines = removeLastLineWithIngredientIdFromLines(
+              nextLines,
+              idString
+            )
           }
         }
         return nextLines
       })
     },
-    [catalog],
+    [catalog]
   )
 
   function removeLine(index: number) {
     setLines((prev) => prev.filter((_line, i) => i !== index))
   }
 
-  function moveLine(index: number, dir: -1 | 1) {
-    setLines((prev) => {
-      const next = index + dir
-      if (next < 0 || next >= prev.length) return prev
-      const copy = [...prev]
-      const temp = copy[index]!
-      copy[index] = copy[next]!
-      copy[next] = temp
-      return copy
-    })
-  }
-
   async function mergeNewIngredientIntoCatalog(
-    rawName: string,
+    rawName: string
   ): Promise<{ id: number; name: string } | null> {
     const createResult = await quickCreateIngredient(rawName)
     if (!createResult.ok) return null
     setCatalog((prev) => {
       if (prev.some((existing) => existing.id === createResult.id)) return prev
-      return [...prev, { id: createResult.id, name: createResult.name }].sort((left, right) =>
-        left.name.localeCompare(right.name, undefined, { sensitivity: "base" }),
+      return [...prev, { id: createResult.id, name: createResult.name }].sort(
+        (left, right) =>
+          left.name.localeCompare(right.name, undefined, {
+            sensitivity: "base",
+          })
       )
     })
     return { id: createResult.id, name: createResult.name }
@@ -176,7 +181,11 @@ export function MealIngredientsEditor({
   async function createIngredientByName(name: string) {
     const created = await mergeNewIngredientIntoCatalog(name)
     if (!created) return
-    appendLine({ ingredientId: created.id, name: created.name, quantityNote: "" })
+    appendLine({
+      ingredientId: created.id,
+      name: created.name,
+      quantityNote: "",
+    })
   }
 
   return (
@@ -184,14 +193,14 @@ export function MealIngredientsEditor({
       <input type="hidden" name="ingredients_payload" value={payloadJson} />
       {lines.length > 0 && (
         <ul className="flex flex-col gap-1">
-            {lines.map((line, i) => (
-              <Fragment key={line.lineId}>
-              <li
-                className="flex flex-col gap-2 rounded-md pl-1 pr-1 py-1 sm:flex-row sm:flex-wrap sm:items-end"
-              >
+          {lines.map((line, i) => (
+            <Fragment key={line.lineId}>
+              <li className="flex flex-col gap-2 rounded-md py-1 pr-1 pl-1 sm:flex-row sm:flex-wrap sm:items-end">
                 <div className="grid min-w-0 flex-1 gap-2 sm:grid-cols-2">
                   <Field className="gap-1.5">
-                    <p className="flex min-h-9 items-center truncate text-sm">{line.name}</p>
+                    <p className="flex min-h-9 items-center truncate text-sm">
+                      {line.name}
+                    </p>
                   </Field>
                   <Field className="gap-1.5">
                     <Input
@@ -199,7 +208,9 @@ export function MealIngredientsEditor({
                       onChange={(event) => {
                         const value = event.target.value
                         setLines((prev) =>
-                          prev.map((line, j) => (j === i ? { ...line, quantityNote: value } : line))
+                          prev.map((line, j) =>
+                            j === i ? { ...line, quantityNote: value } : line
+                          )
                         )
                       }}
                       placeholder="e.g. 2 tbsp"
@@ -240,14 +251,14 @@ export function MealIngredientsEditor({
                 </div>
               </li>
               <Separator />
-              </Fragment>
-            ))}
+            </Fragment>
+          ))}
         </ul>
       )}
 
       <Field className="*:w-auto">
         <SearchableMultiSelect
-          className="max-w-[300px] border-none shadow-none text-muted-foreground -mt-2"
+          className="-mt-2 max-w-[300px] border-none text-muted-foreground shadow-none"
           options={pantryOptions}
           value={pickIds}
           onChange={handlePickIdsChange}
@@ -259,7 +270,6 @@ export function MealIngredientsEditor({
           listMode={listMode}
         />
       </Field>
-      
     </FieldGroup>
   )
 }
