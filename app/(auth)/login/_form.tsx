@@ -51,9 +51,7 @@ export function LoginForm() {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-2 text-center">
-        <h1 className="font-heading text-xl font-semibold tracking-tight">
-          {t("auth.signIn")}
-        </h1>
+        <h1 className="font-heading text-xl font-semibold tracking-tight">{t("auth.signIn")}</h1>
         <p className="text-sm text-muted-foreground">
           {t("auth.magicLinkBlurb")}
         </p>
@@ -69,9 +67,7 @@ export function LoginForm() {
         <form onSubmit={onSubmit} className="flex flex-col gap-6">
           <FieldGroup>
             <Field>
-              <FieldLabel htmlFor="login-email">
-                {t("auth.emailLabel")}
-              </FieldLabel>
+              <FieldLabel htmlFor="login-email">{t("auth.emailLabel")}</FieldLabel>
               <Input
                 id="login-email"
                 name="email"
@@ -98,10 +94,7 @@ export function LoginForm() {
 
       <p className="text-center text-sm text-muted-foreground">
         {t("auth.signUpPrompt")}{" "}
-        <Link
-          href="/signup"
-          className="font-medium text-foreground underline-offset-4 hover:underline"
-        >
+        <Link href="/signup" className="font-medium text-foreground underline-offset-4 hover:underline">
           {t("auth.signUp")}
         </Link>
       </p>

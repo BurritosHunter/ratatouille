@@ -5,11 +5,15 @@ alwaysApply: false
 priority: high
 ---
 
-# Single-line simple expressions
+# Single-line simple expressions and guards
 
 ## Rule
 
 When a statement or JSX tag is simple enough to read on one line, keep it on one line. Do not introduce manual line breaks just because a formatter permits wrapping.
+
+When an `if` exists only to return a value (early exit / guard), put `if`, condition, and `return` on one line. Do not use a braced block for a single `return`.
+
+Immediately after a single-line guard, insert one blank line before whatever comes next. That separates the guard from following logic, including another guard.
 
 Prefer single-line formatting for:
 
@@ -18,18 +22,33 @@ Prefer single-line formatting for:
 - Short function declarations, component parameter destructuring, and prop types.
 - Simple ternaries where both branches are short.
 - JSX tags whose props fit comfortably on one line.
-- Single-line `if` guards with only `return` (see `inline-if-return.mdc`).
+- Single-line `if` guards with only `return`.
+- Short conditional JSX children, including translation calls and simple ternaries.
+- Short mapped expressions and short inline callback updates.
 
 ## Prefer
 
 ```typescript
 const ASSISTANT_CHAT_SYSTEM_PROMPT = "You are a helpful assistant for the Ratatouille recipe app. …";
+if (!Number.isFinite(userId)) return new Response("Unauthorized", { status: 401 });
+
+const modelMessages = await convertToModelMessages(messages, { tools });
+if (!Array.isArray(messages)) return new Response("Expected messages array", { status: 400 });
+
 const commitFromKeyboardReference = useRef(false); /* Avoids firing `onCommit` twice when Enter triggers both keydown and blur */
 const [formCommitted, setFormCommitted] = useState(() => isFormMode ? props.defaultValue ?? "" : "");
 const hiddenFormValue = isFormMode ? (showInput ? draft : formCommitted) : null;
+const pantryOptions = useMemo(() => catalog.map((entry) => ({ value: String(entry.id), label: entry.name })), [catalog]);
+const [lines, setLines] = useState<InternalLine[]>(() => withIds(initialLines));
 ```
 
 ```tsx
+<h1 className="font-heading text-xl font-semibold tracking-tight">{t("auth.signIn")}</h1>
+<FieldLabel htmlFor="login-email">{t("auth.emailLabel")}</FieldLabel>
+<Link href="/signup" className="font-medium text-foreground underline-offset-4 hover:underline">
+  {t("auth.signUp")}
+</Link>
+
 export function RecipeListRowLink({ recipeId, title, thumbSrc }: RecipeListRowLinkProps) {
   return null;
 }
@@ -45,6 +64,11 @@ export function RecipeListRowLink({ recipeId, title, thumbSrc }: RecipeListRowLi
     <IconLink className={previewZoneIconClassName} aria-hidden />
   </span>
 </label>
+
+<span className={cn("min-w-0 truncate", props.typoOverride)}>{displayText}</span>
+<p className="flex min-h-9 items-center truncate text-sm">{line.name}</p>
+<IconTrash className={cn("size-6 shrink-0", removeImageRequested ? "text-destructive" : "text-muted-foreground")} aria-hidden />
+{isDark ? <IconSun className="size-5" aria-hidden /> : <IconMoon className="size-5" aria-hidden />}
 ```
 
 ## Avoid
@@ -52,6 +76,11 @@ export function RecipeListRowLink({ recipeId, title, thumbSrc }: RecipeListRowLi
 ```typescript
 const ASSISTANT_CHAT_SYSTEM_PROMPT =
   "You are a helpful assistant for the Ratatouille recipe app. …";
+
+if (!Number.isFinite(userId)) {
+  return new Response("Unauthorized", { status: 401 });
+}
+const modelMessages = await convertToModelMessages(messages, { tools });
 
 const commitFromKeyboardReference =
   useRef(
@@ -67,9 +96,18 @@ const hiddenFormValue = isFormMode
     ? draft
     : formCommitted
   : null;
+
+const pantryOptions = useMemo(
+  () => catalog.map((entry) => ({ value: String(entry.id), label: entry.name })),
+  [catalog]
+);
 ```
 
 ```tsx
+<h1 className="font-heading text-xl font-semibold tracking-tight">
+  {t("auth.signIn")}
+</h1>
+
 export function RecipeListRowLink({
   recipeId,
   title,

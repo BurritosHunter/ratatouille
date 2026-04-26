@@ -73,13 +73,9 @@ export function MealIngredientsEditor({
   onIngredientsPayloadChange,
 }: Props) {
   const [catalog, setCatalog] = useState(() =>
-    [...catalogProp].sort((left, right) =>
-      left.name.localeCompare(right.name, undefined, { sensitivity: "base" })
-    )
+    [...catalogProp].sort((left, right) => left.name.localeCompare(right.name, undefined, { sensitivity: "base" }))
   );
-  const [lines, setLines] = useState<InternalLine[]>(() =>
-    withIds(initialLines)
-  );
+  const [lines, setLines] = useState<InternalLine[]>(() => withIds(initialLines));
   const nextLineId = useRef(initialLines.length);
   const skipNextPayloadNotificationReference = useRef(true);
 
@@ -105,11 +101,7 @@ export function MealIngredientsEditor({
     onIngredientsPayloadChange?.(payloadJson);
   }, [payloadJson, onIngredientsPayloadChange]);
 
-  const pantryOptions = useMemo(
-    () =>
-      catalog.map((entry) => ({ value: String(entry.id), label: entry.name })),
-    [catalog]
-  );
+  const pantryOptions = useMemo(() => catalog.map((entry) => ({ value: String(entry.id), label: entry.name })), [catalog]);
 
   function appendLine(row: MealIngredientEditorLine) {
     setLines((prev) => [
@@ -145,10 +137,7 @@ export function MealIngredientsEditor({
         }
         for (const idString of currentPickIds) {
           if (!nextSet.has(idString)) {
-            nextLines = removeLastLineWithIngredientIdFromLines(
-              nextLines,
-              idString
-            );
+            nextLines = removeLastLineWithIngredientIdFromLines(nextLines, idString);
           }
         }
         return nextLines;
@@ -198,20 +187,14 @@ export function MealIngredientsEditor({
               <li className="flex flex-col gap-2 rounded-md py-1 pr-1 pl-1 sm:flex-row sm:flex-wrap sm:items-end">
                 <div className="grid min-w-0 flex-1 gap-2 sm:grid-cols-2">
                   <Field className="gap-1.5">
-                    <p className="flex min-h-9 items-center truncate text-sm">
-                      {line.name}
-                    </p>
+                    <p className="flex min-h-9 items-center truncate text-sm">{line.name}</p>
                   </Field>
                   <Field className="gap-1.5">
                     <Input
                       value={line.quantityNote}
                       onChange={(event) => {
                         const value = event.target.value;
-                        setLines((prev) =>
-                          prev.map((line, j) =>
-                            j === i ? { ...line, quantityNote: value } : line
-                          )
-                        );
+                        setLines((prev) => prev.map((line, j) => (j === i ? { ...line, quantityNote: value } : line)));
                       }}
                       placeholder="e.g. 2 tbsp"
                     />

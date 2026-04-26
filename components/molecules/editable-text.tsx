@@ -42,9 +42,7 @@ export type EditableTextFormProps = EditableTextBaseProps & {
   value?: undefined;
 };
 
-export type EditableTextProps =
-  | EditableTextControlledProps
-  | EditableTextFormProps;
+export type EditableTextProps = EditableTextControlledProps | EditableTextFormProps;
 
 export function EditableText(props: EditableTextProps) {
   const isFormMode = "name" in props && props.name != null;
@@ -185,9 +183,7 @@ export function EditableText(props: EditableTextProps) {
         onFocus: handleDisplayFocus,
         onKeyDown: handleDisplayKeyDown,
       },
-      <span className={cn("min-w-0 truncate", props.typoOverride)}>
-        {displayText}
-      </span>
+      <span className={cn("min-w-0 truncate", props.typoOverride)}>{displayText}</span>
     )
   );
 

@@ -31,9 +31,7 @@ function logAiDebugJson(label: string, data: unknown): void {
   if (!isAiDebugEnabled()) return;
 
   try {
-    console.log(
-      `[ratatouille-ai] ${label}\n${JSON.stringify(data, jsonSerializationReplacer, 2)}`
-    );
+    console.log(`[ratatouille-ai] ${label}\n${JSON.stringify(data, jsonSerializationReplacer, 2)}`);
   } catch (error) {
     console.error(`[ratatouille-ai] ${label} (serialize failed)`, error);
   }

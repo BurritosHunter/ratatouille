@@ -69,9 +69,7 @@ export function ImageSelector({
                 <IconUpload className={previewZoneIconClassName} aria-hidden />
                 <span>
                   <span>{previewSrc ? uploadZoneLabel : uploadZoneLabelAdd}</span>
-                  <p className="text-sm font-normal whitespace-pre-line text-muted-foreground">
-                    {fileFormatHelpText}
-                  </p>
+                  <p className="text-sm font-normal whitespace-pre-line text-muted-foreground">{fileFormatHelpText}</p>
                 </span>
               </span>
             </button>
@@ -79,7 +77,9 @@ export function ImageSelector({
               <span className={previewZoneTitleClassName}>
                 <IconLink className={previewZoneIconClassName} aria-hidden />
                 <span>
-                  <span>{previewSrc ? urlShowZoneLabel : urlShowZoneLabelAdd}</span>
+                  <span>
+                    {previewSrc ? urlShowZoneLabel : urlShowZoneLabelAdd}
+                  </span>
                   <Input
                     id={urlInputName}
                     name={urlInputName}
@@ -111,16 +111,13 @@ export function ImageSelector({
                 <span
                   className={cn(
                     "rounded bg-background/60 p-1 transition-colors duration-150 group-focus-within:bg-background/86 group-hover:bg-background/86",
-                    removeImageRequested &&
-                      "bg-destructive/20 group-hover:bg-destructive/25"
+                    removeImageRequested && "bg-destructive/20 group-hover:bg-destructive/25"
                   )}
                 >
                   <IconTrash
                     className={cn(
                       "size-6 shrink-0",
-                      removeImageRequested
-                        ? "text-destructive"
-                        : "text-muted-foreground"
+                      removeImageRequested ? "text-destructive" : "text-muted-foreground"
                     )}
                     aria-hidden
                   />
