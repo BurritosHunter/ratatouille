@@ -31,3 +31,28 @@ export function mergeAssistantGeneratedUIPayload(
     lastCallId: callId,
   };
 }
+
+export function getGeneratedUIDataFieldsFromToolOutput(
+  toolType: (typeof SUPPORTED_TOOL_TYPES)[number],
+  toolOutput: unknown,
+): AssistantGeneratedUIDataFields | null {
+  switch (toolType) {
+    case "tool-listRecipesForUser": {
+      const output = toolOutput as { recipes?: RecipeToolRow[] };
+      if (!output.recipes) { return null; }
+      return { recipes: output.recipes };
+    }
+    case "tool-setAssistantLayout": {
+      const output = toolOutput as { layout?: AssistantLayoutOption };
+      if (!output.layout) { return null; }
+      return { layout: output.layout };
+    }
+    case "tool-setAssistantBackground": {
+      const output = toolOutput as { backgroundColor?: AssistantBackgroundColorToken };
+      if (!output.backgroundColor) { return null; }
+      return { backgroundColor: output.backgroundColor };
+    }
+    default:
+      return null;
+  }
+}

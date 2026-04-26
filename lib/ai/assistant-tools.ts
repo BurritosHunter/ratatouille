@@ -8,6 +8,8 @@ import {
   layoutToolResult,
   type AssistantLayoutToolInput,
 } from "@/lib/ai/assistant-layout-tool";
+import { recipesToToolRows } from "@/lib/ai/recipe-tool-rows";
+import { listRecipes } from "@/lib/data/recipes";
 import { z } from "zod";
 
 type AssistantChatTool = {
@@ -16,14 +18,17 @@ type AssistantChatTool = {
   execute: (input?: unknown) => Promise<unknown>;
 };
 
-export function createAssistantTools(): Record<string, AssistantChatTool> {
+export function createAssistantTools({ userId }: { userId: number }): Record<string, AssistantChatTool> {
   const emptyInputSchema = z.object({});
 
   return {
     listRecipesForUser: {
-      description: "Signal the app to load the signed-in user's recipe list in the main layout preview. The tool does not return recipe data—the client fetches and shows titles. Call when the user asks about their recipes, wants a list, or an overview. Do not make up or guess recipe names; after calling, you may add a short reply that the list and a summary are shown in the app.",
+      description: "Load and return the signed-in user's recipe list for the generated UI preview. Call when the user asks about their recipes, wants a list, or an overview. Do not invent or guess recipe names; use this tool output as the source of truth.",
       inputSchema: emptyInputSchema,
-      execute: async () => ({ status: "client" as const }),
+      execute: async () => {
+        const summaries = await listRecipes(userId);
+        return { recipes: recipesToToolRows(summaries) };
+      },
     },
     setAssistantLayout: {
       description: "Set the modular layout preview in the main app shell (below the site header): singleColumn (stacked), twoColumn (side-by-side regions), or fullWidth (one wide content band). Use when the user asks to change the tool layout preview.",
