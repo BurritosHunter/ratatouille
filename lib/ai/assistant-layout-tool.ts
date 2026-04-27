@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { AssistantLayoutOption } from "@/lib/assistant/generated-ui";
+import type { LayoutOption } from "@/lib/generated-ui";
 
 export const assistantLayoutSchema = z.object({
   layout: z.enum(["singleColumn", "twoColumn", "fullWidth"]),
@@ -7,6 +7,6 @@ export const assistantLayoutSchema = z.object({
 
 export type AssistantLayoutToolInput = z.infer<typeof assistantLayoutSchema>;
 
-export function layoutToolResult(input: AssistantLayoutToolInput): { layout: AssistantLayoutOption } {
+export function layoutToolResult(input: AssistantLayoutToolInput): { layout: LayoutOption } {
   return { layout: input.layout };
 }

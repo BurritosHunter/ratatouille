@@ -2,20 +2,20 @@
 
 import type { ReactNode } from "react";
 import { RecipeListRowLink } from "@/components/molecules/recipe-list-row-link";
-import { useAssistantGeneratedUI } from "@/contexts/assistant-generated-ui-context";
+import { useGeneratedUI } from "@/contexts/assistant-generated-ui-context";
 import type { RecipeToolRow } from "@/lib/ai/recipe-tool-rows";
-import type { AssistantBackgroundColorToken, AssistantLayoutOption } from "@/lib/assistant/generated-ui";
+import type { BackgroundColorToken, LayoutOption } from "@/lib/generated-ui";
 import { cn } from "@/lib/helpers/utils";
 import { useTranslation } from "react-i18next";
 
-const SQUARE_CLASS_BY_COLOR: Record<AssistantBackgroundColorToken, string> = {
+const SQUARE_CLASS_BY_COLOR: Record<BackgroundColorToken, string> = {
   red: "bg-red-500",
   blue: "bg-blue-500",
   green: "bg-green-500",
 };
 
-function AssistantLayoutRegions({ layout, squareColor, recipeBlock }: { layout: AssistantLayoutOption | undefined; squareColor: AssistantBackgroundColorToken | undefined; recipeBlock: ReactNode }) {
-  const resolvedLayout: AssistantLayoutOption = layout ?? "singleColumn";
+function LayoutRegions({ layout, squareColor, recipeBlock }: { layout: LayoutOption | undefined; squareColor: BackgroundColorToken | undefined; recipeBlock: ReactNode }) {
+  const resolvedLayout: LayoutOption = layout ?? "singleColumn";
   const square = squareColor ? (
     <div
       className={cn(
@@ -52,12 +52,12 @@ function AssistantLayoutRegions({ layout, squareColor, recipeBlock }: { layout: 
 }
 
 /**
- * Renders modular assistant tool output on the /assistant route.
- * Hidden when there is no generatedUI state.
+ * Renders the generated-UI tool preview on the /assistant route.
+ * Hidden when there is no `generatedUI` state.
  */
-export function AssistantGeneratedUI() {
+export function GeneratedUISurface() {
   const { t: translate } = useTranslation();
-  const { generatedUI } = useAssistantGeneratedUI();
+  const { generatedUI } = useGeneratedUI();
   if (!generatedUI) return null;
 
   const recipeRows: RecipeToolRow[] = generatedUI.recipes ?? [];
@@ -99,7 +99,7 @@ export function AssistantGeneratedUI() {
             </p>
           ) : null}
         </div>
-        <AssistantLayoutRegions
+        <LayoutRegions
           layout={generatedUI.layout}
           squareColor={generatedUI.backgroundColor}
           recipeBlock={recipeBlock}

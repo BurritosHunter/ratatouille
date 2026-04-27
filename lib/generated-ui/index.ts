@@ -1,17 +1,17 @@
 import type { RecipeToolRow } from "@/lib/ai/recipe-tool-rows";
 
-export type AssistantLayoutOption = "singleColumn" | "twoColumn" | "fullWidth";
-export type AssistantBackgroundColorToken = "red" | "blue" | "green";
+export type LayoutOption = "singleColumn" | "twoColumn" | "fullWidth";
+export type BackgroundColorToken = "red" | "blue" | "green";
 
-export type AssistantGeneratedUIPayload = {
+export type GeneratedUIPayload = {
   generatedAtIso: string;
   lastCallId: string;
   recipes?: RecipeToolRow[];
-  layout?: AssistantLayoutOption;
-  backgroundColor?: AssistantBackgroundColorToken;
+  layout?: LayoutOption;
+  backgroundColor?: BackgroundColorToken;
 };
 
-export type AssistantGeneratedUIDataFields = Partial<Pick<AssistantGeneratedUIPayload, "recipes" | "layout" | "backgroundColor">>;
+export type GeneratedUIDataFields = Partial<Pick<GeneratedUIPayload, "recipes" | "layout" | "backgroundColor">>;
 
 export const SUPPORTED_TOOL_TYPES = [
   "tool-listRecipesForUser",
@@ -19,11 +19,11 @@ export const SUPPORTED_TOOL_TYPES = [
   "tool-setAssistantBackground",
 ] as const;
 
-export function mergeAssistantGeneratedUIPayload(
-  previous: AssistantGeneratedUIPayload | null,
+export function mergeGeneratedUIPayload(
+  previous: GeneratedUIPayload | null,
   callId: string,
-  dataFields: AssistantGeneratedUIDataFields,
-): AssistantGeneratedUIPayload {
+  dataFields: GeneratedUIDataFields,
+): GeneratedUIPayload {
   return {
     ...(previous ?? {}),
     ...dataFields,
@@ -32,10 +32,10 @@ export function mergeAssistantGeneratedUIPayload(
   };
 }
 
-export function getGeneratedUIDataFieldsFromToolOutput(
+export function tryParseToolOutput(
   toolType: (typeof SUPPORTED_TOOL_TYPES)[number],
   toolOutput: unknown,
-): AssistantGeneratedUIDataFields | null {
+): GeneratedUIDataFields | null {
   switch (toolType) {
     case "tool-listRecipesForUser": {
       const output = toolOutput as { recipes?: RecipeToolRow[] };
@@ -43,12 +43,12 @@ export function getGeneratedUIDataFieldsFromToolOutput(
       return { recipes: output.recipes };
     }
     case "tool-setAssistantLayout": {
-      const output = toolOutput as { layout?: AssistantLayoutOption };
+      const output = toolOutput as { layout?: LayoutOption };
       if (!output.layout) { return null; }
       return { layout: output.layout };
     }
     case "tool-setAssistantBackground": {
-      const output = toolOutput as { backgroundColor?: AssistantBackgroundColorToken };
+      const output = toolOutput as { backgroundColor?: BackgroundColorToken };
       if (!output.backgroundColor) { return null; }
       return { backgroundColor: output.backgroundColor };
     }

@@ -4,34 +4,17 @@ import { useChat } from "@ai-sdk/react";
 import { IconMessageCircle, IconX } from "@tabler/icons-react";
 import { usePathname, useRouter } from "next/navigation";
 import type { ReactNode } from "react";
-import {
-  startTransition,
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import { startTransition, useCallback, useEffect, useRef, useState } from "react";
 import type { TFunction } from "i18next";
 import { useTranslation } from "react-i18next";
 import { MessageForm } from "@/components/organisms/message-form";
 import { Button } from "@/components/ui/button";
 import { AssistantChatComposerProvider } from "@/contexts/assistant-chat-composer-context";
-import { AssistantGeneratedUIContext } from "@/contexts/assistant-generated-ui-context";
+import { GeneratedUIContext } from "@/contexts/assistant-generated-ui-context";
 import type { RecipeToolRow } from "@/lib/ai/recipe-tool-rows";
-import {
-  getGeneratedUIDataFieldsFromToolOutput,
-  SUPPORTED_TOOL_TYPES,
-  mergeAssistantGeneratedUIPayload,
-  type AssistantGeneratedUIPayload,
-} from "@/lib/assistant/generated-ui";
+import { tryParseToolOutput, SUPPORTED_TOOL_TYPES, mergeGeneratedUIPayload, type GeneratedUIPayload } from "@/lib/generated-ui";
 import { cn } from "@/lib/helpers/utils";
-import {
-  DefaultChatTransport,
-  type UIDataTypes,
-  type UIMessage,
-  type UIMessagePart,
-  type UITools,
-} from "ai";
+import { DefaultChatTransport, type UIDataTypes, type UIMessage, type UIMessagePart, type UITools } from "ai";
 
 type ToolPart = {
   type: string;
@@ -40,6 +23,14 @@ type ToolPart = {
   errorText?: string;
   output?: unknown;
 };
+
+function appendTextPartToMessage(targetMessageId: string, text: string) {
+  return (previous: UIMessage[]) =>
+    previous.map((message) => {
+      if (message.id !== targetMessageId) return message;
+      return { ...message, parts: [...message.parts, { type: "text" as const, text }] };
+    });
+}
 
 function getToolPart(part: UIMessagePart<UIDataTypes, UITools>): ToolPart | null {
   if (typeof part !== "object" || part === null) return null;
@@ -52,19 +43,14 @@ function getToolPart(part: UIMessagePart<UIDataTypes, UITools>): ToolPart | null
   return part as ToolPart;
 }
 
-function appendTextPartToMessage(targetMessageId: string, text: string) {
-  return (previous: UIMessage[]) =>
-    previous.map((message) => {
-      if (message.id !== targetMessageId) return message;
-      return { ...message, parts: [...message.parts, { type: "text" as const, text }] };
-    });
+const SUPPORTED_TOOL_TYPES_SET = new Set<string>(SUPPORTED_TOOL_TYPES);
+function isSupportedToolType(type: string): type is (typeof SUPPORTED_TOOL_TYPES)[number] {
+  return SUPPORTED_TOOL_TYPES_SET.has(type);
 }
 
-const SURFACE_TOOL_PART_TYPE_SET = new Set<string>(SUPPORTED_TOOL_TYPES);
-function isToolTypeValid(type: string): type is (typeof SUPPORTED_TOOL_TYPES)[number] {
-  return SURFACE_TOOL_PART_TYPE_SET.has(type);
-}
 
+
+/* SARAH - VALIDATE */
 function surfaceToolKindLabel(partType: string, translate: TFunction<"translation">): string {
   switch (partType) {
     case "tool-listRecipesForUser":
@@ -76,6 +62,12 @@ function surfaceToolKindLabel(partType: string, translate: TFunction<"translatio
     default:
       return translate("assistant.toolKind.generic");
   }
+}
+function buildRecipeListSummary(translate: TFunction<"translation">, rows: RecipeToolRow[]): string {
+  if (rows.length === 0) return translate("assistant.recipeListSummaryEmpty");
+
+  const list = rows.map((row) => translate("assistant.recipeListSummaryItem", { title: row.title })).join("\n");
+  return translate("assistant.recipeListSummaryWithList", { count: rows.length, list });
 }
 
 function SurfaceToolPartMessage({ part }: { part: ToolPart }) {
@@ -109,33 +101,20 @@ function SurfaceToolPartMessage({ part }: { part: ToolPart }) {
       return null;
   }
 }
+/* SARAH - VALIDATE */
 
-function buildRecipeListSummary(translate: TFunction<"translation">, rows: RecipeToolRow[]): string {
-  if (rows.length === 0) return translate("assistant.recipeListSummaryEmpty");
-
-  const list = rows
-    .map((row) =>
-      translate("assistant.recipeListSummaryItem", { title: row.title })
-    )
-    .join("\n");
-  return translate("assistant.recipeListSummaryWithList", {
-    count: rows.length,
-    list,
-  });
-}
 
 export function AssistantChatShell({ children }: { children: ReactNode }) {
   const { t: translate } = useTranslation();
   const router = useRouter();
-  const [generatedUI, setGeneratedUI] = useState<AssistantGeneratedUIPayload | null>(null);
-  const clearSurface = useCallback(() => { setGeneratedUI(null); }, []);
+  
+  /* Chat & Generated UI */
   const [panelOpen, setPanelOpen] = useState(false);
+  const [generatedUI, setGeneratedUI] = useState<GeneratedUIPayload | null>(null);
+  const clearGeneratedUI = useCallback(() => { setGeneratedUI(null); }, []);
   const { messages, sendMessage, setMessages, status, stop, error, clearError } =
     useChat({
-      transport: new DefaultChatTransport({
-        api: "/api/chat",
-        credentials: "include",
-      }),
+      transport: new DefaultChatTransport({ api: "/api/chat", credentials: "include" }),
       onError: (chatError) => {
         if (process.env.NODE_ENV === "development") console.error("[assistant]", chatError);
       },
@@ -148,6 +127,8 @@ export function AssistantChatShell({ children }: { children: ReactNode }) {
     },
     [sendMessage]
   );
+
+  /* Pathname */
   const pathname = usePathname();
   const previousPathnameRef = useRef<string | undefined>(undefined);
   useEffect(() => {
@@ -158,9 +139,11 @@ export function AssistantChatShell({ children }: { children: ReactNode }) {
     previousPathnameRef.current = pathname;
   }, [pathname]);
 
+  /* Handle tool outputs */
   const processedToolIds = useRef<Set<string>>(new Set());
   useEffect(() => {
     let routeChangedToAssistantPage = false;
+
     const navigateToAssistantPageIfNeeded = () => {
       if (routeChangedToAssistantPage || pathname === "/assistant") return;
 
@@ -171,64 +154,47 @@ export function AssistantChatShell({ children }: { children: ReactNode }) {
         });
       });
     };
-    const processSurfaceToolOutput = (
-      messageId: string,
-      toolType: (typeof SUPPORTED_TOOL_TYPES)[number],
-      toolOutput: unknown,
-      currentKey: string
-    ) => {
-      if (processedToolIds.current.has(currentKey)) return;
-
-      processedToolIds.current.add(currentKey);
-      navigateToAssistantPageIfNeeded();
-      const dataFields = getGeneratedUIDataFieldsFromToolOutput(
-        toolType,
-        toolOutput
-      );
-      if (dataFields === null) return;
-
-      setGeneratedUI((previous) =>
-        mergeAssistantGeneratedUIPayload(previous, currentKey, dataFields)
-      );
-      if (toolType !== "tool-listRecipesForUser" || !dataFields.recipes) return;
-
-      setMessages(
-        appendTextPartToMessage(
-          messageId,
-          buildRecipeListSummary(translate, dataFields.recipes)
-        )
-      );
-    };
 
     for (const message of messages) {
       if (message.role !== "assistant") continue;
 
       for (const part of message.parts) {
+        /* Validate Tool */
         const tool = getToolPart(part);
-        if (!tool || !isToolTypeValid(tool.type) || tool.state !== "output-available") continue;
+        if (!tool || !isSupportedToolType(tool.type) || tool.state !== "output-available") continue;
+
+        /* Check If Already Processed */
         const currentKey = `${message.id}:${tool.toolCallId}`;
-        processSurfaceToolOutput(
-          message.id,
-          tool.type,
-          tool.output,
-          currentKey
+        if (processedToolIds.current.has(currentKey)) continue;
+        processedToolIds.current.add(currentKey);
+
+        /* Navigate */
+        navigateToAssistantPageIfNeeded();
+
+
+        /* Merge Data Fields */
+        const dataFields = tryParseToolOutput(tool.type, tool.output);
+        if (dataFields === null) continue;
+        setGeneratedUI((previous) => mergeGeneratedUIPayload(previous, currentKey, dataFields));
+
+        /* Append Recipe List Summary */
+        if (tool.type !== "tool-listRecipesForUser" || !dataFields.recipes) continue;
+        setMessages(
+          appendTextPartToMessage(
+            message.id,
+            buildRecipeListSummary(translate, dataFields.recipes)
+          )
         );
       }
     }
   }, [messages, pathname, router, setGeneratedUI, setMessages, translate]);
 
+
   return (
-    <AssistantGeneratedUIContext.Provider value={{ generatedUI, clearSurface }}>
-      <AssistantChatComposerProvider
-        value={{ sendUserMessageToAssistant, inputDisabled }}
-      >
+    <GeneratedUIContext.Provider value={{ generatedUI, clearGeneratedUI }}>
+      <AssistantChatComposerProvider value={{ sendUserMessageToAssistant, inputDisabled }}>
         <div className="flex h-[100svh] max-h-[100svh] min-h-0 w-full overflow-hidden">
-          <div
-            className={cn(
-              "flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden",
-              panelOpen && "md:pr-[min(28rem,100%)]"
-            )}
-          >
+          <div className={cn("flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden", panelOpen && "md:pr-[min(28rem,100%)]")}>
             {children}
           </div>
           {!panelOpen ? (
@@ -253,9 +219,7 @@ export function AssistantChatShell({ children }: { children: ReactNode }) {
                 onClick={() => setPanelOpen(false)}
               />
               <aside
-                className={cn(
-                  "fixed inset-y-0 right-0 z-50 flex h-[100svh] max-h-[100svh] w-full max-w-md shrink-0 flex-col border-l border-border bg-popover shadow-xl"
-                )}
+                className={cn("fixed inset-y-0 right-0 z-50 flex h-[100svh] max-h-[100svh] w-full max-w-md shrink-0 flex-col border-l border-border bg-popover shadow-xl")}
                 role="dialog"
                 aria-label={translate("assistant.chatDialogAria")}
                 aria-modal="true"
@@ -276,16 +240,9 @@ export function AssistantChatShell({ children }: { children: ReactNode }) {
                 </div>
                 <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-4">
                   {error ? (
-                    <div
-                      role="alert"
-                      className="rounded-md border border-destructive/50 bg-destructive/10 px-3 py-2 text-sm text-destructive"
-                    >
-                      <p className="font-medium">
-                        {translate("assistant.errorTitle")}
-                      </p>
-                      <p className="mt-1 whitespace-pre-wrap text-destructive/90">
-                        {error.message}
-                      </p>
+                    <div role="alert" className="rounded-md border border-destructive/50 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                      <p className="font-medium">{translate("assistant.errorTitle")}</p>
+                      <p className="mt-1 whitespace-pre-wrap text-destructive/90">{error.message}</p>
                       <Button
                         type="button"
                         variant="outline"
@@ -302,11 +259,7 @@ export function AssistantChatShell({ children }: { children: ReactNode }) {
                   ) : (
                     messages.map((message) => (
                       <div key={message.id} className="space-y-2">
-                        <span className="text-xs font-medium text-muted-foreground">
-                          {message.role === "user"
-                            ? translate("assistant.roleYou")
-                            : translate("assistant.roleAssistant")}
-                        </span>
+                        <span className="text-xs font-medium text-muted-foreground">{message.role === "user" ? translate("assistant.roleYou") : translate("assistant.roleAssistant")}</span>
                         {message.parts.map((messagePart, partIndex) => {
                           if (messagePart.type === "text") {
                             return (
@@ -326,7 +279,7 @@ export function AssistantChatShell({ children }: { children: ReactNode }) {
                             );
                           }
                           const toolPart = getToolPart(messagePart);
-                          if (toolPart && isToolTypeValid(toolPart.type)) {
+                          if (toolPart && isSupportedToolType(toolPart.type)) {
                             return ( <SurfaceToolPartMessage key={toolPart.toolCallId} part={toolPart} /> );
                           }
                           return null;
@@ -360,6 +313,6 @@ export function AssistantChatShell({ children }: { children: ReactNode }) {
           ) : null}
         </div>
       </AssistantChatComposerProvider>
-    </AssistantGeneratedUIContext.Provider>
+    </GeneratedUIContext.Provider>
   );
 }
