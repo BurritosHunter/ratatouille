@@ -11,7 +11,8 @@
   "nav": {
     "explore": "Explorer",
     "recipes": "Recettes",
-    "ingredients": "Ingrédients"
+    "ingredients": "Ingrédients",
+    "pantry": "Garde-manger"
   },
   "home": {
     "signedInAs": "Connecté(e) en tant que {{displayName}}"
@@ -40,6 +41,48 @@
   },
   "ingredients": {
     "title": "Ingrédients"
+  },
+  "pantry": {
+    "title": "Garde-manger",
+    "add": "Ajouter",
+    "filterAria": "Filtrer par emplacement",
+    "filterAll": "Tous les emplacements",
+    "storage": {
+      "fridge": "Réfrigérateur",
+      "pantry": "Placard",
+      "storage": "Réserve",
+      "freezer": "Congélateur"
+    },
+    "kind": {
+      "ingredient": "Ingrédient",
+      "meal": "Plat",
+      "custom": "Personnalisé"
+    },
+    "empty": "Votre inventaire est vide. Utilisez Ajouter pour enregistrer un ingrédient ou un plat.",
+    "quantityLabel": "Qté",
+    "expiresLabel": "Expire",
+    "removeAria": "Retirer {{name}} de l'inventaire",
+    "addDialogTitle": "Ajouter à l'inventaire",
+    "searchLabel": "Rechercher parmi vos ingrédients et plats",
+    "searchPlaceholder": "Saisissez pour rechercher…",
+    "searching": "Recherche en cours…",
+    "noResults": "Aucun ingrédient ni plat ne correspond. Vous pouvez ajouter un nouvel ingrédient au catalogue, ou enregistrer ce texte comme article personnalisé (sans lien avec le catalogue).",
+    "createIngredient": "Créer l'ingrédient et continuer",
+    "saveCustomOnly": "Enregistrer uniquement comme article personnalisé",
+    "customLabel": "Nom",
+    "customHint": "Les articles personnalisés figurent seulement dans votre garde-manger ; ils ne sont pas liés aux ingrédients ni aux recettes.",
+    "newIngredientName": "Nom de l'ingrédient",
+    "storageLabel": "Emplacement",
+    "quantityField": "Quantité",
+    "expiresField": "Date de péremption (facultatif)",
+    "cancel": "Annuler",
+    "back": "Retour",
+    "saving": "Enregistrement…",
+    "confirmAdd": "Ajouter à l'inventaire",
+    "errors": {
+      "validation": "Vérifiez les champs et réessayez.",
+      "generic": "Une erreur s'est produite. Réessayez."
+    }
   },
   "assistant": {
     "title": "Assistant",
