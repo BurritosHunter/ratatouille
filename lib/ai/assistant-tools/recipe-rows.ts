@@ -1,11 +1,11 @@
-import type { RecipeSummary } from "@/lib/models/recipe"
-import { imageSrcFromStoredOrExternal } from "@/lib/helpers/image/stored-or-external-src"
+import type { RecipeSummary } from "@/lib/models/recipe";
+import { imageSrcFromStoredOrExternal } from "@/lib/helpers/image/stored-or-external-src";
 
 export type RecipeToolRow = {
-  recipeId: number
-  title: string
-  thumbSrc: string | null
-}
+  recipeId: number;
+  title: string;
+  thumbSrc: string | null;
+};
 
 export function recipesToToolRows(summaries: RecipeSummary[]): RecipeToolRow[] {
   return summaries.map((recipe) => ({
@@ -16,5 +16,5 @@ export function recipesToToolRows(summaries: RecipeSummary[]): RecipeToolRow[] {
       storedSrc: `/api/recipes/${recipe.id}/image`,
       externalUrl: recipe.mainImageUrl,
     }),
-  }))
+  }));
 }

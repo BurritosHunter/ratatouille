@@ -5,6 +5,6 @@ export const assistantBackgroundSchema = z.object({ color: z.enum(["red", "blue"
 
 export type AssistantBackgroundToolInput = z.infer<typeof assistantBackgroundSchema>;
 
-export function backgroundToolResult( input: AssistantBackgroundToolInput ): { backgroundColor: BackgroundColorToken } {
+export function backgroundToolResult(input: AssistantBackgroundToolInput): { backgroundColor: BackgroundColorToken } {
   return { backgroundColor: input.color };
 }

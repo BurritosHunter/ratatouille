@@ -1,22 +1,17 @@
+import { listRecipes } from "@/lib/data/recipes";
+import { z } from "zod";
 import {
   assistantBackgroundSchema,
   backgroundToolResult,
   type AssistantBackgroundToolInput,
-} from "@/lib/ai/assistant-background-tool";
+} from "@/lib/ai/assistant-tools/background";
 import {
   assistantLayoutSchema,
   layoutToolResult,
   type AssistantLayoutToolInput,
-} from "@/lib/ai/assistant-layout-tool";
-import { recipesToToolRows } from "@/lib/ai/recipe-tool-rows";
-import { listRecipes } from "@/lib/data/recipes";
-import { z } from "zod";
-
-type AssistantChatTool = {
-  description: string;
-  inputSchema: z.ZodType<unknown>;
-  execute: (input?: unknown) => Promise<unknown>;
-};
+} from "@/lib/ai/assistant-tools/layout";
+import { recipesToToolRows } from "@/lib/ai/assistant-tools/recipe-rows";
+import type { AssistantChatTool } from "@/lib/ai/assistant-tools/types";
 
 export function createAssistantTools({ userId }: { userId: number }): Record<string, AssistantChatTool> {
   const emptyInputSchema = z.object({});
@@ -36,7 +31,7 @@ export function createAssistantTools({ userId }: { userId: number }): Record<str
       execute: async (input: unknown) => layoutToolResult(input as AssistantLayoutToolInput),
     },
     setAssistantBackground: {
-      description: "Show a solid colored square inside the first column of the modular layout preview in the main shell (not the whole page). Use the color input: red, blue, or green—choose the one that matches the user's request, or the best option when they ask for a swatch or colored square without naming a color. The square is not the full page background.",
+      description: "Show a solid colored square inside the first column of the modular layout preview in the main shell (not the whole page). Use the color input: red, blue, or green, choose the one that matches the user's request, or the best option when they ask for a swatch or colored square without naming a color. The square is not the full page background.",
       inputSchema: assistantBackgroundSchema,
       execute: async (input: unknown) => backgroundToolResult(input as AssistantBackgroundToolInput),
     },

@@ -1,4 +1,4 @@
-import type { RecipeToolRow } from "@/lib/ai/recipe-tool-rows";
+import type { RecipeToolRow } from "@/lib/ai/assistant-tools/recipe-rows";
 
 export type LayoutOption = "singleColumn" | "twoColumn" | "fullWidth";
 export type BackgroundColorToken = "red" | "blue" | "green";

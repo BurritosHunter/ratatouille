@@ -3,7 +3,7 @@
 import type { ReactNode } from "react";
 import { RecipeListRowLink } from "@/components/molecules/recipe-list-row-link";
 import { useGeneratedUI } from "@/contexts/assistant-generated-ui-context";
-import type { RecipeToolRow } from "@/lib/ai/recipe-tool-rows";
+import type { RecipeToolRow } from "@/lib/ai/assistant-tools/recipe-rows";
 import type { BackgroundColorToken, LayoutOption } from "@/lib/generated-ui";
 import { cn } from "@/lib/helpers/utils";
 import { useTranslation } from "react-i18next";
