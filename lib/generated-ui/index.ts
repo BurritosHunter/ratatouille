@@ -32,7 +32,7 @@ export function mergeGeneratedUIPayload(
   };
 }
 
-export function tryParseToolOutput(
+export function tryParseToolData(
   toolType: (typeof SUPPORTED_TOOL_TYPES)[number],
   toolOutput: unknown,
 ): GeneratedUIDataFields | null {
