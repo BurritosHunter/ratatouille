@@ -19,11 +19,15 @@ function parseStorageLocation(value: unknown): PantryStorageLocation | null {
   return null
 }
 
-function parseQuantity(value: unknown): number | null {
+/** Empty or omitted quantity defaults to 1 (DB default). Non-empty invalid input yields null. */
+function parseQuantityInput(value: unknown): number | null {
+  if (value === null || value === undefined) return 1
+  if (typeof value === "string" && value.trim() === "") return 1
   if (typeof value === "number" && Number.isFinite(value) && value > 0) return value
   if (typeof value === "string") {
     const parsed = Number.parseFloat(value.trim())
     if (Number.isFinite(parsed) && parsed > 0) return parsed
+    return null
   }
   return null
 }
@@ -58,9 +62,9 @@ export async function addPantryInventoryLine(payload: unknown): Promise<
 
     const fields = payload as Record<string, unknown>
     const storageLocation = parseStorageLocation(fields.storageLocation)
-    const quantity = parseQuantity(fields.quantity)
+    const quantity = parseQuantityInput(fields.quantity)
     const expiresOn = parseExpiresOn(fields.expiresOn)
-    if (!storageLocation || quantity === null) return { ok: false, reason: "validation" }
+    if (!storageLocation || quantity === null || expiresOn === null) return { ok: false, reason: "validation" }
 
     const mode = fields.mode
     if (mode === "catalog") {

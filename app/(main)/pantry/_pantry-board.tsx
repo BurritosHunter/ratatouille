@@ -60,7 +60,7 @@ export function PantryBoard({ initialRows }: Props) {
   const [customLabel, setCustomLabel] = useState("")
   const [newIngredientName, setNewIngredientName] = useState("")
   const [detailStorage, setDetailStorage] = useState<PantryStorageLocation>("fridge")
-  const [detailQuantity, setDetailQuantity] = useState("1")
+  const [detailQuantity, setDetailQuantity] = useState("")
   const [detailExpires, setDetailExpires] = useState("")
   const [submitting, setSubmitting] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
@@ -116,7 +116,7 @@ export function PantryBoard({ initialRows }: Props) {
     setCustomLabel("")
     setNewIngredientName("")
     setDetailStorage("fridge")
-    setDetailQuantity("1")
+    setDetailQuantity("")
     setDetailExpires("")
     setFormError(null)
   }
@@ -150,6 +150,10 @@ export function PantryBoard({ initialRows }: Props) {
 
   async function submitDetails() {
     setFormError(null)
+    if (!detailExpires.trim()) {
+      setFormError(t("pantry.errors.validation"))
+      return
+    }
     setSubmitting(true)
     try {
       let payload: Record<string, unknown>
@@ -160,7 +164,7 @@ export function PantryBoard({ initialRows }: Props) {
           catalogId: selectedHit.id,
           storageLocation: detailStorage,
           quantity: detailQuantity,
-          expiresOn: detailExpires || null,
+          expiresOn: detailExpires,
         }
       } else if (addMode === "custom") {
         payload = {
@@ -168,7 +172,7 @@ export function PantryBoard({ initialRows }: Props) {
           customLabel,
           storageLocation: detailStorage,
           quantity: detailQuantity,
-          expiresOn: detailExpires || null,
+          expiresOn: detailExpires,
         }
       } else if (addMode === "newIngredient") {
         payload = {
@@ -176,7 +180,7 @@ export function PantryBoard({ initialRows }: Props) {
           ingredientName: newIngredientName,
           storageLocation: detailStorage,
           quantity: detailQuantity,
-          expiresOn: detailExpires || null,
+          expiresOn: detailExpires,
         }
       } else {
         setFormError(t("pantry.errors.generic"))
@@ -204,6 +208,12 @@ export function PantryBoard({ initialRows }: Props) {
 
   const trimmedSearch = searchQuery.trim()
   const showNoResultsActions = addPhase === "search" && trimmedSearch.length > 0 && !searching && searchHits.length === 0
+
+  const catalogIngredientHits = useMemo(
+    () => searchHits.filter((hit) => hit.kind === "ingredient"),
+    [searchHits],
+  )
+  const catalogMealHits = useMemo(() => searchHits.filter((hit) => hit.kind === "meal"), [searchHits])
 
   return (
     <div className="flex flex-col gap-6">
@@ -285,156 +295,201 @@ export function PantryBoard({ initialRows }: Props) {
           }}
         >
           <div
-            className="w-full max-w-md max-h-[min(90vh,640px)] overflow-y-auto rounded-lg border border-border bg-background p-4 shadow-lg"
+            className="flex w-full max-w-2xl min-h-[500px] max-h-[min(90vh,640px)] flex-col overflow-hidden rounded-lg border border-border bg-background p-4 shadow-lg"
             role="dialog"
             aria-modal="true"
             aria-labelledby="pantry-add-title"
           >
-            <h2 id="pantry-add-title" className="font-heading text-base font-semibold mb-4">
+            <h2 id="pantry-add-title" className="mb-4 shrink-0 font-heading text-base font-semibold">
               {t("pantry.addDialogTitle")}
             </h2>
 
             {addPhase === "search" ? (
-              <FieldGroup className="gap-4">
-                <Field className="gap-1.5">
-                  <FieldLabel htmlFor="pantry-search">{t("pantry.searchLabel")}</FieldLabel>
-                  <Input
-                    id="pantry-search"
-                    value={searchQuery}
-                    onChange={(event) => setSearchQuery(event.target.value)}
-                    placeholder={t("pantry.searchPlaceholder")}
-                    autoComplete="off"
-                  />
-                </Field>
-                {searching ? (
-                  <p className="text-sm text-muted-foreground">{t("pantry.searching")}</p>
-                ) : null}
-                {!searching && searchHits.length > 0 ? (
-                  <ul className="flex flex-col gap-1 rounded-md border border-border p-1 max-h-48 overflow-y-auto">
-                    {searchHits.map((hit) => (
-                      <li key={`${hit.kind}-${hit.id}`}>
-                        <button
-                          type="button"
-                          className="w-full rounded px-2 py-2 text-left text-sm hover:bg-muted"
-                          onClick={() => selectCatalogHit(hit)}
-                        >
-                          <span className="font-medium">{hit.name}</span>
-                          <span className="text-muted-foreground ml-2">
-                            ({t(`pantry.kind.${hit.kind === "ingredient" ? "ingredient" : "meal"}`)})
-                          </span>
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                ) : null}
-                {showNoResultsActions ? (
-                  <div className="flex flex-col gap-2">
-                    <p className="text-sm text-muted-foreground">{t("pantry.noResults")}</p>
-                    <Button type="button" variant="outline" onClick={goToNewIngredientFromSearch}>
-                      {t("pantry.createIngredient")}
-                    </Button>
-                    <Button type="button" variant="outline" onClick={goToCustomFromSearch}>
-                      {t("pantry.saveCustomOnly")}
-                    </Button>
-                  </div>
-                ) : null}
-                <div className="flex justify-end gap-2 pt-2">
+              <div className="flex min-h-0 flex-1 flex-col">
+                <FieldGroup className="min-h-0 flex-1 gap-4 overflow-y-auto">
+                  <Field className="gap-1.5">
+                    <FieldLabel htmlFor="pantry-search">{t("pantry.searchLabel")}</FieldLabel>
+                    <Input
+                      id="pantry-search"
+                      value={searchQuery}
+                      onChange={(event) => setSearchQuery(event.target.value)}
+                      placeholder={t("pantry.searchPlaceholder")}
+                      autoComplete="off"
+                      autoFocus
+                    />
+                  </Field>
+                  {searching ? (
+                    <p className="text-sm text-muted-foreground">{t("pantry.searching")}</p>
+                  ) : null}
+                  {!searching && searchHits.length > 0 ? (
+                    <div className="rounded-md border border-border max-h-72 overflow-y-auto">
+                      <div className="grid grid-cols-2 divide-x divide-border">
+                        <div className="flex min-h-0 min-w-0 flex-col gap-1 p-2">
+                          <p className="px-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                            {t("pantry.kind.ingredient")}
+                          </p>
+                          <ul className="flex flex-col gap-0.5">
+                            {catalogIngredientHits.map((hit) => (
+                              <li key={`${hit.kind}-${hit.id}`}>
+                                <button
+                                  type="button"
+                                  className="w-full rounded px-2 py-2 text-left text-sm hover:bg-muted"
+                                  onClick={() => selectCatalogHit(hit)}
+                                >
+                                  <span className="font-medium">{hit.name}</span>
+                                </button>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                        <div className="flex min-h-0 min-w-0 flex-col gap-1 p-2">
+                          <p className="px-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                            {t("pantry.kind.meal")}
+                          </p>
+                          <ul className="flex flex-col gap-0.5">
+                            {catalogMealHits.map((hit) => (
+                              <li key={`${hit.kind}-${hit.id}`}>
+                                <button
+                                  type="button"
+                                  className="w-full rounded px-2 py-2 text-left text-sm hover:bg-muted"
+                                  onClick={() => selectCatalogHit(hit)}
+                                >
+                                  <span className="font-medium">{hit.name}</span>
+                                </button>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+                  ) : null}
+                  {showNoResultsActions ? (
+                    <div className="flex flex-col gap-2">
+                      <p className="text-sm text-muted-foreground">{t("pantry.noResults")}</p>
+                      <Button type="button" variant="outline" onClick={goToNewIngredientFromSearch}>
+                        {t("pantry.createIngredient")}
+                      </Button>
+                      <Button type="button" variant="outline" onClick={goToCustomFromSearch}>
+                        {t("pantry.saveCustomOnly")}
+                      </Button>
+                    </div>
+                  ) : null}
+                </FieldGroup>
+                <div className="flex shrink-0 justify-end gap-2 border-t border-border pt-4">
                   <Button type="button" variant="ghost" onClick={closeAddDialog}>
                     {t("pantry.cancel")}
                   </Button>
                 </div>
-              </FieldGroup>
+              </div>
             ) : (
-              <FieldGroup className="gap-4">
-                {addMode === "catalog" && selectedHit ? (
-                  <p className="text-sm">
-                    <span className="font-medium">{selectedHit.name}</span>
-                    <span className="text-muted-foreground ml-2">
-                      ({t(`pantry.kind.${selectedHit.kind === "ingredient" ? "ingredient" : "meal"}`)})
-                    </span>
-                  </p>
-                ) : null}
-                {addMode === "custom" ? (
+              <div className="flex min-h-0 flex-1 flex-col">
+                <FieldGroup className="min-h-0 flex-1 gap-4 overflow-y-auto">
+                  {addMode === "catalog" && selectedHit ? (
+                    <button
+                      type="button"
+                      className="grid w-full cursor-pointer grid-cols-[1fr_auto] gap-x-4 gap-y-1 rounded-md border border-transparent px-2 py-2 text-left text-sm transition-colors hover:border-border hover:bg-muted focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none"
+                      onClick={() => {
+                        setAddPhase("search")
+                        setFormError(null)
+                      }}
+                      aria-label={t("pantry.changeCatalogSelectionAria")}
+                    >
+                      <span className="min-w-0 font-medium">{selectedHit.name}</span>
+                      <span className="text-right text-muted-foreground">
+                        {t(`pantry.kind.${selectedHit.kind === "ingredient" ? "ingredient" : "meal"}`)}
+                      </span>
+                    </button>
+                  ) : null}
+                  {addMode === "custom" ? (
+                    <Field className="gap-1.5">
+                      <FieldLabel htmlFor="pantry-custom-label">{t("pantry.customLabel")}</FieldLabel>
+                      <Input
+                        id="pantry-custom-label"
+                        value={customLabel}
+                        onChange={(event) => setCustomLabel(event.target.value)}
+                        autoComplete="off"
+                      />
+                      <p className="text-xs text-muted-foreground">{t("pantry.customHint")}</p>
+                    </Field>
+                  ) : null}
+                  {addMode === "newIngredient" ? (
+                    <Field className="gap-1.5">
+                      <FieldLabel htmlFor="pantry-new-ingredient">{t("pantry.newIngredientName")}</FieldLabel>
+                      <Input
+                        id="pantry-new-ingredient"
+                        value={newIngredientName}
+                        onChange={(event) => setNewIngredientName(event.target.value)}
+                        autoComplete="off"
+                      />
+                    </Field>
+                  ) : null}
+
                   <Field className="gap-1.5">
-                    <FieldLabel htmlFor="pantry-custom-label">{t("pantry.customLabel")}</FieldLabel>
-                    <Input
-                      id="pantry-custom-label"
-                      value={customLabel}
-                      onChange={(event) => setCustomLabel(event.target.value)}
-                      autoComplete="off"
-                    />
-                    <p className="text-xs text-muted-foreground">{t("pantry.customHint")}</p>
+                    <FieldLabel>{t("pantry.storageLabel")}</FieldLabel>
+                    <div className="flex flex-wrap gap-2">
+                      {STORAGE_LOCATIONS.map((location) => (
+                        <Button
+                          key={location}
+                          type="button"
+                          size="sm"
+                          variant={detailStorage === location ? "secondary" : "outline"}
+                          onClick={() => setDetailStorage(location)}
+                        >
+                          {t(`pantry.storage.${location}`)}
+                        </Button>
+                      ))}
+                    </div>
                   </Field>
-                ) : null}
-                {addMode === "newIngredient" ? (
+
                   <Field className="gap-1.5">
-                    <FieldLabel htmlFor="pantry-new-ingredient">{t("pantry.newIngredientName")}</FieldLabel>
+                    <FieldLabel htmlFor="pantry-qty">{t("pantry.quantityField")}</FieldLabel>
                     <Input
-                      id="pantry-new-ingredient"
-                      value={newIngredientName}
-                      onChange={(event) => setNewIngredientName(event.target.value)}
-                      autoComplete="off"
+                      id="pantry-qty"
+                      type="number"
+                      inputMode="decimal"
+                      min={0.0001}
+                      step="any"
+                      value={detailQuantity}
+                      onChange={(event) => setDetailQuantity(event.target.value)}
                     />
                   </Field>
-                ) : null}
 
-                <Field className="gap-1.5">
-                  <FieldLabel>{t("pantry.storageLabel")}</FieldLabel>
-                  <div className="flex flex-wrap gap-2">
-                    {STORAGE_LOCATIONS.map((location) => (
-                      <Button
-                        key={location}
-                        type="button"
-                        size="sm"
-                        variant={detailStorage === location ? "secondary" : "outline"}
-                        onClick={() => setDetailStorage(location)}
-                      >
-                        {t(`pantry.storage.${location}`)}
-                      </Button>
-                    ))}
-                  </div>
-                </Field>
+                  <Field className="gap-1.5">
+                    <FieldLabel htmlFor="pantry-exp">{t("pantry.expiresField")}</FieldLabel>
+                    <Input
+                      id="pantry-exp"
+                      type="date"
+                      required
+                      value={detailExpires}
+                      onChange={(event) => setDetailExpires(event.target.value)}
+                    />
+                  </Field>
 
-                <Field className="gap-1.5">
-                  <FieldLabel htmlFor="pantry-qty">{t("pantry.quantityField")}</FieldLabel>
-                  <Input
-                    id="pantry-qty"
-                    type="number"
-                    inputMode="decimal"
-                    min={0.0001}
-                    step="any"
-                    value={detailQuantity}
-                    onChange={(event) => setDetailQuantity(event.target.value)}
-                  />
-                </Field>
-
-                <Field className="gap-1.5">
-                  <FieldLabel htmlFor="pantry-exp">{t("pantry.expiresField")}</FieldLabel>
-                  <Input
-                    id="pantry-exp"
-                    type="date"
-                    value={detailExpires}
-                    onChange={(event) => setDetailExpires(event.target.value)}
-                  />
-                </Field>
-
-                {formError ? (
-                  <p className="text-sm text-destructive" role="alert">
-                    {formError}
-                  </p>
-                ) : null}
-
-                <div className="flex flex-wrap justify-between gap-2 pt-2">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    onClick={() => {
-                      setAddPhase("search")
-                      setFormError(null)
-                    }}
-                  >
-                    {t("pantry.back")}
-                  </Button>
+                  {formError ? (
+                    <p className="text-sm text-destructive" role="alert">
+                      {formError}
+                    </p>
+                  ) : null}
+                </FieldGroup>
+                <div
+                  className={
+                    addMode === "catalog"
+                      ? "flex shrink-0 flex-wrap justify-end gap-2 border-t border-border pt-4"
+                      : "flex shrink-0 flex-wrap items-center justify-between gap-2 border-t border-border pt-4"
+                  }
+                >
+                  {addMode !== "catalog" ? (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      onClick={() => {
+                        setAddPhase("search")
+                        setFormError(null)
+                      }}
+                    >
+                      {t("pantry.backToSearch")}
+                    </Button>
+                  ) : null}
                   <div className="flex gap-2">
                     <Button type="button" variant="outline" onClick={closeAddDialog}>
                       {t("pantry.cancel")}
@@ -444,7 +499,7 @@ export function PantryBoard({ initialRows }: Props) {
                     </Button>
                   </div>
                 </div>
-              </FieldGroup>
+              </div>
             )}
           </div>
         </div>
