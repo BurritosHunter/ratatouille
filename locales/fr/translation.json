@@ -74,7 +74,7 @@
     "newIngredientName": "Nom de l'ingrédient",
     "storageLabel": "Emplacement",
     "quantityField": "Quantité (facultatif ; 1 par défaut)",
-    "expiresField": "Date de péremption (obligatoire)",
+    "expiresField": "Date de péremption (facultatif)",
     "cancel": "Annuler",
     "backToSearch": "Retour à la recherche",
     "changeCatalogSelectionAria": "Choisir un autre ingrédient ou plat",

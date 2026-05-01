@@ -1,53 +1,23 @@
 ---
-description: Generic ui primitives, molecules, and organisms; domain UI colocated with page.tsx using _*.tsx filenames
+description: Shared UI stays generic; domain UI colocated as app/**/_*.tsx next to page.tsx
 globs: components/ui/**/*,components/molecules/**/*,components/organisms/**/*,app/**/page.tsx,app/**/_*.tsx
-alwaysApply: false
+alwaysApply: true
 ---
 
-# Generic UI components (`ui`, molecules, organisms)
+# Generic UI (`components/ui`, `molecules`, `organisms`)
 
-## Rule
+Components in those folders must stay **reusable**: names, file names, and public props describe **layout and behavior**, not one feature (no “recipe / ingredient / pantry” specificity in shared layers).
 
-Components under `components/ui/`, `components/molecules/`, and `components/organisms/` must stay **reusable and domain-agnostic**: names, file names, and public props should describe **UI structure and behavior**, not a single app feature or entity (recipes, ingredients, users, etc.).
+Put **feature-specific** UI next to **`page.tsx`**: **`app/.../_name.tsx`** (underscore = colocated partial, not a route). Never underscore **`page.tsx`** / **`layout.tsx`**.
 
-Domain-specific wiring (copy, field names for one server action, recipe IDs, ingredient catalogs) belongs in **route colocation**, **feature modules**, or thin page wrappers—not in shared `components/ui/`, molecules, or organisms.
+**Avoid** domain-coupled names/props (**`RecipeCard`**, **`IngredientRow`**, **`props: Recipe`** from **`lib/data`** when you could express the same UI with generic props).
 
-## If it cannot be made generic
-
-Put the component **in the same route folder as `page.tsx`** (the segment that owns the screen), not under `components/ui/`, `components/molecules/`, or `components/organisms/`. Use a **leading underscore** on the file name so it is clearly a colocated partial, not a route file:
-
-- `app/(main)/recipes/[id]/edit/_image-selector.tsx`
-- `app/(auth)/login/_form.tsx`
-
-Do not use an underscore prefix for `page.tsx`, `layout.tsx`, or other Next.js special files—only for colocated UI modules.
-
-## Avoid
-
-- **Names** that encode a product entity or screen: `RecipeMainImageFields`, `MealCard`, `IngredientRow`.
-- **Props** typed to domain models from `lib/data/*` or feature-only types when the layout could be expressed generically.
-
-## Prefer
-
-- **Structural / behavioral names**: `ImageSelector`, `ImagePreviewWithSources`, `EditableLineList`, `AuthEmailMagicLinkForm`.
-- **Generic props**: `previewSrc`, `onSubmit`, `lines`, `labels`; map domain data to these at the call site.
-
-## Examples
+**Prefer** structural names (**`ImageSelector`**, **`EditableLineList`**) and map domain data at the call site (**`previewSrc`**, **`onSubmit`**, **`lines`**).
 
 ```tsx
-// ❌ Too specific for components/ui/, molecules/, or organisms/
-export function RecipeMainImageFields({ recipe }: { recipe: Recipe }) { }
+export function RecipeMainImageFields({ recipe }: { recipe: Recipe }) {}
 
-// ✅ Generic building block; caller passes values and handlers
-export function ImageSelector({
-  previewSrc,
-  defaultImageUrl,
-}: {
-  previewSrc: string | null
-  defaultImageUrl: string
-}) { }
+export function ImageSelector({ previewSrc, defaultImageUrl }: { previewSrc: string | null; defaultImageUrl: string }) {}
 ```
 
-## Scope
-
-- **Shared UI:** When **adding or editing** `components/ui/`, `components/molecules/`, or `components/organisms/`, keep components generic.
-- **App routes:** When **adding or editing** `app/**/page.tsx` or colocated `app/**/_*.tsx`, prefer local `_*.tsx` files for non-generic UI instead of pushing domain-specific pieces into shared layers.
+When **adding/editing** shared UI ⇒ keep generic. When **page**/**`_*.tsx`** ⇒ put non-generic pieces there instead of **`components/ui`**.

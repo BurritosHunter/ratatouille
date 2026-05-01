@@ -73,7 +73,7 @@
     "customHint": "Custom items are stored only in your pantry list; they do not link to ingredients or recipes.",
     "newIngredientName": "Ingredient name",
     "storageLabel": "Storage location",
-    "quantityField": "Quantity (optional)",
+    "quantityField": "Quantity",
     "expiresField": "Expiration date",
     "cancel": "Cancel",
     "backToSearch": "Back to search",

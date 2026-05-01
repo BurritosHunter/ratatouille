@@ -1,186 +1,54 @@
 ---
-description: One-line style for guards, short expressions, string literals, and simple text JSX
-globs: "**/*.{ts,tsx,js,jsx}"
-alwaysApply: false
+description: Prefer one logical line for simple guards, expressions, literals, and trivial JSX when readable
+alwaysApply: true
 priority: high
 ---
 
-# Single-line simple expressions, guards, strings, and text JSX
+# Single-line simple expressions (TS / JS / JSX)
 
-## General
+Keep **simple** code **compact** (short declarations, small ternaries, obvious callbacks, trivial **`t("…")`** / single **`{}` child** in JSX) when it stays readable. Use **semicolons** per **`semicolons`**. Do not fight **Prettier** / `printWidth`.
 
-When a statement or JSX tag is simple enough to read on one line, keep it on one line. Do not introduce manual line breaks just because a formatter permits wrapping.
+**Signatures:** One line when it fits. Prefer a small named props type over a huge inline type in the signature.
 
-Prefer single-line formatting for short `const` / `let` / `var` initializers, `useRef` / `useState` hooks (with short trailing comments), ternaries with short branches, function signatures, JSX with props that fit on one line, **JSX elements whose only child is one simple `{expression}`**, short conditional children (including `t(…)`), mapped callbacks, and short callback/handler types.
+## `if` / `else`
 
-## Function and method signatures
+- **No `else`:** one branch, **one** statement → braceless allowed (`if (ok) refresh();`). **Several** statements → **`{ }`**.
+- **With `else`:** **always** **`{ }`** on **every** limb, even for a single statement each (including **`else if`** segments). Avoid mixing braceless **`if`** with braced **`else`**.
 
-Keep **`function` / method / arrow** declarations on **one line** when the full signature (parameters, type parameters, and return type) is still easy to read.
+## Early-return ladders (`if (...) return …;` only)
 
-- **Named props type**: `export function RecipeListRowLink({ recipeId, title, thumbSrc }: RecipeListRowLinkProps) {` — one line, not one parameter per line.
-- **Inline object type** on destructured props: put the type object on the **same line** as the closing `}` of the destructure, with properties separated by **`;`**, e.g. `function Card({ title, children }: { title: string; children: ReactNode }) {` — do **not** break after `{` in the destructure and put each field of the inline type on its own line unless the line would be unreasonably long.
-- If the signature is too long for one line, break at a meaningful boundary (e.g. after `)`) or use a **named** `*Props` type, not a four-line destructure for three short fields.
+- **No** blank line **between** consecutive one-line **`if (...) return`** rows.
+- **One** blank line **after** the **last** such row when something else follows in the same block (`const …`, plain **`return`**, **`await`**, **`{`** …).
+- **Never** insert a blank between a normal statement and the **next** **`if (...) return`** (e.g. `const trimmed = s.trim()` then **`if (!ok) return null`** stuck together).
 
-## Guards (early return / `continue` / one side-effect call)
-
-When an `if` exists only to return or jump — that includes **`return`**, **`return null`**, **`continue`**, and side-effect calls like **`console.error` when the whole branch is a single call** — put `if`, the full condition, and that one statement on **one line**. Do **not** use `{ }` around a block whose only body is a single `return` / `continue` / one call.
-
-**Compound conditions** (multiple `||` / `&&` / `typeof` checks) are still a single simple guard: prefer **one** physical line, e.g. `if (a || b) return null;` and `if (!tool || !ok(tool.type)) continue;`. If a line is genuinely too long, break **after** the condition and keep a single unbraced `return` / `continue` on the next line, not a `{` block for one statement.
-
-Immediately after a single-line guard, insert one blank line before the next top-level statement in the same block (e.g. `const` or the next `if`), so guards do not run into following logic. Do not stack multiple blank lines.
-
-## String literals
-
-**`const` / `let` / `var` with a single string value** (prompts, copy, labels, URLs, env messages): keep the **whole initializer on one line** — assignment, opening quote, full text, and closing quote. Do not break after `=` and continue the string on the next line for “readability,” unless the string is an intentional multi-line **template literal** (embedded newlines, heredoc-style blocks). If a line is very long, prefer one logical string; if the formatter wraps, avoid *manual* splits that break the string across lines.
-
-## Static text-only JSX
-
-**JSX whose only child is static text** (no nested elements, no `{expr}`): keep **opening tag, text, and closing tag on one line**, e.g. `<button type="button">Save</button>`, `<span className="…">Label</span>`.
-
-## JSX with a single simple expression child
-
-When the **only** child is a **single** simple expression (one `{…}`) — e.g. a variable, prop, or short call like `{children}`, `{square}`, `{recipeBlock}` — and the **start tag** (with `className` / other props) still fits on one line, keep the **entire element on one line**: `<div className="…">{recipeBlock}</div>`. Do **not** break so the only child sits alone on the next line unless the line would be unreasonably long or the child is already a multi-line subtree.
-
-**Multiple** children, **fragments** with more than one node, or **nested** block-level markup inside still use normal multi-line formatting.
-
-## Prefer
+The last **`if (...) return`** in a block gets **no** trailing blank when nothing follows. A branch with **several** statements uses **`{ }`** with **one statement per line** (no fused **`a(); return;`**).
 
 ```typescript
-const ASSISTANT_CHAT_SYSTEM_PROMPT = "You are a helpful assistant for the Ratatouille recipe app. …";
-if (!Number.isFinite(userId)) return new Response("Unauthorized", { status: 401 });
+if (needsAuth) return null;
+if (!session) return null;
 
-const modelMessages = await convertToModelMessages(messages, { tools });
-if (!Array.isArray(messages)) return new Response("Expected messages array", { status: 400 });
+return dashboard();
 
-if (typeof candidate.toolCallId !== "string" || typeof candidate.state !== "string") return null;
+const trimmed = value.trim();
+if (!/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return null;
 
-function Card({ title, children }: { title: string; children: ReactNode }) {
-  return null;
-}
-
-const commitFromKeyboardReference = useRef(false); /* Avoids firing `onCommit` twice when Enter triggers both keydown and blur */
-const [formCommitted, setFormCommitted] = useState(() => isFormMode ? props.defaultValue ?? "" : "");
-const hiddenFormValue = isFormMode ? (showInput ? draft : formCommitted) : null;
-const pantryOptions = useMemo(() => catalog.map((entry) => ({ value: String(entry.id), label: entry.name })), [catalog]);
-const [lines, setLines] = useState<InternalLine[]>(() => withIds(initialLines));
+return trimmed;
 ```
 
-```tsx
-<h1 className="font-heading text-xl font-semibold tracking-tight">{t("auth.signIn")}</h1>
-<p className="text-sm text-muted-foreground">{t("auth.magicLinkBlurb")}</p>
-<FieldLabel htmlFor="login-email">{t("auth.emailLabel")}</FieldLabel>
-<Button type="submit">Send</Button>
-<Link href="/signup" className="font-medium text-foreground underline-offset-4 hover:underline">
-  {t("auth.signUp")}
-</Link>
-<h2 className="text-sm font-medium text-muted-foreground">Ingredients</h2>
-<div className="text-sm leading-relaxed whitespace-pre-wrap">{recipe.ingredients}</div>
-<div className="rounded-lg border border-border bg-card p-4 text-sm text-card-foreground shadow-sm">{contentSlot}</div>
+**Non-return** compact **`if`** one-liners: optional blank before the next line—clarity beats dogma.
 
-export function RecipeListRowLink({ recipeId, title, thumbSrc }: RecipeListRowLinkProps) {
-  return null;
-}
+**Two-step exits** (**`setError(…)`** then **`return`**): **`return`** on its own line inside a **`{ }`** branch.
 
-<button type="button" className={previewZoneGrowSectionClassName} onClick={onUploadZoneClick}>
-  <span className={previewZoneTitleClassName}>
-    <IconUpload className={previewZoneIconClassName} aria-hidden />
-  </span>
-</button>
+## Strings & JSX
 
-<span className={cn("min-w-0 truncate", props.typoOverride)}>{displayText}</span>
-<p className="flex min-h-9 items-center truncate text-sm">{line.name}</p>
-<IconTrash className={cn("size-6 shrink-0", removeImageRequested ? "text-destructive" : "text-muted-foreground")} aria-hidden />
-{isDark ? <IconSun className="size-5" aria-hidden /> : <IconMoon className="size-5" aria-hidden />}
-```
+Strings: keep one-line `"... "` unless you want a multi-line template.
 
-## Avoid
+JSX: static text ⇒ often one line (`<button type="button">Save</button>`); one trivial **`{}`** expression child can stay on one line when the opening tag fits; heavier trees ⇒ wrap normally.
 
-```typescript
-const ASSISTANT_CHAT_SYSTEM_PROMPT =
-  "You are a helpful assistant for the Ratatouille recipe app. …";
+## Long / noisy code
 
-if (!Number.isFinite(userId)) {
-  return new Response("Unauthorized", { status: 401 });
-}
-const modelMessages = await convertToModelMessages(messages, { tools });
-
-if (x) {
-  return null;
-}
-const next = 1;
-
-const commitFromKeyboardReference =
-  useRef(
-    false
-  ); /* Avoids firing `onCommit` twice when Enter triggers both keydown and blur */
-
-const [formCommitted, setFormCommitted] = useState(() =>
-  isFormMode ? (props.defaultValue ?? "") : ""
-);
-
-const hiddenFormValue = isFormMode
-  ? showInput
-    ? draft
-    : formCommitted
-  : null;
-
-const pantryOptions = useMemo(
-  () => catalog.map((entry) => ({ value: String(entry.id), label: entry.name })),
-  [catalog]
-);
-
-onIngredientsPayloadChange?: (payloadJson: string) => void;
-
-function Card({
-  title,
-  children,
-}: {
-  title: string;
-  children: ReactNode;
-}) {
-  return null;
-}
-```
-
-```tsx
-<Button type="submit">
-  Send
-</Button>
-
-<h1 className="font-heading text-xl font-semibold tracking-tight">
-  {t("auth.signIn")}
-</h1>
-<p className="text-sm text-muted-foreground">
-  {t("auth.magicLinkBlurb")}
-</p>
-
-<div className="rounded-lg border border-border bg-card p-4 text-sm text-card-foreground shadow-sm">
-  {contentSlot}
-</div>
-
-export function RecipeListRowLink({
-  recipeId,
-  title,
-  thumbSrc,
-}: RecipeListRowLinkProps) {
-  return null;
-}
-
-<button
-  type="button"
-  className={previewZoneGrowSectionClassName}
-  onClick={onUploadZoneClick}
->
-```
-
-## Exceptions
-
-- Complex expressions, long object literals, long JSX prop lists, and multi-line JSX children (nested elements) can use normal multi-line formatting.
-- **Template literals** that intentionally span lines (e.g. embedded newlines) are not required to be a single source line.
-- **Several children, non-trivial expression trees, or a child that is already multi-line** — use normal formatting. A **single** simple `{ident}` or similar child still prefers one line when the start tag fits (see **JSX with a single simple expression child**).
-- Do not fight automated formatting for generated files. For hand-edited code, prefer a concise one-line form when it stays readable.
-- If a line is genuinely too long to review comfortably, split at a meaningful boundary instead of splitting a trivial expression into many lines.
+Prefer normal wrapping when props, objects, JSX, or templates would be cramped.
 
 ## Scope
 
-Applies to **new and edited** code in matched files. When editing existing code, avoid churn outside the touched expressions.
+**New and edited** code only; skip drive-by reformat of untouched areas.
