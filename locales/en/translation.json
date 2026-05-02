@@ -11,7 +11,8 @@
   "nav": {
     "explore": "Explore",
     "recipes": "Recipes",
-    "ingredients": "Ingredients"
+    "ingredients": "Ingredients",
+    "pantry": "Pantry"
   },
   "home": {
     "signedInAs": "Signed in as {{displayName}}"
@@ -40,6 +41,49 @@
   },
   "ingredients": {
     "title": "Ingredients"
+  },
+  "pantry": {
+    "title": "Pantry",
+    "add": "Add",
+    "filterAria": "Filter by storage location",
+    "filterAll": "All locations",
+    "storage": {
+      "fridge": "Fridge",
+      "pantry": "Pantry",
+      "storage": "Storage",
+      "freezer": "Freezer"
+    },
+    "kind": {
+      "ingredient": "Ingredient",
+      "meal": "Meal",
+      "custom": "Custom"
+    },
+    "empty": "Nothing in your inventory yet. Use Add to stock an ingredient or meal.",
+    "quantityLabel": "Qty",
+    "expiresLabel": "Expires",
+    "removeAria": "Remove {{name}} from inventory",
+    "addDialogTitle": "Add to inventory",
+    "searchLabel": "Search your ingredients and meals",
+    "searchPlaceholder": "Type to search…",
+    "searching": "Searching…",
+    "noResults": "No matching ingredients or meals. You can add a new ingredient to your catalog, or save this text as a custom item (not linked to your catalog).",
+    "createIngredient": "Create ingredient and continue",
+    "saveCustomOnly": "Save as custom item only",
+    "customLabel": "Name",
+    "customHint": "Custom items are stored only in your pantry list; they do not link to ingredients or recipes.",
+    "newIngredientName": "Ingredient name",
+    "storageLabel": "Storage location",
+    "quantityField": "Quantity",
+    "expiresField": "Expiration date",
+    "cancel": "Cancel",
+    "backToSearch": "Back to search",
+    "changeCatalogSelectionAria": "Choose a different ingredient or meal",
+    "saving": "Saving…",
+    "confirmAdd": "Add to inventory",
+    "errors": {
+      "validation": "Check the fields and try again.",
+      "generic": "Something went wrong. Please try again."
+    }
   },
   "assistant": {
     "title": "Assistant",

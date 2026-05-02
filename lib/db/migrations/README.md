@@ -4,3 +4,4 @@ Run these in order in the Neon SQL editor (or your Postgres client) on the datab
 
 1. **`001_recipes_table.sql`** — creates the `recipes` table. Expects a **`users`** table to already exist (from Auth.js / `@auth/pg-adapter` setup).
 2. **`002_ingredients_and_recipe_ingredients.sql`** — creates `ingredients` and `recipe_ingredients` for the pantry and per-recipe lines.
+3. **`003_pantry_inventory.sql`** — creates `pantry_inventory` for on-hand stock by storage location (ingredients, meals/recipes, or custom labels).
