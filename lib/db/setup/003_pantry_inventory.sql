@@ -1,5 +1,5 @@
--- On-hand pantry inventory: ingredients, meals (recipes), or custom unlinked labels per storage location.
--- Expects `users`, `ingredients`, and `recipes` (see 001 and 002).
+-- Fresh database setup script 003.
+-- Prerequisites: `users`, `recipes`, and catalog from 001–002 (`ingredients`, `recipes` for FK references).
 
 CREATE TABLE pantry_inventory (
   id                 BIGSERIAL PRIMARY KEY,
@@ -10,12 +10,12 @@ CREATE TABLE pantry_inventory (
     CHECK (item_kind IN ('ingredient', 'meal', 'custom')),
   ingredient_id      BIGINT NULL REFERENCES ingredients (id) ON DELETE CASCADE,
   recipe_id          BIGINT NULL REFERENCES recipes (id) ON DELETE CASCADE,
-  custom_label        TEXT NULL,
-  quantity            NUMERIC(12, 4) NOT NULL DEFAULT 1
+  custom_label       TEXT NULL,
+  quantity           NUMERIC(12, 4) NOT NULL DEFAULT 1
     CHECK (quantity > 0),
-  expires_on          DATE NULL,
-  created_at          TIMESTAMPTZ NOT NULL DEFAULT now(),
-  updated_at          TIMESTAMPTZ NOT NULL DEFAULT now(),
+  expires_on         DATE NULL,
+  created_at         TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at         TIMESTAMPTZ NOT NULL DEFAULT now(),
   CONSTRAINT pantry_inventory_link_chk CHECK (
     (
       item_kind = 'ingredient'

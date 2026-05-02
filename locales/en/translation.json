@@ -40,7 +40,41 @@
     "restoredToast": "Recipe restored"
   },
   "ingredients": {
-    "title": "Ingredients"
+    "title": "Ingredients",
+    "rowLabel": "Ingredient {{index}}",
+    "namePlaceholder": "Ingredient name",
+    "nameAria": "Ingredient name {{index}}",
+    "shelfLife": {
+      "aria": "Shelf life {{index}}",
+      "3_days": "Three days",
+      "5_days": "Five days",
+      "7_days": "Seven days",
+      "2_weeks": "Two weeks",
+      "1_month": "One month",
+      "3_months": "Three months",
+      "6_months": "Six months",
+      "1_year": "One year"
+    },
+    "categoryAria": "Category {{index}}",
+    "removeAria": "Remove ingredient {{index}}",
+    "sortAria": "Sort ingredients",
+    "sortNameAz": "Name (A–Z)",
+    "sortByCategory": "Category",
+    "createNew": "Create a new ingredient",
+    "saving": "Saving…",
+    "emptyCatalog": "No ingredients yet. Add one below.",
+    "category": {
+      "dairy": "Dairy",
+      "pasta": "Pasta",
+      "bread": "Bread",
+      "meat": "Meat",
+      "nut": "Nut",
+      "seed": "Seed",
+      "herb": "Herb",
+      "vegetable": "Vegetable",
+      "fruit": "Fruit",
+      "miscellaneous": "Miscellaneous"
+    }
   },
   "pantry": {
     "title": "Pantry",

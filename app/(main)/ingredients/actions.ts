@@ -8,8 +8,18 @@ import {
   softDeleteIngredient,
   updateIngredient,
 } from "@/lib/data/ingredients"
+import type { IngredientShelfLifePreset } from "@/lib/models/ingredient"
+import {
+  parseIngredientCategory,
+  resolveShelfLifePreset,
+} from "@/lib/models/ingredient"
 
-export type IngredientLinePayload = { id?: number; name: string }
+export type IngredientLinePayload = {
+  id?: number
+  name: string
+  shelfLifePreset: IngredientShelfLifePreset
+  category?: unknown
+}
 
 export async function quickCreateIngredient(
   rawName: string,
@@ -42,7 +52,14 @@ export async function saveIngredientsState(payload: unknown): Promise<{ ok: true
       const parsedId = Number.parseInt(lineFields.id, 10)
       if (Number.isFinite(parsedId)) id = parsedId
     }
-    lines.push({ id, name })
+    lines.push({
+      id,
+      name,
+      shelfLifePreset: resolveShelfLifePreset(
+        lineFields.shelfLifePreset ?? lineFields.shelf_life_preset,
+      ),
+      category: lineFields.category,
+    })
   }
 
   const existing = await listIngredients(userId)
@@ -58,16 +75,31 @@ export async function saveIngredientsState(payload: unknown): Promise<{ ok: true
 
   for (const line of lines) {
     const trimmed = line.name.trim()
+    const category = parseIngredientCategory(line.category)
+    const shelfLifePresetParsed = resolveShelfLifePreset(line.shelfLifePreset)
     if (line.id !== undefined) {
       if (!existingById.has(line.id)) continue
       if (!trimmed) {
         await softDeleteIngredient(userId, line.id)
         continue
       }
-      if (existingById.get(line.id)?.name !== trimmed) await updateIngredient(userId, line.id, trimmed)
+      const previous = existingById.get(line.id)
+      if (
+        previous &&
+        (previous.name !== trimmed ||
+          previous.shelfLifePreset !== shelfLifePresetParsed ||
+          previous.category !== category)
+      ) {
+        await updateIngredient(userId, line.id, {
+          name: trimmed,
+          shelfLifePreset: shelfLifePresetParsed,
+          category,
+        })
+      }
       continue
     }
-    if (trimmed) await createIngredient(userId, trimmed)
+    if (trimmed)
+      await createIngredient(userId, trimmed, { shelfLifePreset: shelfLifePresetParsed, category })
   }
 
   revalidatePath("/ingredients")

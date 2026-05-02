@@ -2,17 +2,66 @@
 
 import { IconPlus, IconTrash } from "@tabler/icons-react"
 import { useRouter } from "next/navigation"
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react"
+import { useTranslation } from "react-i18next"
 
 import { saveIngredientsState } from "./actions"
+import type { CategoryShelfLifeDefaultsMap } from "@/lib/data/ingredient-category-shelf-defaults"
 import { Button } from "@/components/ui/button"
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field"
-import { Input } from "@/components/ui/input"
-import type { Ingredient } from "@/lib/models/ingredient"
+import { Input, inputVariants } from "@/components/ui/input"
+import { cn } from "@/lib/helpers/utils"
+import type { Ingredient, IngredientCategory, IngredientShelfLifePreset } from "@/lib/models/ingredient"
+import {
+  DEFAULT_SHELF_LIFE_PRESET,
+  INGREDIENT_CATEGORIES,
+  INGREDIENT_SHELF_LIFE_PRESETS,
+  parseIngredientCategory,
+  resolveShelfLifePreset,
+} from "@/lib/models/ingredient"
 
-type Line = { id?: number; name: string }
+type Line = {
+  id?: number
+  name: string
+  shelfLifePreset: IngredientShelfLifePreset
+  category: IngredientCategory
+}
 
 type InternalLine = Line & { lineId: string }
+
+export type IngredientsSortMode = "name_az" | "category"
+
+function sortIngredientLines(rows: InternalLine[], mode: IngredientsSortMode): InternalLine[] {
+  const copy = [...rows]
+  const compareNameTrimmed = (left: InternalLine, right: InternalLine) =>
+    left.name.trim().localeCompare(right.name.trim(), undefined, { sensitivity: "base" })
+  const putBlankNamesLast = (left: InternalLine, right: InternalLine) => {
+    const blankLeft = left.name.trim() === ""
+    const blankRight = right.name.trim() === ""
+    if (blankLeft && blankRight) return 0
+    if (blankLeft) return 1
+    if (blankRight) return -1
+    return 0
+  }
+  if (mode === "name_az") {
+    copy.sort((left, right) => {
+      const blankOrder = putBlankNamesLast(left, right)
+      if (blankOrder !== 0) return blankOrder
+      return compareNameTrimmed(left, right)
+    })
+    return copy
+  }
+  const categoryRank = new Map(INGREDIENT_CATEGORIES.map((categoryKey, i) => [categoryKey, i]))
+  copy.sort((left, right) => {
+    const rankLeft = categoryRank.get(left.category) ?? 999
+    const rankRight = categoryRank.get(right.category) ?? 999
+    if (rankLeft !== rankRight) return rankLeft - rankRight
+    const blankOrder = putBlankNamesLast(left, right)
+    if (blankOrder !== 0) return blankOrder
+    return compareNameTrimmed(left, right)
+  })
+  return copy
+}
 
 function linesFromServer(initial: Ingredient[]): InternalLine[] {
   return initial.map((row, i) => ({ ...row, lineId: `s-${row.id}-${i}` }))
@@ -23,7 +72,12 @@ function draftLineId(): string {
 }
 
 function linesToPayload(lines: InternalLine[]): Line[] {
-  return lines.map(({ id, name }) => ({ id, name }))
+  return lines.map(({ id, name, shelfLifePreset, category }) => ({
+    id,
+    name,
+    shelfLifePreset,
+    category,
+  }))
 }
 
 function payloadSignature(payload: Line[]): string {
@@ -31,7 +85,14 @@ function payloadSignature(payload: Line[]): string {
 }
 
 function ingredientsSignature(items: Ingredient[]): string {
-  return JSON.stringify(items.map((ingredient) => [ingredient.id, ingredient.name]))
+  return JSON.stringify(
+    items.map((ingredient) => [
+      ingredient.id,
+      ingredient.name,
+      ingredient.shelfLifePreset,
+      ingredient.category,
+    ]),
+  )
 }
 
 function mergeIngredientsFromServer(server: Ingredient[], prev: InternalLine[]): InternalLine[] {
@@ -61,11 +122,14 @@ function mergeIngredientsFromServer(server: Ingredient[], prev: InternalLine[]):
 
 type Props = {
   initial: Ingredient[]
+  categoryShelfDefaults: CategoryShelfLifeDefaultsMap
+  sortMode: IngredientsSortMode
 }
 
 const BLUR_SAVE_DEBOUNCE_MS = 250
 
-export function IngredientsEditor({ initial }: Props) {
+export function IngredientsEditor({ initial, categoryShelfDefaults, sortMode }: Props) {
+  const { t } = useTranslation()
   const router = useRouter()
   const [lines, setLines] = useState<InternalLine[]>(() => linesFromServer(initial))
   const [saving, setSaving] = useState(false)
@@ -169,8 +233,21 @@ export function IngredientsEditor({ initial }: Props) {
   }, [initial])
 
   const addEmptyRow = useCallback(() => {
-    setLines((prev) => [...prev, { name: "", lineId: draftLineId() }])
-  }, [])
+    setLines((prev) => [
+      ...prev,
+      {
+        name: "",
+        shelfLifePreset: categoryShelfDefaults.miscellaneous,
+        category: "miscellaneous",
+        lineId: draftLineId(),
+      },
+    ])
+  }, [categoryShelfDefaults])
+
+  const orderedLines = useMemo(
+    () => sortIngredientLines(lines, sortMode),
+    [lines, sortMode],
+  )
 
   function removeLine(index: number) {
     flushDebounce()
@@ -186,49 +263,110 @@ export function IngredientsEditor({ initial }: Props) {
     <div className="flex flex-col gap-4">
       <FieldGroup className="gap-3">
         {lines.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No ingredients yet. Add one below.</p>
+          <p className="text-sm text-muted-foreground">{t("ingredients.emptyCatalog")}</p>
         ) : (
           <ul className="flex flex-col gap-3">
-            {lines.map((line, i) => (
-              <li key={line.lineId}>
-                <Field className="gap-1.5">
-                  <FieldLabel className="sr-only">Ingredient {i + 1}</FieldLabel>
-                  <div className="flex items-center gap-2">
-                    <Input
-                      className="min-w-0 flex-1"
-                      value={line.name}
-                      onChange={(event) => {
-                        const value = event.target.value
-                        setLines((prev) =>
-                          prev.map((line, j) => (j === i ? { ...line, name: value } : line))
-                        )
-                      }}
-                      onKeyDown={(event) => {
-                        if (event.key !== "Enter" || event.nativeEvent.isComposing) return
-                        event.preventDefault()
-                        flushDebounce()
-                        if (line.id === undefined && line.name.trim() !== "") enterConfirmLineIdRef.current = line.lineId
-                        void persistNowRef.current()
-                      }}
-                      onBlur={schedulePersistFromBlur}
-                      placeholder="Ingredient name"
-                      autoComplete="off"
-                      aria-label={`Ingredient ${i + 1}`}
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon-sm"
-                      className="shrink-0 text-muted-foreground hover:text-destructive"
-                      aria-label={`Remove ingredient ${i + 1}`}
-                      onClick={() => removeLine(i)}
-                    >
-                      <IconTrash className="size-4" aria-hidden />
-                    </Button>
-                  </div>
-                </Field>
-              </li>
-            ))}
+            {orderedLines.map((line, displayPosition) => {
+              const stableIndex = lines.findIndex((candidate) => candidate.lineId === line.lineId)
+              if (stableIndex < 0) return null
+              const rowAriaIndex = displayPosition + 1
+              return (
+                <li key={line.lineId}>
+                  <Field className="gap-1.5">
+                    <FieldLabel className="sr-only">
+                      {t("ingredients.rowLabel", { index: rowAriaIndex })}
+                    </FieldLabel>
+                    <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+                      <Input
+                        className="min-w-0 w-full sm:flex-1 sm:min-w-[10rem]"
+                        value={line.name}
+                        onChange={(event) => {
+                          const value = event.target.value
+                          setLines((prev) =>
+                            prev.map((line, j) => (j === stableIndex ? { ...line, name: value } : line))
+                          )
+                        }}
+                        onKeyDown={(event) => {
+                          if (event.key !== "Enter" || event.nativeEvent.isComposing) return
+                          event.preventDefault()
+                          flushDebounce()
+                          if (line.id === undefined && line.name.trim() !== "") enterConfirmLineIdRef.current = line.lineId
+                          void persistNowRef.current()
+                        }}
+                        onBlur={schedulePersistFromBlur}
+                        placeholder={t("ingredients.namePlaceholder")}
+                        autoComplete="off"
+                        aria-label={t("ingredients.nameAria", { index: rowAriaIndex })}
+                      />
+
+                      <select
+                        className={cn(inputVariants({ variant: "default" }), "w-full min-w-0 sm:min-w-[9rem] sm:w-auto shrink-0")}
+                        value={line.category}
+                        onChange={(event) => {
+                          const categoryNext = parseIngredientCategory(event.target.value)
+                          const shelfDefault =
+                            categoryShelfDefaults[categoryNext] ?? DEFAULT_SHELF_LIFE_PRESET
+                          setLines((prev) =>
+                            prev.map((line, j) =>
+                              j === stableIndex
+                                ? {
+                                    ...line,
+                                    category: categoryNext,
+                                    shelfLifePreset: shelfDefault,
+                                  }
+                                : line,
+                            ),
+                          )
+                        }}
+                        onBlur={schedulePersistFromBlur}
+                        aria-label={t("ingredients.categoryAria", { index: rowAriaIndex })}
+                      >
+                        {INGREDIENT_CATEGORIES.map((categoryKey) => (
+                          <option key={categoryKey} value={categoryKey}>
+                            {t(`ingredients.category.${categoryKey}`)}
+                          </option>
+                        ))}
+                      </select>
+
+                      <select
+                        className={cn(
+                          inputVariants({ variant: "default" }),
+                          "w-full min-w-0 sm:min-w-[12rem] sm:w-auto shrink-0",
+                        )}
+                        value={line.shelfLifePreset}
+                        onChange={(event) => {
+                          const preset = resolveShelfLifePreset(event.target.value)
+                          setLines((prev) =>
+                            prev.map((line, j) =>
+                              j === stableIndex ? { ...line, shelfLifePreset: preset } : line,
+                            ),
+                          )
+                        }}
+                        onBlur={schedulePersistFromBlur}
+                        aria-label={t("ingredients.shelfLife.aria", { index: rowAriaIndex })}
+                      >
+                        {INGREDIENT_SHELF_LIFE_PRESETS.map((presetKey) => (
+                          <option key={presetKey} value={presetKey}>
+                            {t(`ingredients.shelfLife.${presetKey}`)}
+                          </option>
+                        ))}
+                      </select>
+
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon-sm"
+                        className="shrink-0 text-muted-foreground hover:text-destructive self-start sm:self-center"
+                        aria-label={t("ingredients.removeAria", { index: rowAriaIndex })}
+                        onClick={() => removeLine(stableIndex)}
+                      >
+                        <IconTrash className="size-4" aria-hidden />
+                      </Button>
+                    </div>
+                  </Field>
+                </li>
+              )
+            })}
           </ul>
         )}
       </FieldGroup>
@@ -241,15 +379,14 @@ export function IngredientsEditor({ initial }: Props) {
           onClick={addEmptyRow}
         >
           <IconPlus className="size-4 shrink-0" aria-hidden />
-          Create a new ingredient
+          {t("ingredients.createNew")}
         </Button>
         {saving ? (
           <p className="text-sm text-muted-foreground" aria-live="polite">
-            Saving…
+            {t("ingredients.saving")}
           </p>
         ) : null}
       </div>
-
     </div>
   )
 }

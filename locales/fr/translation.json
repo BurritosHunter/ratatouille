@@ -40,7 +40,41 @@
     "restoredToast": "Recette restaurée"
   },
   "ingredients": {
-    "title": "Ingrédients"
+    "title": "Ingrédients",
+    "rowLabel": "Ingrédient {{index}}",
+    "namePlaceholder": "Nom de l'ingrédient",
+    "nameAria": "Nom de l'ingrédient {{index}}",
+    "shelfLife": {
+      "aria": "Durée de conservation {{index}}",
+      "3_days": "Trois jours",
+      "5_days": "Cinq jours",
+      "7_days": "Sept jours",
+      "2_weeks": "Deux semaines",
+      "1_month": "Un mois",
+      "3_months": "Trois mois",
+      "6_months": "Six mois",
+      "1_year": "Un an"
+    },
+    "categoryAria": "Catégorie {{index}}",
+    "removeAria": "Retirer l'ingrédient {{index}}",
+    "sortAria": "Trier les ingrédients",
+    "sortNameAz": "Nom (A–Z)",
+    "sortByCategory": "Catégorie",
+    "createNew": "Créer un nouvel ingrédient",
+    "saving": "Enregistrement…",
+    "emptyCatalog": "Aucun ingrédient pour l'instant. Ajoutez-en un ci-dessous.",
+    "category": {
+      "dairy": "Produit laitier",
+      "pasta": "Pâtes",
+      "bread": "Pain",
+      "meat": "Viande",
+      "nut": "Noix",
+      "seed": "Graine",
+      "herb": "Herbe / aromate",
+      "vegetable": "Légume",
+      "fruit": "Fruit",
+      "miscellaneous": "Divers"
+    }
   },
   "pantry": {
     "title": "Garde-manger",
