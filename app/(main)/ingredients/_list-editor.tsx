@@ -128,6 +128,11 @@ type Props = {
 
 const BLUR_SAVE_DEBOUNCE_MS = 250
 
+function mainScrollContainer(editorRoot: HTMLElement | null): HTMLElement | null {
+  const node = editorRoot?.closest("main")
+  return node instanceof HTMLElement ? node : null
+}
+
 export function IngredientsEditor({ initial, categoryShelfDefaults, sortMode }: Props) {
   const { t } = useTranslation()
   const router = useRouter()
@@ -144,6 +149,8 @@ export function IngredientsEditor({ initial, categoryShelfDefaults, sortMode }: 
   const initialSigRef = useRef(ingredientsSignature(initial))
   /** Draft row to clear after a successful Enter (confirm) save. */
   const enterConfirmLineIdRef = useRef<string | null>(null)
+  const scrollRestoreAfterCategorySortRef = useRef<number | null>(null)
+  const editorRootRef = useRef<HTMLDivElement | null>(null)
 
   const runPersist = useCallback(async () => {
     const payload = linesToPayload(linesRef.current)
@@ -249,6 +256,15 @@ export function IngredientsEditor({ initial, categoryShelfDefaults, sortMode }: 
     [lines, sortMode],
   )
 
+  useLayoutEffect(() => {
+    const scrollTargetTop = scrollRestoreAfterCategorySortRef.current
+    if (scrollTargetTop === null) return
+    scrollRestoreAfterCategorySortRef.current = null
+    const scrollContainer = mainScrollContainer(editorRootRef.current)
+    if (!scrollContainer) return
+    scrollContainer.scrollTop = scrollTargetTop
+  }, [lines])
+
   function removeLine(index: number) {
     flushDebounce()
     setLines((prev) => {
@@ -260,7 +276,7 @@ export function IngredientsEditor({ initial, categoryShelfDefaults, sortMode }: 
   }
 
   return (
-    <div className="flex flex-col gap-4">
+    <div ref={editorRootRef} className="flex flex-col gap-4">
       <FieldGroup className="gap-3">
         {lines.length === 0 ? (
           <p className="text-sm text-muted-foreground">{t("ingredients.emptyCatalog")}</p>
@@ -306,6 +322,10 @@ export function IngredientsEditor({ initial, categoryShelfDefaults, sortMode }: 
                           const categoryNext = parseIngredientCategory(event.target.value)
                           const shelfDefault =
                             categoryShelfDefaults[categoryNext] ?? DEFAULT_SHELF_LIFE_PRESET
+                          if (sortMode === "category") {
+                            const scrollContainer = mainScrollContainer(editorRootRef.current)
+                            if (scrollContainer) scrollRestoreAfterCategorySortRef.current = scrollContainer.scrollTop
+                          }
                           setLines((prev) =>
                             prev.map((line, j) =>
                               j === stableIndex
