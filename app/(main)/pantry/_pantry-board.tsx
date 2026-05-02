@@ -15,6 +15,28 @@ type LocationFilter = "all" | PantryStorageLocation;
 
 const STORAGE_LOCATIONS: readonly PantryStorageLocation[] = ["fridge", "pantry", "storage", "freezer"] as const;
 
+type PantryExpiresPresetKey = "pantry.expiresPresetToday" | "pantry.expiresPreset3Days" | "pantry.expiresPreset7Days" | "pantry.expiresPreset14Days";
+
+const EXPIRATION_DATE_PRESETS: readonly { daysFromToday: number; i18nKey: PantryExpiresPresetKey }[] = [
+  { daysFromToday: 0, i18nKey: "pantry.expiresPresetToday" },
+  { daysFromToday: 3, i18nKey: "pantry.expiresPreset3Days" },
+  { daysFromToday: 7, i18nKey: "pantry.expiresPreset7Days" },
+  { daysFromToday: 14, i18nKey: "pantry.expiresPreset14Days" },
+];
+
+function formatLocalCalendarDateForDateInput(calendarDate: Date): string {
+  const year = calendarDate.getFullYear();
+  const month = String(calendarDate.getMonth() + 1).padStart(2, "0");
+  const day = String(calendarDate.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function localCalendarDateWithDaysFromToday(daysFromToday: number): string {
+  const today = new Date();
+  const shifted = new Date(today.getFullYear(), today.getMonth(), today.getDate() + daysFromToday);
+  return formatLocalCalendarDateForDateInput(shifted);
+}
+
 type AddPhase = "search" | "details";
 type Props = { initialRows: PantryInventoryRow[] };
 
@@ -313,7 +335,7 @@ export function PantryBoard({ initialRows }: Props) {
               </div>
             ) : (
               <div className="flex min-h-0 flex-1 flex-col">
-                <FieldGroup className="min-h-0 flex-1 gap-4 overflow-y-auto">
+                <FieldGroup className="min-h-0 flex-1 gap-6 overflow-y-auto">
                   {addMode === "catalog" && selectedHit ? (
                     <button
                       type="button"
@@ -354,13 +376,29 @@ export function PantryBoard({ initialRows }: Props) {
                   </Field>
 
                   <Field className="gap-1.5">
-                    <FieldLabel htmlFor="pantry-qty">{t("pantry.quantityField")}</FieldLabel>
-                    <Input id="pantry-qty" type="number" inputMode="decimal" min={0.0001} step="any" value={detailQuantity} onChange={(event) => setDetailQuantity(event.target.value)} />
+                    <FieldLabel htmlFor="pantry-exp">{t("pantry.expiresField")}</FieldLabel>
+                    <div className="flex flex-wrap gap-2">
+                      {EXPIRATION_DATE_PRESETS.map((preset) => {
+                        const presetDate = localCalendarDateWithDaysFromToday(preset.daysFromToday);
+                        return (
+                          <Button
+                            key={preset.daysFromToday}
+                            type="button"
+                            size="sm"
+                            variant={detailExpires === presetDate ? "secondary" : "outline"}
+                            onClick={() => setDetailExpires(presetDate)}
+                          >
+                            {t(preset.i18nKey)}
+                          </Button>
+                        );
+                      })}
+                    </div>
+                    <Input id="pantry-exp" type="date" value={detailExpires} onChange={(event) => setDetailExpires(event.target.value)} />
                   </Field>
 
                   <Field className="gap-1.5">
-                    <FieldLabel htmlFor="pantry-exp">{t("pantry.expiresField")}</FieldLabel>
-                    <Input id="pantry-exp" type="date" value={detailExpires} onChange={(event) => setDetailExpires(event.target.value)} />
+                    <FieldLabel htmlFor="pantry-qty">{t("pantry.quantityField")}</FieldLabel>
+                    <Input id="pantry-qty" type="number" inputMode="decimal" min={0.0001} step="any" value={detailQuantity} onChange={(event) => setDetailQuantity(event.target.value)} />
                   </Field>
 
                   {formError ? (
