@@ -27,12 +27,9 @@ type LocationFilter = "all" | PantryStorageLocation;
 
 const STORAGE_LOCATIONS: readonly PantryStorageLocation[] = ["fridge", "pantry", "storage", "freezer"] as const;
 
-type PantryExpiryQuickOption = { kind: "today" } | { kind: "preset"; preset: IngredientShelfLifePreset };
+type PantryExpiryQuickOption = { kind: "today" } | { kind: "twoDaysPantryOnly" } | { kind: "preset"; preset: IngredientShelfLifePreset };
 
-const PANTRY_EXPIRY_QUICK_OPTIONS: readonly PantryExpiryQuickOption[] = [
-  { kind: "today" },
-  ...INGREDIENT_SHELF_LIFE_PRESETS.map((preset) => ({ kind: "preset" as const, preset })),
-];
+const PANTRY_EXPIRY_QUICK_OPTIONS: readonly PantryExpiryQuickOption[] = [{ kind: "today" }, { kind: "twoDaysPantryOnly" }, ...INGREDIENT_SHELF_LIFE_PRESETS.map((preset) => ({ kind: "preset" as const, preset }))];
 
 function formatLocalCalendarDateForDateInput(calendarDate: Date): string {
   const year = calendarDate.getFullYear();
@@ -493,15 +490,15 @@ export function PantryBoard({ initialRows }: Props) {
                       <div className="flex min-h-0 min-w-0 w-full flex-wrap content-start gap-2">
                         {PANTRY_EXPIRY_QUICK_OPTIONS.map((option) => {
                           const daysFromToday =
-                            option.kind === "today" ? 0 : expirationDaysOffsetForShelfLifePreset(option.preset);
+                            option.kind === "today" ? 0 : option.kind === "twoDaysPantryOnly" ? 2 : expirationDaysOffsetForShelfLifePreset(option.preset);
                           const presetDate = localCalendarDateWithDaysFromToday(daysFromToday);
-                          const label =
-                            option.kind === "today"
-                              ? t("pantry.expiresPresetToday")
-                              : t(`ingredients.shelfLife.${option.preset}`);
+                          let label: string;
+                          if (option.kind === "today") label = t("pantry.expiresPresetToday");
+                          else if (option.kind === "twoDaysPantryOnly") label = t("pantry.expiresPreset2Days");
+                          else label = t(`ingredients.shelfLife.${option.preset}`);
                           return (
                             <Button
-                              key={option.kind === "today" ? "today" : option.preset}
+                              key={ option.kind === "today" ? "today" : option.kind === "twoDaysPantryOnly" ? "two-days-pantry" : option.preset }
                               type="button"
                               size="sm"
                               variant={detailExpires === presetDate ? "secondary" : "outline"}

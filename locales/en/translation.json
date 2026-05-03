@@ -118,6 +118,7 @@
     "expiresRelativeDaysAgo_one": "{{count}} day ago",
     "expiresRelativeDaysAgo_other": "{{count}} days ago",
     "expiresPresetToday": "Today",
+    "expiresPreset2Days": "Two days",
     "cancel": "Cancel",
     "backToSearch": "Back to search",
     "changeCatalogSelectionAria": "Choose a different ingredient or meal",

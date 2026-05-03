@@ -118,6 +118,7 @@
     "expiresRelativeDaysAgo_one": "Il y a {{count}} jour",
     "expiresRelativeDaysAgo_other": "Il y a {{count}} jours",
     "expiresPresetToday": "Aujourd'hui",
+    "expiresPreset2Days": "Deux jours",
     "cancel": "Annuler",
     "backToSearch": "Retour à la recherche",
     "changeCatalogSelectionAria": "Choisir un autre ingrédient ou plat",
