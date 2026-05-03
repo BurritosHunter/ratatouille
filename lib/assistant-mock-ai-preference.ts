@@ -6,7 +6,7 @@ export const ASSISTANT_MOCK_SCENARIO_STORAGE_KEY = "ratatouille-assistant-mock-s
 
 export const DEFAULT_ASSISTANT_MOCK_SCENARIO = "recipes" as const;
 
-export type AssistantMockScenario = "recipes" | "surface";
+export type AssistantMockScenario = "recipes" | "surface" | "pantry";
 
 export function readAssistantMockAiOverride(): boolean | null {
   if (typeof window === "undefined") return null;
@@ -37,6 +37,7 @@ export function readAssistantMockScenarioOverride(): AssistantMockScenario | nul
   try {
     const raw = window.localStorage.getItem(ASSISTANT_MOCK_SCENARIO_STORAGE_KEY)?.trim().toLowerCase();
     if (raw === "surface") return "surface";
+    if (raw === "pantry") return "pantry";
     if (raw === "recipes") return "recipes";
     return null;
   } catch {

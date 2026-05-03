@@ -35,7 +35,11 @@ export function AssistantMockScenarioSelect({ id }: Props) {
     void fetch("/api/assistant/dev-ai-mode", { credentials: "include" })
       .then((response) => (response.ok ? response.json() : null))
       .then((data: { defaultMockScenario?: string } | null) => {
-        if (data?.defaultMockScenario === "surface" || data?.defaultMockScenario === "recipes") {
+        if (
+          data?.defaultMockScenario === "surface" ||
+          data?.defaultMockScenario === "recipes" ||
+          data?.defaultMockScenario === "pantry"
+        ) {
           setScenario(data.defaultMockScenario);
         }
       })
@@ -55,7 +59,9 @@ export function AssistantMockScenarioSelect({ id }: Props) {
         id={id}
         value={scenario}
         onChange={(event) => {
-          const next = event.target.value === "surface" ? "surface" : "recipes";
+          const value = event.target.value;
+          const next: AssistantMockScenario =
+            value === "surface" ? "surface" : value === "pantry" ? "pantry" : "recipes";
           setScenario(next);
           writeAssistantMockScenarioOverride(next);
         }}
@@ -63,6 +69,7 @@ export function AssistantMockScenarioSelect({ id }: Props) {
       >
         <option value="recipes">{t("profile.mockScenarioRecipes")}</option>
         <option value="surface">{t("profile.mockScenarioSurface")}</option>
+        <option value="pantry">{t("profile.mockScenarioPantry")}</option>
       </select>
       <p className="text-xs text-muted-foreground">{t("profile.mockScenarioHint")}</p>
     </div>

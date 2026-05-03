@@ -1,3 +1,5 @@
+import { pantryInventoryToToolRows } from "@/lib/ai/assistant-tools/pantry-rows";
+import { listPantryInventory } from "@/lib/data/pantry-inventory";
 import { listRecipes } from "@/lib/data/recipes";
 import { z } from "zod";
 import {
@@ -23,6 +25,15 @@ export function createAssistantTools({ userId }: { userId: number }): Record<str
       execute: async () => {
         const summaries = await listRecipes(userId);
         return { recipes: recipesToToolRows(summaries) };
+      },
+    },
+    listPantryForUser: {
+      description:
+        "Load and return the signed-in user's pantry inventory for the generated UI preview. Call when the user asks what is in their pantry, to list pantry items, inventory, stock, or similar. Returns every row (all storage locations). The preview lets the user filter by storage location and item type (ingredient, meal, custom) and sort the list. Do not invent items; use this tool output as the source of truth.",
+      inputSchema: emptyInputSchema,
+      execute: async () => {
+        const inventoryRows = await listPantryInventory(userId, "all");
+        return { pantryRows: pantryInventoryToToolRows(inventoryRows) };
       },
     },
     setAssistantLayout: {

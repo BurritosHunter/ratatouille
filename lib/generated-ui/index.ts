@@ -1,3 +1,4 @@
+import type { PantryToolRow } from "@/lib/ai/assistant-tools/pantry-rows";
 import type { RecipeToolRow } from "@/lib/ai/assistant-tools/recipe-rows";
 
 export type LayoutOption = "singleColumn" | "twoColumn" | "fullWidth";
@@ -7,14 +8,18 @@ export type GeneratedUIPayload = {
   generatedAtIso: string;
   lastCallId: string;
   recipes?: RecipeToolRow[];
+  pantryRows?: PantryToolRow[];
   layout?: LayoutOption;
   backgroundColor?: BackgroundColorToken;
 };
 
-export type GeneratedUIDataFields = Partial<Pick<GeneratedUIPayload, "recipes" | "layout" | "backgroundColor">>;
+export type GeneratedUIDataFields = Partial<
+  Pick<GeneratedUIPayload, "recipes" | "pantryRows" | "layout" | "backgroundColor">
+>;
 
 export const SUPPORTED_TOOL_TYPES = [
   "tool-listRecipesForUser",
+  "tool-listPantryForUser",
   "tool-setAssistantLayout",
   "tool-setAssistantBackground",
 ] as const;
@@ -41,6 +46,11 @@ export function tryParseToolData(
       const output = toolOutput as { recipes?: RecipeToolRow[] };
       if (!output.recipes) { return null; }
       return { recipes: output.recipes };
+    }
+    case "tool-listPantryForUser": {
+      const output = toolOutput as { pantryRows?: PantryToolRow[] };
+      if (!output.pantryRows) { return null; }
+      return { pantryRows: output.pantryRows };
     }
     case "tool-setAssistantLayout": {
       const output = toolOutput as { layout?: LayoutOption };

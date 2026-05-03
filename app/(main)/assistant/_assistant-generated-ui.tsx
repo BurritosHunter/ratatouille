@@ -1,9 +1,10 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { AssistantPantrySurface } from "@/app/(main)/assistant/_assistant-pantry-surface";
 import { RecipeListRowLink } from "@/components/molecules/recipe-list-row-link";
 import { useGeneratedUI } from "@/contexts/assistant-generated-ui-context";
-import type { RecipeToolRow } from "@/lib/ai/assistant-tools/recipe-rows";
+import type { PantryToolRow } from "@/lib/ai/assistant-tools/pantry-rows";
 import type { BackgroundColorToken, LayoutOption } from "@/lib/generated-ui";
 import { cn } from "@/lib/helpers/utils";
 import { useTranslation } from "react-i18next";
@@ -14,7 +15,15 @@ const SQUARE_CLASS_BY_COLOR: Record<BackgroundColorToken, string> = {
   green: "bg-green-500",
 };
 
-function LayoutRegions({ layout, squareColor, recipeBlock }: { layout: LayoutOption | undefined; squareColor: BackgroundColorToken | undefined; recipeBlock: ReactNode }) {
+function LayoutRegions({
+  layout,
+  squareColor,
+  recipeBlock,
+}: {
+  layout: LayoutOption | undefined;
+  squareColor: BackgroundColorToken | undefined;
+  recipeBlock: ReactNode;
+}) {
   const resolvedLayout: LayoutOption = layout ?? "singleColumn";
   const square = squareColor ? (
     <div
@@ -29,14 +38,16 @@ function LayoutRegions({ layout, squareColor, recipeBlock }: { layout: LayoutOpt
     return (
       <div className="grid min-h-[12rem] grid-cols-1 gap-4 md:grid-cols-2">
         <div className="rounded-lg border border-border bg-card p-4 text-sm text-card-foreground shadow-sm">{square}</div>
-        <div className="flex flex-col gap-3 rounded-lg border border-border bg-card p-4 text-sm text-card-foreground shadow-sm">{recipeBlock}</div>
+        <div className="flex max-h-[min(75vh,720px)] min-h-0 flex-col gap-4 overflow-y-auto rounded-lg border border-border bg-card p-4 text-sm text-card-foreground shadow-sm">
+          {recipeBlock}
+        </div>
       </div>
     );
   }
 
   if (resolvedLayout === "fullWidth") {
     return (
-      <div className="min-h-[12rem] rounded-lg border border-border bg-card p-4 text-sm text-card-foreground shadow-sm">
+      <div className="max-h-[min(85vh,800px)] min-h-[12rem] overflow-y-auto rounded-lg border border-border bg-card p-4 text-sm text-card-foreground shadow-sm">
         {square}
         <div className="mt-4">{recipeBlock}</div>
       </div>
@@ -46,7 +57,9 @@ function LayoutRegions({ layout, squareColor, recipeBlock }: { layout: LayoutOpt
   return (
     <div className="flex min-h-[12rem] flex-col gap-4">
       <div className="rounded-lg border border-border bg-card p-4 text-sm text-card-foreground shadow-sm">{square}</div>
-      {recipeBlock}
+      <div className="max-h-[min(75vh,720px)] min-h-0 overflow-y-auto rounded-lg border border-border bg-card p-4 text-sm text-card-foreground shadow-sm">
+        {recipeBlock}
+      </div>
     </div>
   );
 }
@@ -60,19 +73,37 @@ export function GeneratedUISurface() {
   const { generatedUI } = useGeneratedUI();
   if (!generatedUI) return null;
 
-  const recipeRows: RecipeToolRow[] = generatedUI.recipes ?? [];
-  const recipeBlock =
-    recipeRows.length === 0 ? (
+  const recipePayload = generatedUI.recipes;
+  const pantryPayload = generatedUI.pantryRows;
+
+  const recipeSection =
+    recipePayload === undefined ? null : recipePayload.length === 0 ? (
       <p className="text-sm text-muted-foreground">{translate("assistant.noRecipesInSurface")}</p>
     ) : (
-      <ul className="flex flex-col gap-2">
-        {recipeRows.map((recipe) => (
-          <li key={recipe.recipeId}>
-            <RecipeListRowLink recipeId={recipe.recipeId} title={recipe.title} thumbSrc={recipe.thumbSrc} />
-          </li>
-        ))}
-      </ul>
+      <div className="flex flex-col gap-2">
+        <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">{translate("assistant.recipesSurfaceHeading")}</p>
+        <ul className="flex flex-col gap-2">
+          {recipePayload.map((recipe) => (
+            <li key={recipe.recipeId}>
+              <RecipeListRowLink recipeId={recipe.recipeId} title={recipe.title} thumbSrc={recipe.thumbSrc} />
+            </li>
+          ))}
+        </ul>
+      </div>
     );
+
+  const pantrySection = pantryPayload === undefined ? null : <AssistantPantrySurface rows={pantryPayload} />;
+
+  const previewStack = (
+    <>
+      {recipeSection}
+      {recipeSection !== null && pantrySection !== null ? (
+        <div className="border-t border-border/60 pt-4">{pantrySection}</div>
+      ) : (
+        pantrySection
+      )}
+    </>
+  );
 
   return (
     <section
@@ -99,11 +130,7 @@ export function GeneratedUISurface() {
             </p>
           ) : null}
         </div>
-        <LayoutRegions
-          layout={generatedUI.layout}
-          squareColor={generatedUI.backgroundColor}
-          recipeBlock={recipeBlock}
-        />
+        <LayoutRegions layout={generatedUI.layout} squareColor={generatedUI.backgroundColor} recipeBlock={previewStack} />
       </div>
     </section>
   );

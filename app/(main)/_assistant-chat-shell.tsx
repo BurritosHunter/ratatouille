@@ -68,7 +68,7 @@ export function AssistantChatShell({ children }: { children: ReactNode }) {
   const clearGeneratedUI = useCallback(() => { setGeneratedUI(null); }, []);
   /** Dev: defaults from `/api/assistant/dev-ai-mode` until `localStorage` overrides exist. */
   const devChatMockDefaultRef = useRef<boolean | null>(null);
-  const devChatMockScenarioRef = useRef<"recipes" | "surface" | null>(null);
+  const devChatMockScenarioRef = useRef<"recipes" | "surface" | "pantry" | null>(null);
 
   useEffect(() => {
     if (process.env.NODE_ENV === "production") return;
@@ -80,7 +80,7 @@ export function AssistantChatShell({ children }: { children: ReactNode }) {
           if (data && typeof data.defaultUseMock === "boolean") {
             devChatMockDefaultRef.current = data.defaultUseMock;
           }
-          if (data?.defaultMockScenario === "surface" || data?.defaultMockScenario === "recipes") {
+        if (data?.defaultMockScenario === "surface" || data?.defaultMockScenario === "recipes" || data?.defaultMockScenario === "pantry") {
             devChatMockScenarioRef.current = data.defaultMockScenario;
           }
         },
