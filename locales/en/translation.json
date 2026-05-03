@@ -17,7 +17,14 @@
   "profile": {
     "title": "Profile",
     "theme": "Theme",
-    "assistantHeading": "Assistant"
+    "assistantHeading": "Assistant",
+    "mockAiLabel": "Mock AI",
+    "mockAiHint": "Development only. Uses the local mock model instead of Anthropic; you control it here, not via env flags.",
+    "mockAiAria": "Toggle mock assistant AI responses",
+    "mockScenarioLabel": "Mock first step",
+    "mockScenarioRecipes": "List recipes only",
+    "mockScenarioSurface": "Surface (layout + color + recipes)",
+    "mockScenarioHint": "Controls the mock model’s first streaming step when Mock AI is on."
   },
   "home": {
     "signedInAs": "Signed in as {{displayName}}"

@@ -1,61 +1,69 @@
-import type { LanguageModelV3StreamPart, LanguageModelV3Usage } from "@ai-sdk/provider"
-import { MockLanguageModelV3 } from "ai/test"
-import { simulateReadableStream } from "ai"
+import type { LanguageModelV3StreamPart, LanguageModelV3Usage } from "@ai-sdk/provider";
+import { MockLanguageModelV3 } from "ai/test";
+import { simulateReadableStream } from "ai";
 
 const mockUsage: LanguageModelV3Usage = {
   inputTokens: { total: 0, noCache: 0, cacheRead: 0, cacheWrite: 0 },
   outputTokens: { total: 0, text: 0, reasoning: 0 },
-}
+};
 
-const MOCK_TEXT_BLOCK_ID = "ratatouille-mock-text"
+const MOCK_TEXT_BLOCK_ID = "ratatouille-mock-text";
 
 /**
- * Sentinel values: keep a line in `.env.local` but do not call Anthropic (dev auto-mock still applies).
- * `RATATOUILLE_AI_DEBUG` only logs — it does not disable Anthropic. Use this file’s rules or `RATATOUILLE_AI_MOCK`.
+ * Sentinel values: `ANTHROPIC_API_KEY` can be set to a placeholder so dev skips real calls until you use a real key.
+ * Mock vs real in development is controlled by Profile / `x-ratatouille-mock-ai`, not env flags.
  */
-const ANTHROPIC_KEY_DISABLED_SENTINELS = new Set(["mock", "off", "disabled", "false", "placeholder", "none"])
+const ANTHROPIC_KEY_DISABLED_SENTINELS = new Set(["mock", "off", "disabled", "false", "placeholder", "none"]);
 
 export function hasUsableAnthropicApiKey(): boolean {
   /** True when `ANTHROPIC_API_KEY` is set to a non-placeholder value (real calls use this). */
-  const raw = process.env.ANTHROPIC_API_KEY?.trim()
+  const raw = process.env.ANTHROPIC_API_KEY?.trim();
   if (!raw) {
-    return false
+    return false;
   }
   if (ANTHROPIC_KEY_DISABLED_SENTINELS.has(raw.toLowerCase())) {
-    return false
+    return false;
   }
-  return true
+  return true;
 }
 
+/**
+ * Default mock-vs-real when the client has not sent `x-ratatouille-mock-ai` yet (e.g. `/api/assistant/dev-ai-mode`).
+ * In development: mock if there is no usable Anthropic key. Production: never mock.
+ */
 export function shouldUseRatatouilleMockAi(): boolean {
-  /**
-   * When true, `/api/chat` uses a mock language model (no Anthropic network calls).
-   *
-   * - `RATATOUILLE_AI_MOCK=true` or `1`: always mock (even if `ANTHROPIC_API_KEY` is set — use this to test locally with a fake key still in the file).
-   * - `RATATOUILLE_AI_MOCK=false`: never mock (requires a real `ANTHROPIC_API_KEY`).
-   * - Otherwise: in production, never mock. In dev, mock if there is no usable key (`ANTHROPIC_API_KEY` empty, or set to a sentinel like `mock`).
-   *
-   * If you put any other non-empty value in `ANTHROPIC_API_KEY`, the real Anthropic client runs; a fake key will fail at the API with “invalid API key”.
-   */
-  const explicit = process.env.RATATOUILLE_AI_MOCK?.trim().toLowerCase()
-  if (explicit === "false") {
-    return false
-  }
-  if (explicit === "true" || explicit === "1") {
-    return true
-  }
-  if (process.env.NODE_ENV === "production") {
-    return false
-  }
-  return !hasUsableAnthropicApiKey()
+  if (process.env.NODE_ENV === "production") { return false; }
+
+  return !hasUsableAnthropicApiKey();
 }
 
-function getRatatouilleMockScenario(): "recipes" | "surface" {
-  /** `RATATOUILLE_AI_MOCK_SCENARIO=surface`: first step emits layout + background + listRecipes tool calls in one model turn (dev testing of merged assistant surface). */
-  const raw = process.env.RATATOUILLE_AI_MOCK_SCENARIO?.trim().toLowerCase();
-  if (raw === "surface") {
-    return "surface";
-  }
+/**
+ * Resolves mock vs real for `/api/chat`.
+ * Non-production: `x-ratatouille-mock-ai` from the app wins; if absent, {@link shouldUseRatatouilleMockAi}.
+ * Production: always real (no mock).
+ */
+export function resolveUseMockAiForChatRequest(request: Request): boolean {
+  if (process.env.NODE_ENV === "production") { return false; }
+
+  const header = request.headers.get("x-ratatouille-mock-ai")?.trim().toLowerCase();
+  if (header === "true" || header === "1") { return true; }
+  if (header === "false" || header === "0") { return false; }
+
+  return shouldUseRatatouilleMockAi();
+}
+
+export type RatatouilleMockScenario = "recipes" | "surface";
+
+/**
+ * First mock model step: `recipes` = listRecipes tool only; `surface` = layout + background + listRecipes.
+ * Non-production: header `x-ratatouille-mock-scenario`; if invalid or absent, `recipes`.
+ */
+export function resolveRatatouilleMockScenarioFromRequest(request: Request): RatatouilleMockScenario {
+  if (process.env.NODE_ENV === "production") { return "recipes"; }
+
+  const header = request.headers.get("x-ratatouille-mock-scenario")?.trim().toLowerCase();
+  if (header === "surface") { return "surface"; }
+  if (header === "recipes") { return "recipes"; }
   return "recipes";
 }
 
@@ -109,11 +117,11 @@ function streamMockSurfaceMultiToolCallStep(): ReadableStream<LanguageModelV3Str
   });
 }
 
-function streamMockAssistantTextStep(): ReadableStream<LanguageModelV3StreamPart> {
+function streamMockAssistantTextStep(scenario: RatatouilleMockScenario): ReadableStream<LanguageModelV3StreamPart> {
   const text =
-    getRatatouilleMockScenario() === "surface"
-      ? "This is a mock assistant reply (no Anthropic API call). One step emitted three tools: layout (twoColumn), setAssistantBackground with color green for the first-column square, and listRecipesForUser with recipe rows for the generated UI preview below the site header. Add ANTHROPIC_API_KEY to .env.local for the real model."
-      : "This is a mock assistant reply (no Anthropic API call). The listRecipesForUser tool returns your saved recipes for the generated UI preview, and the app adds a short summary in this chat. Add ANTHROPIC_API_KEY to .env.local for the real model."
+    scenario === "surface"
+      ? "This is a mock assistant reply (no Anthropic API call). One step emitted three tools: layout (twoColumn), setAssistantBackground with color green for the first-column square, and listRecipesForUser with recipe rows for the generated UI preview below the site header. Turn off Mock AI under Profile to use the real model when your API key is configured."
+      : "This is a mock assistant reply (no Anthropic API call). The listRecipesForUser tool returns your saved recipes for the generated UI preview, and the app adds a short summary in this chat. Turn off Mock AI under Profile to use the real model when your API key is configured.";
   return simulateReadableStream({
     chunks: [
       { type: "stream-start", warnings: [] },
@@ -126,16 +134,15 @@ function streamMockAssistantTextStep(): ReadableStream<LanguageModelV3StreamPart
         finishReason: { unified: "stop", raw: "mock" },
       },
     ],
-  })
+  });
 }
 
 /**
- * Two-step mock: (1) emit fixed tool call(s) so tools run for real (`listRecipesForUser`, or layout+background+recipes when `RATATOUILLE_AI_MOCK_SCENARIO=surface`), (2) stream canned text.
+ * Two-step mock: (1) emit fixed tool call(s) so tools run for real, (2) stream canned text.
  * A new instance per request so the step counter resets.
  */
-export function createRatatouilleMockLanguageModel(): MockLanguageModelV3 {
+export function createRatatouilleMockLanguageModel(scenario: RatatouilleMockScenario): MockLanguageModelV3 {
   let stepIndex = 0;
-  const scenario = getRatatouilleMockScenario();
   return new MockLanguageModelV3({
     provider: "ratatouille-mock",
     modelId: "mock-claude",
@@ -146,7 +153,7 @@ export function createRatatouilleMockLanguageModel(): MockLanguageModelV3 {
         const stream = scenario === "surface" ? streamMockSurfaceMultiToolCallStep() : streamMockListRecipesToolCallStep();
         return { stream };
       }
-      return { stream: streamMockAssistantTextStep() };
+      return { stream: streamMockAssistantTextStep(scenario) };
     },
   });
 }

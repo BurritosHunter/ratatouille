@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { AssistantChatComposerProvider } from "@/contexts/assistant-chat-composer-context";
 import { GeneratedUIContext } from "@/contexts/assistant-generated-ui-context";
 import { tryParseToolData, SUPPORTED_TOOL_TYPES, mergeGeneratedUIPayload, type GeneratedUIPayload } from "@/lib/generated-ui";
+import { DEFAULT_ASSISTANT_MOCK_SCENARIO, readAssistantMockAiOverride, readAssistantMockScenarioOverride } from "@/lib/assistant-mock-ai-preference";
 import { cn } from "@/lib/helpers/utils";
 import { DefaultChatTransport, type UIDataTypes, type UIMessagePart, type UITools } from "ai";
 
@@ -65,13 +66,77 @@ export function AssistantChatShell({ children }: { children: ReactNode }) {
   const [assistantAccessEnabled, setAssistantAccessEnabledState] = useState(true);
   const [generatedUI, setGeneratedUI] = useState<GeneratedUIPayload | null>(null);
   const clearGeneratedUI = useCallback(() => { setGeneratedUI(null); }, []);
-  const { messages, sendMessage, setMessages, status, stop, error, clearError } =
-    useChat({
-      transport: new DefaultChatTransport({ api: "/api/chat", credentials: "include" }),
-      onError: (chatError) => {
-        if (process.env.NODE_ENV === "development") console.error("[assistant]", chatError);
-      },
-    });
+  /** Dev: defaults from `/api/assistant/dev-ai-mode` until `localStorage` overrides exist. */
+  const devChatMockDefaultRef = useRef<boolean | null>(null);
+  const devChatMockScenarioRef = useRef<"recipes" | "surface" | null>(null);
+
+  useEffect(() => {
+    if (process.env.NODE_ENV === "production") return;
+
+    void fetch("/api/assistant/dev-ai-mode", { credentials: "include" })
+      .then((response) => (response.ok ? response.json() : null))
+      .then(
+        (data: { defaultUseMock?: boolean; defaultMockScenario?: string } | null) => {
+          if (data && typeof data.defaultUseMock === "boolean") {
+            devChatMockDefaultRef.current = data.defaultUseMock;
+          }
+          if (data?.defaultMockScenario === "surface" || data?.defaultMockScenario === "recipes") {
+            devChatMockScenarioRef.current = data.defaultMockScenario;
+          }
+        },
+      )
+      .catch(() => {});
+  }, []);
+
+  const assistantChatTransport = useMemo(
+    () =>
+      new DefaultChatTransport({
+        api: "/api/chat",
+        credentials: "include",
+        prepareSendMessagesRequest: (request) => {
+          const { body, headers, id, messages, trigger, messageId } = request;
+          const outgoingBody = {
+            ...(body ?? {}),
+            id,
+            messages,
+            trigger,
+            messageId,
+          };
+          const headerRecord: Record<string, string> =
+            headers instanceof Headers
+              ? Object.fromEntries(headers.entries())
+              : { ...((headers as Record<string, string> | undefined) ?? {}) };
+
+          if (process.env.NODE_ENV === "production") { return { body: outgoingBody }; }
+
+          const fromStorage = readAssistantMockAiOverride();
+          const useMockAi = fromStorage ?? devChatMockDefaultRef.current;
+          if (useMockAi === null) { return { body: outgoingBody }; }
+
+          const scenario =
+            readAssistantMockScenarioOverride() ??
+            devChatMockScenarioRef.current ??
+            DEFAULT_ASSISTANT_MOCK_SCENARIO;
+
+          return {
+            body: outgoingBody,
+            headers: {
+              ...headerRecord,
+              "x-ratatouille-mock-ai": useMockAi ? "true" : "false",
+              "x-ratatouille-mock-scenario": scenario,
+            },
+          };
+        },
+      }),
+    [],
+  );
+
+  const { messages, sendMessage, setMessages, status, stop, error, clearError } = useChat({
+    transport: assistantChatTransport,
+    onError: (chatError) => {
+      if (process.env.NODE_ENV === "development") console.error("[assistant]", chatError);
+    },
+  });
   const chatBlockedByStatus = status === "submitted" || status === "streaming";
   const formsDisabled = chatBlockedByStatus || !assistantAccessEnabled;
 

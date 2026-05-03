@@ -3,7 +3,8 @@ import { auth } from "@/auth";
 import { createAssistantTools } from "@/lib/ai/assistant-tools";
 import {
   createRatatouilleMockLanguageModel,
-  shouldUseRatatouilleMockAi,
+  resolveRatatouilleMockScenarioFromRequest,
+  resolveUseMockAiForChatRequest,
 } from "@/lib/ai/ratatouille-mock-language-model";
 import {
   convertToModelMessages,
@@ -15,21 +16,12 @@ import {
 export const maxDuration = 30;
 const ASSISTANT_CHAT_SYSTEM_PROMPT = "You are a helpful assistant for the Ratatouille recipe app. When the user asks what recipes they have, to list their recipes, or similar, call the listRecipesForUser tool. That tool returns the signed-in user's recipe rows for the generated UI preview and chat summary context. Do not invent or guess recipe names; rely on tool output as the source of truth and you may briefly say the list is shown in the app. When the user asks to change the modular tool layout preview (below the site header), call setAssistantLayout with the best matching option. When the user asks for a colored square or swatch in that preview, call setAssistantBackground with a color of red, blue, or green (you choose: match their request, or pick a default if they do not specify). That tool shows a square in a layout column, not the full page background. You may call multiple tools in the same assistant turn when it fits the request—for example, to update the preview with layout, a color square, and the user's recipes together (parallel tool calls in one step are allowed).";
 
-/** logAiDebugJson **/
-function isAiDebugEnabled(): boolean {
-  /** Set `RATATOUILLE_AI_DEBUG=true` in `.env.local` to log prompts, tools, and SDK steps (dev only; includes user message text). */
-  const raw = process.env.RATATOUILLE_AI_DEBUG;
-  return raw === "1" || raw === "true";
-}
 function jsonSerializationReplacer(_key: string, value: unknown): unknown {
   if (typeof value === "bigint") return value.toString();
-  if (value instanceof Error)
-    return { name: value.name, message: value.message, stack: value.stack };
+  if (value instanceof Error) return { name: value.name, message: value.message, stack: value.stack };
   return value;
 }
 function logAiDebugJson(label: string, data: unknown): void {
-  if (!isAiDebugEnabled()) return;
-
   try {
     console.log(`[ratatouille-ai] ${label}\n${JSON.stringify(data, jsonSerializationReplacer, 2)}`);
   } catch (error) {
@@ -55,14 +47,16 @@ export async function POST(request: Request) {
 
   const tools = createAssistantTools({ userId });
   const modelMessages = await convertToModelMessages(messages, { tools });
-  const useMockAi = shouldUseRatatouilleMockAi();
+  const useMockAi = resolveUseMockAiForChatRequest(request);
+  const mockScenario = resolveRatatouilleMockScenarioFromRequest(request);
   logAiDebugJson("request", {
     messageCount: messages.length,
     useMockAi,
+    mockScenario,
     toolNames: Object.keys(tools),
   });
 
-  const languageModel = useMockAi ? createRatatouilleMockLanguageModel() : anthropic("claude-sonnet-4-20250514");
+  const languageModel = useMockAi ? createRatatouilleMockLanguageModel(mockScenario) : anthropic("claude-sonnet-4-20250514");
   const result = streamText({
     model: languageModel,
     system: ASSISTANT_CHAT_SYSTEM_PROMPT,

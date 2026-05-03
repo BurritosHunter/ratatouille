@@ -17,7 +17,14 @@
   "profile": {
     "title": "Profil",
     "theme": "Thème",
-    "assistantHeading": "Assistant"
+    "assistantHeading": "Assistant",
+    "mockAiLabel": "IA simulée",
+    "mockAiHint": "Développement uniquement : modèle factice local à la place d’Anthropic ; tout se règle ici, pas via des variables d’environnement.",
+    "mockAiAria": "Activer ou désactiver la simulation de l’assistant",
+    "mockScenarioLabel": "Première étape simulée",
+    "mockScenarioRecipes": "Liste des recettes seulement",
+    "mockScenarioSurface": "Surface (mise en page + couleur + recettes)",
+    "mockScenarioHint": "Définit la première étape du flux simulé lorsque l’IA simulée est activée."
   },
   "home": {
     "signedInAs": "Connecté(e) en tant que {{displayName}}"
