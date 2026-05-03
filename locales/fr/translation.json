@@ -23,7 +23,7 @@
     "mockAiAria": "Activer ou désactiver la simulation de l’assistant",
     "mockScenarioLabel": "Première étape simulée",
     "mockScenarioRecipes": "Liste des recettes seulement",
-    "mockScenarioSurface": "Surface (mise en page + couleur + recettes)",
+    "mockScenarioSurface": "Surface (mise en page + recettes)",
     "mockScenarioHint": "Définit la première étape du flux simulé lorsque l’IA simulée est activée."
   },
   "home": {
@@ -170,8 +170,6 @@
     "surfaceHeading": "Outils de l'assistant",
     "surfaceMeta": "Mis à jour le {{date}} (dernier appel : {{lastCallId}})",
     "layoutLine": "Mise en page : {{layout}}",
-    "layoutTestSquare": "Carré de test de mise en page : {{color}}",
-    "layoutTestSquareAria": "Carré de test de mise en page : {{color}}",
     "noRecipesInSurface": "Aucune recette dans l'aperçu pour le moment.",
     "recipeListSummaryItem": "• {{title}}",
     "recipeListSummaryWithList": "Vous avez {{count}} recette(s) enregistrée(s) :\n\n{{list}}",

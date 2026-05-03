@@ -23,7 +23,7 @@
     "mockAiAria": "Toggle mock assistant AI responses",
     "mockScenarioLabel": "Mock first step",
     "mockScenarioRecipes": "List recipes only",
-    "mockScenarioSurface": "Surface (layout + color + recipes)",
+    "mockScenarioSurface": "Surface (layout + recipes)",
     "mockScenarioHint": "Controls the mock model’s first streaming step when Mock AI is on."
   },
   "home": {
@@ -170,8 +170,6 @@
     "surfaceHeading": "Assistant tools",
     "surfaceMeta": "Updated {{date}} (last call: {{lastCallId}})",
     "layoutLine": "Layout: {{layout}}",
-    "layoutTestSquare": "Layout test square: {{color}}",
-    "layoutTestSquareAria": "Layout test square: {{color}}",
     "noRecipesInSurface": "No recipes in surface state yet.",
     "recipeListSummaryItem": "• {{title}}",
     "recipeListSummaryWithList": "You have {{count}} saved recipe(s):\n\n{{list}}",

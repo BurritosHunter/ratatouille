@@ -17,13 +17,10 @@ const ANTHROPIC_KEY_DISABLED_SENTINELS = new Set(["mock", "off", "disabled", "fa
 
 export function hasUsableAnthropicApiKey(): boolean {
   /** True when `ANTHROPIC_API_KEY` is set to a non-placeholder value (real calls use this). */
-  const raw = process.env.ANTHROPIC_API_KEY?.trim();
-  if (!raw) {
-    return false;
-  }
-  if (ANTHROPIC_KEY_DISABLED_SENTINELS.has(raw.toLowerCase())) {
-    return false;
-  }
+  const trimmedAnthropicApiKey = process.env.ANTHROPIC_API_KEY?.trim();
+  if (!trimmedAnthropicApiKey) return false;
+  if (ANTHROPIC_KEY_DISABLED_SENTINELS.has(trimmedAnthropicApiKey.toLowerCase())) return false;
+
   return true;
 }
 
@@ -32,7 +29,7 @@ export function hasUsableAnthropicApiKey(): boolean {
  * In development: mock if there is no usable Anthropic key. Production: never mock.
  */
 export function shouldUseRatatouilleMockAi(): boolean {
-  if (process.env.NODE_ENV === "production") { return false; }
+  if (process.env.NODE_ENV === "production") return false;
 
   return !hasUsableAnthropicApiKey();
 }
@@ -43,11 +40,11 @@ export function shouldUseRatatouilleMockAi(): boolean {
  * Production: always real (no mock).
  */
 export function resolveUseMockAiForChatRequest(request: Request): boolean {
-  if (process.env.NODE_ENV === "production") { return false; }
+  if (process.env.NODE_ENV === "production") return false;
 
-  const header = request.headers.get("x-ratatouille-mock-ai")?.trim().toLowerCase();
-  if (header === "true" || header === "1") { return true; }
-  if (header === "false" || header === "0") { return false; }
+  const mockAiModeHeader = request.headers.get("x-ratatouille-mock-ai")?.trim().toLowerCase();
+  if (mockAiModeHeader === "true" || mockAiModeHeader === "1") return true;
+  if (mockAiModeHeader === "false" || mockAiModeHeader === "0") return false;
 
   return shouldUseRatatouilleMockAi();
 }
@@ -55,15 +52,16 @@ export function resolveUseMockAiForChatRequest(request: Request): boolean {
 export type RatatouilleMockScenario = "recipes" | "surface";
 
 /**
- * First mock model step: `recipes` = listRecipes tool only; `surface` = layout + background + listRecipes.
+ * First mock model step: `recipes` = listRecipes tool only; `surface` = layout + listRecipes.
  * Non-production: header `x-ratatouille-mock-scenario`; if invalid or absent, `recipes`.
  */
 export function resolveRatatouilleMockScenarioFromRequest(request: Request): RatatouilleMockScenario {
-  if (process.env.NODE_ENV === "production") { return "recipes"; }
+  if (process.env.NODE_ENV === "production") return "recipes";
 
-  const header = request.headers.get("x-ratatouille-mock-scenario")?.trim().toLowerCase();
-  if (header === "surface") { return "surface"; }
-  if (header === "recipes") { return "recipes"; }
+  const mockScenarioHeader = request.headers.get("x-ratatouille-mock-scenario")?.trim().toLowerCase();
+  if (mockScenarioHeader === "surface") return "surface";
+  if (mockScenarioHeader === "recipes") return "recipes";
+
   return "recipes";
 }
 
@@ -98,12 +96,6 @@ function streamMockSurfaceMultiToolCallStep(): ReadableStream<LanguageModelV3Str
       },
       {
         type: "tool-call",
-        toolCallId: "mock-setAssistantBackground",
-        toolName: "setAssistantBackground",
-        input: '{"color":"green"}',
-      },
-      {
-        type: "tool-call",
         toolCallId: "mock-listRecipesForUser",
         toolName: "listRecipesForUser",
         input: "{}",
@@ -120,7 +112,7 @@ function streamMockSurfaceMultiToolCallStep(): ReadableStream<LanguageModelV3Str
 function streamMockAssistantTextStep(scenario: RatatouilleMockScenario): ReadableStream<LanguageModelV3StreamPart> {
   const text =
     scenario === "surface"
-      ? "This is a mock assistant reply (no Anthropic API call). One step emitted three tools: layout (twoColumn), setAssistantBackground with color green for the first-column square, and listRecipesForUser with recipe rows for the generated UI preview below the site header. Turn off Mock AI under Profile to use the real model when your API key is configured."
+      ? "This is a mock assistant reply (no Anthropic API call). One step emitted two tools: layout (twoColumn) and listRecipesForUser with recipe rows for the generated UI preview below the site header. Turn off Mock AI under Profile to use the real model when your API key is configured."
       : "This is a mock assistant reply (no Anthropic API call). The listRecipesForUser tool returns your saved recipes for the generated UI preview, and the app adds a short summary in this chat. Turn off Mock AI under Profile to use the real model when your API key is configured.";
   return simulateReadableStream({
     chunks: [

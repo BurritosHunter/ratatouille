@@ -4,49 +4,30 @@ import type { ReactNode } from "react";
 import { RecipeListRowLink } from "@/components/molecules/recipe-list-row-link";
 import { useGeneratedUI } from "@/contexts/assistant-generated-ui-context";
 import type { RecipeToolRow } from "@/lib/ai/assistant-tools/recipe-rows";
-import type { BackgroundColorToken, LayoutOption } from "@/lib/generated-ui";
-import { cn } from "@/lib/helpers/utils";
+import type { LayoutOption } from "@/lib/generated-ui";
 import { useTranslation } from "react-i18next";
 
-const SQUARE_CLASS_BY_COLOR: Record<BackgroundColorToken, string> = {
-  red: "bg-red-500",
-  blue: "bg-blue-500",
-  green: "bg-green-500",
-};
-
-function LayoutRegions({ layout, squareColor, recipeBlock }: { layout: LayoutOption | undefined; squareColor: BackgroundColorToken | undefined; recipeBlock: ReactNode }) {
+function LayoutRegions({ layout, recipeBlock }: { layout: LayoutOption | undefined; recipeBlock: ReactNode }) {
   const resolvedLayout: LayoutOption = layout ?? "singleColumn";
-  const square = squareColor ? (
-    <div
-      className={cn(
-        "size-24 shrink-0 rounded-md border border-border shadow-sm",
-        SQUARE_CLASS_BY_COLOR[squareColor]
-      )}
-    />
-  ) : null;
+  const regionCardClass =
+    "rounded-lg border border-border bg-card p-4 text-sm text-card-foreground shadow-sm";
 
   if (resolvedLayout === "twoColumn") {
     return (
       <div className="grid min-h-[12rem] grid-cols-1 gap-4 md:grid-cols-2">
-        <div className="rounded-lg border border-border bg-card p-4 text-sm text-card-foreground shadow-sm">{square}</div>
-        <div className="flex flex-col gap-3 rounded-lg border border-border bg-card p-4 text-sm text-card-foreground shadow-sm">{recipeBlock}</div>
+        <div aria-hidden className={`min-h-[8rem] ${regionCardClass}`} />
+        <div className={`flex flex-col gap-3 ${regionCardClass}`}>{recipeBlock}</div>
       </div>
     );
   }
 
   if (resolvedLayout === "fullWidth") {
-    return (
-      <div className="min-h-[12rem] rounded-lg border border-border bg-card p-4 text-sm text-card-foreground shadow-sm">
-        {square}
-        <div className="mt-4">{recipeBlock}</div>
-      </div>
-    );
+    return <div className={`min-h-[12rem] ${regionCardClass}`}>{recipeBlock}</div>;
   }
 
   return (
     <div className="flex min-h-[12rem] flex-col gap-4">
-      <div className="rounded-lg border border-border bg-card p-4 text-sm text-card-foreground shadow-sm">{square}</div>
-      {recipeBlock}
+      <div className={regionCardClass}>{recipeBlock}</div>
     </div>
   );
 }
@@ -89,21 +70,10 @@ export function GeneratedUISurface() {
             })}
           </p>
           {generatedUI.layout ? (
-            <p className="text-xs font-medium text-foreground">
-              {translate("assistant.layoutLine", { layout: generatedUI.layout })}
-            </p>
-          ) : null}
-          {generatedUI.backgroundColor ? (
-            <p className="text-xs font-medium text-foreground -mt-2">
-              {translate("assistant.layoutTestSquare", { color: generatedUI.backgroundColor })}
-            </p>
+            <p className="text-xs font-medium text-foreground">{translate("assistant.layoutLine", { layout: generatedUI.layout })}</p>
           ) : null}
         </div>
-        <LayoutRegions
-          layout={generatedUI.layout}
-          squareColor={generatedUI.backgroundColor}
-          recipeBlock={recipeBlock}
-        />
+        <LayoutRegions layout={generatedUI.layout} recipeBlock={recipeBlock} />
       </div>
     </section>
   );
