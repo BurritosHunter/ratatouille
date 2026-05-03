@@ -48,6 +48,20 @@ export function resolveShelfLifePreset(raw: unknown): IngredientShelfLifePreset 
   return parseShelfLifePreset(raw) ?? DEFAULT_SHELF_LIFE_PRESET
 }
 
+/** Days from today for default pantry expiry dates (months/year are approximate). */
+export function expirationDaysOffsetForShelfLifePreset(preset: IngredientShelfLifePreset): number {
+  switch (preset) {
+    case "3_days":   return 3
+    case "5_days":   return 5
+    case "7_days":   return 7
+    case "2_weeks":  return 14
+    case "1_month":  return 30
+    case "3_months": return 90
+    case "6_months": return 182
+    case "1_year":   return 365
+  }
+}
+
 export type Ingredient = {
   id: number
   name: string

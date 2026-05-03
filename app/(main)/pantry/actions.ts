@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 
 import { requireUserId } from "@/lib/auth/auth-user";
 import { createIngredient } from "@/lib/data/ingredients";
+import { shortestExpirationDaysOffsetForRecipe } from "@/lib/data/recipe-ingredients";
 import { deletePantryInventoryRow, insertPantryInventoryRow, searchPantryCatalog } from "@/lib/data/pantry-inventory";
 import type { PantryCatalogHit, PantryStorageLocation } from "@/lib/models/pantry-inventory";
 
@@ -48,6 +49,25 @@ export async function searchPantryCatalogAction(query: string): Promise<{ ok: tr
     const userId = await requireUserId("/pantry");
     const hits = await searchPantryCatalog(userId, query);
     return { ok: true, hits };
+  } catch {
+    return { ok: false };
+  }
+}
+
+export async function mealShortestShelfLifeExpiryDaysAction(
+  recipeId: unknown,
+): Promise<{ ok: true; daysFromToday: number | null } | { ok: false }> {
+  try {
+    const userId = await requireUserId("/pantry");
+    const numericId =
+      typeof recipeId === "number" && Number.isFinite(recipeId)
+        ? recipeId
+        : typeof recipeId === "string"
+          ? Number.parseInt(recipeId, 10)
+          : Number.NaN;
+    if (!Number.isFinite(numericId)) return { ok: false };
+    const daysFromToday = await shortestExpirationDaysOffsetForRecipe(userId, numericId);
+    return { ok: true, daysFromToday };
   } catch {
     return { ok: false };
   }

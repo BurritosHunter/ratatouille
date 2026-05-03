@@ -1,3 +1,5 @@
+import type { IngredientShelfLifePreset } from "@/lib/models/ingredient"
+
 export type PantryStorageLocation = "fridge" | "pantry" | "storage" | "freezer"
 
 export type PantryItemKind = "ingredient" | "meal" | "custom"
@@ -15,5 +17,5 @@ export type PantryInventoryRow = {
 }
 
 export type PantryCatalogHit =
-  | { kind: "ingredient"; id: number; name: string }
+  | { kind: "ingredient"; id: number; name: string; shelfLifePreset: IngredientShelfLifePreset }
   | { kind: "meal"; id: number; name: string }

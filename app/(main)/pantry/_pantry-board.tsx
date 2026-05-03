@@ -3,25 +3,35 @@
 import { IconPlus, IconTrash } from "@tabler/icons-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import type { TFunction } from "i18next";
 import { useTranslation } from "react-i18next";
 
-import { addPantryInventoryLine, removePantryInventoryLine, searchPantryCatalogAction } from "./actions";
+import {
+  addPantryInventoryLine,
+  mealShortestShelfLifeExpiryDaysAction,
+  removePantryInventoryLine,
+  searchPantryCatalogAction,
+} from "./actions";
 import { Button } from "@/components/ui/button";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
+import { Input, inputVariants } from "@/components/ui/input";
+import { cn } from "@/lib/helpers/utils";
 import type { PantryCatalogHit, PantryInventoryRow, PantryStorageLocation } from "@/lib/models/pantry-inventory";
+import {
+  expirationDaysOffsetForShelfLifePreset,
+  INGREDIENT_SHELF_LIFE_PRESETS,
+  type IngredientShelfLifePreset,
+} from "@/lib/models/ingredient";
 
 type LocationFilter = "all" | PantryStorageLocation;
 
 const STORAGE_LOCATIONS: readonly PantryStorageLocation[] = ["fridge", "pantry", "storage", "freezer"] as const;
 
-type PantryExpiresPresetKey = "pantry.expiresPresetToday" | "pantry.expiresPreset3Days" | "pantry.expiresPreset7Days" | "pantry.expiresPreset14Days";
+type PantryExpiryQuickOption = { kind: "today" } | { kind: "preset"; preset: IngredientShelfLifePreset };
 
-const EXPIRATION_DATE_PRESETS: readonly { daysFromToday: number; i18nKey: PantryExpiresPresetKey }[] = [
-  { daysFromToday: 0, i18nKey: "pantry.expiresPresetToday" },
-  { daysFromToday: 3, i18nKey: "pantry.expiresPreset3Days" },
-  { daysFromToday: 7, i18nKey: "pantry.expiresPreset7Days" },
-  { daysFromToday: 14, i18nKey: "pantry.expiresPreset14Days" },
+const PANTRY_EXPIRY_QUICK_OPTIONS: readonly PantryExpiryQuickOption[] = [
+  { kind: "today" },
+  ...INGREDIENT_SHELF_LIFE_PRESETS.map((preset) => ({ kind: "preset" as const, preset })),
 ];
 
 function formatLocalCalendarDateForDateInput(calendarDate: Date): string {
@@ -37,6 +47,43 @@ function localCalendarDateWithDaysFromToday(daysFromToday: number): string {
   return formatLocalCalendarDateForDateInput(shifted);
 }
 
+function parseIsoLocalDate(value: string): { year: number; monthIndex: number; day: number } | null {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value.trim());
+  if (!match) return null;
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const dayNum = Number(match[3]);
+  if (!Number.isFinite(year) || !Number.isFinite(month) || !Number.isFinite(dayNum)) return null;
+  const date = new Date(year, month - 1, dayNum);
+  if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== dayNum) return null;
+  return { year, monthIndex: month - 1, day: dayNum };
+}
+
+/** Whole calendar days from local today to yyyy-mm-dd (negative = past). */
+function calendarDayDiffFromToday(yyyyMmDd: string): number | null {
+  const parsed = parseIsoLocalDate(yyyyMmDd);
+  if (!parsed) return null;
+  const today = new Date();
+  const todayMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
+  const targetMidnight = new Date(parsed.year, parsed.monthIndex, parsed.day).getTime();
+  return Math.round((targetMidnight - todayMidnight) / 86400000);
+}
+
+function formatMediumIsoLocalDate(yyyyMmDd: string, locale: string): string | null {
+  const parsed = parseIsoLocalDate(yyyyMmDd);
+  if (!parsed) return null;
+  const date = new Date(parsed.year, parsed.monthIndex, parsed.day);
+  return new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(date);
+}
+
+function pantryExpiryRelativeLabel(t: TFunction<"translation">, dayDiff: number): string {
+  if (dayDiff === 0) return t("pantry.expiresRelativeToday");
+  if (dayDiff === 1) return t("pantry.expiresRelativeTomorrow");
+  if (dayDiff === -1) return t("pantry.expiresRelativeYesterday");
+  if (dayDiff > 1) return t("pantry.expiresRelativeInDays", { count: dayDiff });
+  return t("pantry.expiresRelativeDaysAgo", { count: -dayDiff });
+}
+
 type AddPhase = "search" | "details";
 type Props = { initialRows: PantryInventoryRow[] };
 
@@ -45,7 +92,7 @@ function rowsSignature(rows: PantryInventoryRow[]): string {
 }
 
 export function PantryBoard({ initialRows }: Props) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const router = useRouter();
   const [rows, setRows] = useState<PantryInventoryRow[]>(initialRows);
   const [locationFilter, setLocationFilter] = useState<LocationFilter>("all");
@@ -65,6 +112,20 @@ export function PantryBoard({ initialRows }: Props) {
   const [formError, setFormError] = useState<string | null>(null);
 
   const lastServerRowsSignatureRef = useRef(rowsSignature(initialRows));
+  const mealExpiryLoadGenerationReference = useRef(0);
+  const expiryDateInputReference = useRef<HTMLInputElement | null>(null);
+
+  const activateExpiryDatePicker = useCallback(() => {
+    const input = expiryDateInputReference.current;
+    if (!input) return;
+    try {
+      const showPicker = input.showPicker;
+      if (typeof showPicker === "function") showPicker.call(input);
+      else input.focus();
+    } catch {
+      input.focus();
+    }
+  }, []);
 
   useLayoutEffect(() => {
     const nextSignature = rowsSignature(initialRows);
@@ -79,6 +140,15 @@ export function PantryBoard({ initialRows }: Props) {
 
     return rows.filter((row) => row.storageLocation === locationFilter);
   }, [rows, locationFilter]);
+
+  const expiryDateFieldSummary = useMemo(() => {
+    const trimmed = detailExpires.trim();
+    if (trimmed === "") return null;
+    const dayDiff = calendarDayDiffFromToday(trimmed);
+    const formattedDate = formatMediumIsoLocalDate(trimmed, i18n.language);
+    if (dayDiff === null || formattedDate === null) return null;
+    return { formattedDate, relativeLabel: pantryExpiryRelativeLabel(t, dayDiff) };
+  }, [detailExpires, i18n.language, t]);
 
   const runSearch = useCallback(async (query: string) => {
     setSearching(true);
@@ -130,11 +200,23 @@ export function PantryBoard({ initialRows }: Props) {
     setAddOpen(false);
   }
 
-  function selectCatalogHit(hit: PantryCatalogHit) {
+  async function selectCatalogHit(hit: PantryCatalogHit) {
+    const loadGeneration = (mealExpiryLoadGenerationReference.current += 1);
     setSelectedHit(hit);
     setAddMode("catalog");
     setAddPhase("details");
     setFormError(null);
+    if (hit.kind === "ingredient") {
+      const daysFromToday = expirationDaysOffsetForShelfLifePreset(hit.shelfLifePreset);
+      setDetailExpires(localCalendarDateWithDaysFromToday(daysFromToday));
+      return;
+    }
+    setDetailExpires("");
+    const result = await mealShortestShelfLifeExpiryDaysAction(hit.id);
+    if (loadGeneration !== mealExpiryLoadGenerationReference.current) return;
+    if (result.ok && result.daysFromToday !== null) {
+      setDetailExpires(localCalendarDateWithDaysFromToday(result.daysFromToday));
+    }
   }
 
   function goToCustomFromSearch() {
@@ -293,7 +375,7 @@ export function PantryBoard({ initialRows }: Props) {
                           <ul className="flex flex-col gap-0.5">
                             {catalogIngredientHits.map((hit) => (
                               <li key={`${hit.kind}-${hit.id}`}>
-                                <button type="button" className="w-full rounded px-2 py-2 text-left text-sm hover:bg-muted" onClick={() => selectCatalogHit(hit)}>
+                                <button type="button" className="w-full rounded px-2 py-2 text-left text-sm hover:bg-muted" onClick={() => void selectCatalogHit(hit)}>
                                   <span className="font-medium">{hit.name}</span>
                                 </button>
                               </li>
@@ -305,7 +387,7 @@ export function PantryBoard({ initialRows }: Props) {
                           <ul className="flex flex-col gap-0.5">
                             {catalogMealHits.map((hit) => (
                               <li key={`${hit.kind}-${hit.id}`}>
-                                <button type="button" className="w-full rounded px-2 py-2 text-left text-sm hover:bg-muted" onClick={() => selectCatalogHit(hit)}>
+                                <button type="button" className="w-full rounded px-2 py-2 text-left text-sm hover:bg-muted" onClick={() => void selectCatalogHit(hit)}>
                                   <span className="font-medium">{hit.name}</span>
                                 </button>
                               </li>
@@ -377,23 +459,60 @@ export function PantryBoard({ initialRows }: Props) {
 
                   <Field className="gap-1.5">
                     <FieldLabel htmlFor="pantry-exp">{t("pantry.expiresField")}</FieldLabel>
-                    <div className="flex flex-wrap gap-2">
-                      {EXPIRATION_DATE_PRESETS.map((preset) => {
-                        const presetDate = localCalendarDateWithDaysFromToday(preset.daysFromToday);
-                        return (
-                          <Button
-                            key={preset.daysFromToday}
-                            type="button"
-                            size="sm"
-                            variant={detailExpires === presetDate ? "secondary" : "outline"}
-                            onClick={() => setDetailExpires(presetDate)}
-                          >
-                            {t(preset.i18nKey)}
-                          </Button>
-                        );
-                      })}
+                    <div className="flex min-w-0 flex-col gap-2">
+                      <div
+                        role="presentation"
+                        className={cn(
+                          inputVariants({ variant: "default" }),
+                          "relative flex min-h-9 h-auto w-full min-w-0 cursor-pointer items-center py-1.5 focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50 dark:focus-within:border-ring dark:focus-within:ring-ring/50",
+                        )}
+                        onClick={activateExpiryDatePicker}
+                      >
+                        <div className="relative z-0 flex min-h-9 w-full min-w-0 flex-wrap items-center gap-x-1 text-base md:text-sm">
+                          {expiryDateFieldSummary ? (
+                            <>
+                              <span className="text-foreground">{expiryDateFieldSummary.relativeLabel}</span>
+                              <span className="text-muted-foreground" aria-hidden>
+                                ·
+                              </span>
+                              <span className="text-muted-foreground">{expiryDateFieldSummary.formattedDate}</span>
+                            </>
+                          ) : (
+                            <span className="text-muted-foreground">{t("pantry.expiresDatePlaceholder")}</span>
+                          )}
+                        </div>
+                        <input
+                          ref={expiryDateInputReference}
+                          id="pantry-exp"
+                          type="date"
+                          value={detailExpires}
+                          onChange={(event) => setDetailExpires(event.target.value)}
+                          className="sr-only [color-scheme:inherit]"
+                        />
+                      </div>
+                      <div className="flex min-h-0 min-w-0 w-full flex-wrap content-start gap-2">
+                        {PANTRY_EXPIRY_QUICK_OPTIONS.map((option) => {
+                          const daysFromToday =
+                            option.kind === "today" ? 0 : expirationDaysOffsetForShelfLifePreset(option.preset);
+                          const presetDate = localCalendarDateWithDaysFromToday(daysFromToday);
+                          const label =
+                            option.kind === "today"
+                              ? t("pantry.expiresPresetToday")
+                              : t(`ingredients.shelfLife.${option.preset}`);
+                          return (
+                            <Button
+                              key={option.kind === "today" ? "today" : option.preset}
+                              type="button"
+                              size="sm"
+                              variant={detailExpires === presetDate ? "secondary" : "outline"}
+                              onClick={() => setDetailExpires(presetDate)}
+                            >
+                              {label}
+                            </Button>
+                          );
+                        })}
+                      </div>
                     </div>
-                    <Input id="pantry-exp" type="date" value={detailExpires} onChange={(event) => setDetailExpires(event.target.value)} />
                   </Field>
 
                   <Field className="gap-1.5">

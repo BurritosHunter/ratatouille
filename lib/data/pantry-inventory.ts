@@ -1,4 +1,5 @@
 import { getSql } from "@/lib/db"
+import { resolveShelfLifePreset } from "@/lib/models/ingredient"
 import type {
   PantryCatalogHit,
   PantryInventoryRow,
@@ -78,7 +79,7 @@ export async function searchPantryCatalog(
   const safeLimit = Number.isFinite(limit) ? Math.min(Math.max(limit, 1), 50) : 20
 
   const ingredientRows = await getSql()`
-    SELECT id, name
+    SELECT id, name, shelf_life_preset
     FROM ingredients
     WHERE user_id = ${userId}
       AND deleted_at IS NULL
@@ -98,8 +99,17 @@ export async function searchPantryCatalog(
   `
 
   const hits: PantryCatalogHit[] = []
-  for (const row of ingredientRows as { id: string | number; name: string }[]) {
-    hits.push({ kind: "ingredient", id: toId(row.id), name: row.name })
+  for (const row of ingredientRows as {
+    id: string | number
+    name: string
+    shelf_life_preset: string
+  }[]) {
+    hits.push({
+      kind: "ingredient",
+      id: toId(row.id),
+      name: row.name,
+      shelfLifePreset: resolveShelfLifePreset(row.shelf_life_preset),
+    })
   }
   for (const row of recipeRows as { id: string | number; name: string }[]) {
     hits.push({ kind: "meal", id: toId(row.id), name: row.name })

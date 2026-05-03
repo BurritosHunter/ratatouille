@@ -1,5 +1,6 @@
 import { getSql } from "@/lib/db"
 import type { RecipeIngredientLine, RecipeIngredientPayloadItem } from "../models/recipe-ingredient"
+import { expirationDaysOffsetForShelfLifePreset, resolveShelfLifePreset } from "@/lib/models/ingredient"
 import { findOrCreateIngredient, getIngredientById } from "./ingredients"
 
 export type ResolvedRecipeIngredientLine = {
@@ -32,6 +33,26 @@ export async function listRecipeIngredientLines(
       sortOrder: row.sort_order,
     }),
   )
+}
+
+/** Smallest pantry-style day offset implied by ingredient shelf presets on lines (null when none). */
+export async function shortestExpirationDaysOffsetForRecipe(
+  userId: number,
+  recipeId: number,
+): Promise<number | null> {
+  const rows = await getSql()`
+    SELECT i.shelf_life_preset AS shelf_life_preset
+    FROM recipe_ingredients ri
+    INNER JOIN recipes r ON r.id = ri.recipe_id AND r.user_id = ${userId} AND r.deleted_at IS NULL
+    INNER JOIN ingredients i ON i.id = ri.ingredient_id AND i.user_id = ${userId} AND i.deleted_at IS NULL
+    WHERE ri.recipe_id = ${recipeId}
+  `
+  const presets = (rows as { shelf_life_preset: string }[]).map((row) =>
+    resolveShelfLifePreset(row.shelf_life_preset),
+  )
+  if (presets.length === 0) return null
+  const offsets = presets.map((preset) => expirationDaysOffsetForShelfLifePreset(preset))
+  return Math.min(...offsets)
 }
 
 export function formatIngredientsDisplay(lines: { name: string; quantityNote: string | null }[]): string {
