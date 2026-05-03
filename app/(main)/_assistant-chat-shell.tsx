@@ -10,7 +10,12 @@ import { MessageForm } from "@/components/organisms/message-form";
 import { Button } from "@/components/ui/button";
 import { AssistantChatComposerProvider } from "@/contexts/assistant-chat-composer-context";
 import { GeneratedUIContext } from "@/contexts/assistant-generated-ui-context";
-import { DEFAULT_ASSISTANT_MOCK_SCENARIO, readAssistantMockAiOverride, readAssistantMockScenarioOverride, type AssistantMockScenario } from "@/lib/assistant-mock-ai-preference";
+import {
+  DEFAULT_ASSISTANT_MOCK_SCENARIO,
+  readAssistantMockAiOverride,
+  readAssistantMockScenarioOverride,
+  type AssistantMockScenario,
+} from "@/lib/assistant-mock/client-preference";
 import { mergeGeneratedUIPayload, SUPPORTED_TOOL_TYPES, tryParseToolData, type GeneratedUIPayload } from "@/lib/generated-ui";
 import { cn } from "@/lib/helpers/utils";
 import { DefaultChatTransport, type UIDataTypes, type UIMessagePart, type UITools } from "ai";

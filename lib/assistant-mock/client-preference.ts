@@ -1,12 +1,13 @@
 /** Client-only: persisted assistant dev settings for `/api/chat` (mock model, scenario). */
 
+import type { AssistantMockScenario } from "./scenario";
+
+export type { AssistantMockScenario } from "./scenario";
+export { DEFAULT_ASSISTANT_MOCK_SCENARIO } from "./scenario";
+
 export const ASSISTANT_MOCK_AI_STORAGE_KEY = "ratatouille-assistant-mock-ai";
 
 export const ASSISTANT_MOCK_SCENARIO_STORAGE_KEY = "ratatouille-assistant-mock-scenario";
-
-export const DEFAULT_ASSISTANT_MOCK_SCENARIO = "recipes" as const;
-
-export type AssistantMockScenario = "recipes" | "surface" | "pantry";
 
 export function readAssistantMockAiOverride(): boolean | null {
   if (typeof window === "undefined") return null;

@@ -1,11 +1,11 @@
 import { anthropic } from "@ai-sdk/anthropic";
 import { auth } from "@/auth";
-import { createAssistantTools } from "@/lib/ai/assistant-tools/registry";
+import { createAssistantTools } from "@/lib/assistant-tools/registry";
 import {
   createRatatouilleMockLanguageModel,
   resolveRatatouilleMockScenarioFromRequest,
   resolveUseMockAiForChatRequest,
-} from "@/lib/ai/ratatouille-mock-language-model";
+} from "@/lib/assistant-mock/mock-language-model";
 import {
   convertToModelMessages,
   stepCountIs,
@@ -15,7 +15,7 @@ import {
 
 export const maxDuration = 30;
 const ASSISTANT_CHAT_SYSTEM_PROMPT =
-  "You are a helpful assistant for the Ratatouille recipe app. When the user asks what recipes they have, to list their recipes, or similar, call the listRecipesForUser tool. That tool returns the signed-in user's recipe rows for the generated UI preview and chat summary context. Do not invent or guess recipe names; rely on tool output as the source of truth and you may briefly say the list is shown in the app. When they want to see or manage their pantry in the main layout preview—the same interactive board as `/pantry` below the site header—call the pantryBoardForUser tool. That tool fills the preview with authoritative pantry rows for add/remove/filter there; never fabricate pantry items. When the user asks to change the modular tool layout preview (below the site header), call setAssistantLayout with the best matching option. You may call multiple tools in the same assistant turn when it fits the request—for example, layout plus recipes plus pantry (parallel tool calls in one step are allowed).";
+  "You are a helpful assistant for the Ratatouille recipe app. When the user asks what recipes they have, to list their recipes, or similar, call the recipeList tool. That tool returns the signed-in user's recipe rows for the generated UI preview and chat summary context. Do not invent or guess recipe names; rely on tool output as the source of truth and you may briefly say the list is shown in the app. When they want to see or manage their pantry in the main layout preview—the same interactive board as `/pantry` below the site header—call the pantryList tool. That tool fills the preview with authoritative pantry rows for add/remove/filter there; never fabricate pantry items. When the user asks to change the modular tool layout preview (below the site header), call the layoutRegions tool with the best matching option. You may call multiple tools in the same assistant turn when it fits the request—for example, layout plus recipes plus pantry (parallel tool calls in one step are allowed).";
 
 function jsonSerializationReplacer(_key: string, value: unknown): unknown {
   if (typeof value === "bigint") return value.toString();

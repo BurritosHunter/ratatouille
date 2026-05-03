@@ -14,7 +14,7 @@ import {
   readAssistantMockScenarioOverride,
   writeAssistantMockAiOverride,
   writeAssistantMockScenarioOverride,
-} from "@/lib/assistant-mock-ai-preference";
+} from "@/lib/assistant-mock/client-preference";
 import { cn } from "@/lib/helpers/utils";
 
 type AssistantMockAiProfileMocksProps = {

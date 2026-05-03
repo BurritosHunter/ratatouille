@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import type { LayoutOption } from "@/lib/generated-ui";
+import type { LayoutOption } from "@/lib/assistant-tools/layout-regions";
 
 export type LayoutRegionSlot = ReactNode | null | undefined;
 

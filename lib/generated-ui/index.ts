@@ -1,7 +1,8 @@
-import type { RecipeToolRow } from "@/lib/ai/assistant-tools/recipe-rows";
+import type { RecipeToolRow } from "@/lib/assistant-tools/recipe-rows";
+import { layoutRegionsToolType, tryParseLayoutRegionsToolOutput, type LayoutOption } from "@/lib/assistant-tools/layout-regions";
 import type { PantryInventoryRow, PantryItemKind } from "@/lib/models/pantry-inventory";
 
-export type LayoutOption = "singleColumn" | "twoColumn" | "fullWidth";
+export type { LayoutOption };
 
 export type GeneratedUIPayload = {
   generatedAtIso: string;
@@ -11,13 +12,9 @@ export type GeneratedUIPayload = {
   pantryRows?: PantryInventoryRow[];
 };
 
-export type GeneratedUIDataFields = Partial<Pick<GeneratedUIPayload, "recipes" | "layout" | "pantryRows">>;
+export type GeneratedUIDataFields = Partial<Pick<GeneratedUIPayload, "layout" | "recipes" | "pantryRows">>;
 
-export const SUPPORTED_TOOL_TYPES = [
-  "tool-listRecipesForUser",
-  "tool-pantryBoardForUser",
-  "tool-setAssistantLayout",
-] as const;
+export const SUPPORTED_TOOL_TYPES = [layoutRegionsToolType, "tool-recipeList", "tool-pantryList"] as const;
 
 export function mergeGeneratedUIPayload(previous: GeneratedUIPayload | null, callId: string, dataFields: GeneratedUIDataFields): GeneratedUIPayload {
   return {
@@ -40,8 +37,7 @@ function pantryRowFromUnknown(value: unknown): PantryInventoryRow | null {
   const record = value as Record<string, unknown>;
 
   const idRaw = record.id;
-  const id =
-    typeof idRaw === "number" && Number.isFinite(idRaw)
+  const id = typeof idRaw === "number" && Number.isFinite(idRaw)
       ? idRaw
       : typeof idRaw === "string" && idRaw.trim() !== "" && Number.isFinite(Number(idRaw))
         ? Number(idRaw)
@@ -57,8 +53,7 @@ function pantryRowFromUnknown(value: unknown): PantryInventoryRow | null {
   if (!isPantryItemKind(itemKind)) return null;
 
   const ingredientIdRaw = record.ingredientId;
-  const ingredientId =
-    ingredientIdRaw === null
+  const ingredientId = ingredientIdRaw === null
       ? null
       : typeof ingredientIdRaw === "number"
         ? ingredientIdRaw
@@ -67,8 +62,7 @@ function pantryRowFromUnknown(value: unknown): PantryInventoryRow | null {
           : null;
 
   const recipeIdRaw = record.recipeId;
-  const recipeId =
-    recipeIdRaw === null
+  const recipeId = recipeIdRaw === null
       ? null
       : typeof recipeIdRaw === "number"
         ? recipeIdRaw
@@ -112,20 +106,16 @@ function tryPantryBoardToolGeneratedUIData(toolOutput: unknown): GeneratedUIData
 
 export function tryParseToolData(toolType: (typeof SUPPORTED_TOOL_TYPES)[number], toolOutput: unknown): GeneratedUIDataFields | null {
   switch (toolType) {
-    case "tool-listRecipesForUser": {
+    case "tool-recipeList": {
       const listRecipesToolOutput = toolOutput as { recipes?: RecipeToolRow[] };
       if (!listRecipesToolOutput.recipes) return null;
 
       return { recipes: listRecipesToolOutput.recipes };
     }
-    case "tool-pantryBoardForUser":
+    case "tool-pantryList":
       return tryPantryBoardToolGeneratedUIData(toolOutput);
-    case "tool-setAssistantLayout": {
-      const layoutToolOutput = toolOutput as { layout?: LayoutOption };
-      if (!layoutToolOutput.layout) return null;
-
-      return { layout: layoutToolOutput.layout };
-    }
+    case layoutRegionsToolType:
+      return tryParseLayoutRegionsToolOutput(toolOutput);
     default:
       return null;
   }

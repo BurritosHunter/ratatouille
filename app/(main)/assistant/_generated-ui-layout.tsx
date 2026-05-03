@@ -4,7 +4,7 @@ import { LayoutRegions } from "@/components/features/layout-regions";
 import { PantryList } from "@/components/features/pantry-list";
 import { RecipeList } from "@/components/features/recipe-list";
 import { useGeneratedUI } from "@/contexts/assistant-generated-ui-context";
-import type { RecipeToolRow } from "@/lib/ai/assistant-tools/recipe-rows";
+import type { RecipeToolRow } from "@/lib/assistant-tools/recipe-rows";
 import { useTranslation } from "react-i18next";
 
 export function GeneratedUILayout() {
@@ -30,7 +30,6 @@ export function GeneratedUILayout() {
       </div>
     ) : null;
 
-  /** Slot order preserved for layout: pantry column, recipes column (`LayoutRegions` assigns by layout). */
   const surfaceRegions = [
     hasPantryList ? <PantryList key={generatedUI.lastCallId} initialRows={pantryRowsMerged} /> : null,
     hasPantryList ? recipeSectionHeadingBlock : recipePreview,
