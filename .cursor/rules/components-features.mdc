@@ -1,0 +1,22 @@
+---
+description: components/features cross-surface slices; assistant preview colocated under app/(main)/assistant
+globs: components/features/**/*,app/**/*.tsx,app/**/*.ts
+alwaysApply: false
+priority: medium
+---
+
+# `components/features` (and sparse `components/tools`)
+
+## `components/features`
+
+Use for **cross-surface domain slices**: the same substantive UI/logic must be composed from **more than one app surface**—typically **`app/(main)/.../page.tsx` plus the assistant **`GeneratedUILayout`** (`app/(main)/assistant/_generated-ui-layout.tsx`). Route-only consumers should prefer **`app/.../_name.tsx`** (see **generic-ui-components**).
+
+- **Flatten files** under **`components/features/`** (no feature-named subfolders required): e.g. **`pantry-list.tsx`** + **`pantry-list.actions.ts`**.
+- **`.actions.ts`**: **`"use server"`** module colocated next to its client counterpart; exported names stay feature-specific (**`searchPantryCatalogAction`**, etc.).
+- **Imports**: **`app`** surfaces (pages and route-colocated **`_*.tsx`** partials such as **`_generated-ui-layout.tsx`**) compose **`components/features`**; keep substantive domain UI in **`features`**, not ad hoc under **`app`** except as thin wrappers.
+
+## `components/tools`
+
+**`components/tools`:** reserve for assistant-adjacent UI that stays **outside** **`app/`** (rare once route colocation covers preview shells).
+
+**Assistant preview shell** lives beside the route as **`app/(main)/assistant/_generated-ui-layout.tsx`**; it composes **`components/features`** slices—not primary **`/routes`** domain markup that ships without the assistant surface.

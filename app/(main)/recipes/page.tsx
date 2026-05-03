@@ -1,19 +1,17 @@
 import Link from "next/link"
 
 import { restoreDeletedRecipe } from "./actions"
-import { RecipeListRowLink } from "@/components/molecules/recipe-list-row-link"
+import { RecipeList } from "@/components/features/recipe-list"
 import { UndoDeleteToast } from "@/components/molecules/toast-undo-delete"
 import { Button } from "@/components/ui/button"
 import { requireUserId } from "@/lib/auth/auth-user"
-import { getServerT } from "@/lib/i18n/server"
 import { listRecipes } from "@/lib/data/recipes"
-import { imageSrcFromStoredOrExternal } from "@/lib/helpers/image/stored-or-external-src"
+import { recipeSummariesToListLinkItems } from "@/lib/helpers/recipe-list-link-items"
+import { getServerT } from "@/lib/i18n/server"
 
 export const dynamic = "force-dynamic"
 
-type PageProps = {
-  searchParams: Promise<{ deleted?: string }>
-}
+type PageProps = { searchParams: Promise<{ deleted?: string }> };
 
 export default async function RecipesPage({ searchParams }: PageProps) {
   const t = getServerT()
@@ -51,24 +49,7 @@ export default async function RecipesPage({ searchParams }: PageProps) {
             </Button>
           </div>
         ) : (
-          <ul className="mx-auto flex w-full max-w-2xl flex-col gap-3">
-            {recipes.map((recipe) => {
-              const thumbSrc = imageSrcFromStoredOrExternal({
-                hasStored: recipe.hasStoredImage,
-                storedSrc: `/api/recipes/${recipe.id}/image`,
-                externalUrl: recipe.mainImageUrl,
-              })
-              return (
-                <li key={recipe.id}>
-                  <RecipeListRowLink
-                    recipeId={recipe.id}
-                    title={recipe.title}
-                    thumbSrc={thumbSrc}
-                  />
-                </li>
-              )
-            })}
-          </ul>
+          <RecipeList recipes={recipeSummariesToListLinkItems(recipes)} />
         )}
       </div>
     </div>

@@ -24,6 +24,7 @@
     "mockScenarioLabel": "Première étape simulée",
     "mockScenarioRecipes": "Liste des recettes seulement",
     "mockScenarioSurface": "Surface (mise en page + recettes)",
+    "mockScenarioPantry": "Tableau garde-manger",
     "mockScenarioHint": "Définit la première étape du flux simulé lorsque l’IA simulée est activée."
   },
   "home": {
@@ -175,6 +176,7 @@
     "recipeListSummaryWithList": "Vous avez {{count}} recette(s) enregistrée(s) :\n\n{{list}}",
     "recipeListFetchError": "Impossible de charger votre liste de recettes.",
     "recipeListFetchUnauthorized": "Vous n'êtes pas connecté·e ou votre session a expiré.",
-    "recipeListFetchLine": "Liste des recettes : {{error}}"
+    "recipeListFetchLine": "Liste des recettes : {{error}}",
+    "recipesSectionHeading": "Recettes"
   }
 }

@@ -10,8 +10,8 @@ import { MessageForm } from "@/components/organisms/message-form";
 import { Button } from "@/components/ui/button";
 import { AssistantChatComposerProvider } from "@/contexts/assistant-chat-composer-context";
 import { GeneratedUIContext } from "@/contexts/assistant-generated-ui-context";
-import { tryParseToolData, SUPPORTED_TOOL_TYPES, mergeGeneratedUIPayload, type GeneratedUIPayload } from "@/lib/generated-ui";
-import { DEFAULT_ASSISTANT_MOCK_SCENARIO, readAssistantMockAiOverride, readAssistantMockScenarioOverride } from "@/lib/assistant-mock-ai-preference";
+import { DEFAULT_ASSISTANT_MOCK_SCENARIO, readAssistantMockAiOverride, readAssistantMockScenarioOverride, type AssistantMockScenario } from "@/lib/assistant-mock-ai-preference";
+import { mergeGeneratedUIPayload, SUPPORTED_TOOL_TYPES, tryParseToolData, type GeneratedUIPayload } from "@/lib/generated-ui";
 import { cn } from "@/lib/helpers/utils";
 import { DefaultChatTransport, type UIDataTypes, type UIMessagePart, type UITools } from "ai";
 
@@ -68,7 +68,7 @@ export function AssistantChatShell({ children }: { children: ReactNode }) {
   const clearGeneratedUI = useCallback(() => { setGeneratedUI(null); }, []);
   /** Dev: defaults from `/api/assistant/dev-ai-mode` until `localStorage` overrides exist. */
   const devChatMockDefaultRef = useRef<boolean | null>(null);
-  const devChatMockScenarioRef = useRef<"recipes" | "surface" | null>(null);
+  const devChatMockScenarioRef = useRef<AssistantMockScenario | null>(null);
 
   useEffect(() => {
     if (process.env.NODE_ENV === "production") return;
@@ -80,7 +80,11 @@ export function AssistantChatShell({ children }: { children: ReactNode }) {
           if (data && typeof data.defaultUseMock === "boolean") {
             devChatMockDefaultRef.current = data.defaultUseMock;
           }
-          if (data?.defaultMockScenario === "surface" || data?.defaultMockScenario === "recipes") {
+          if (
+            data?.defaultMockScenario === "surface" ||
+            data?.defaultMockScenario === "recipes" ||
+            data?.defaultMockScenario === "pantry"
+          ) {
             devChatMockScenarioRef.current = data.defaultMockScenario;
           }
         },
@@ -88,6 +92,8 @@ export function AssistantChatShell({ children }: { children: ReactNode }) {
       .catch(() => {});
   }, []);
 
+  /** Refs below are read only inside `prepareSendMessagesRequest` (when sending), not synchronously during render. */
+  /* eslint-disable react-hooks/refs -- false positive: callback runs on transport send */
   const assistantChatTransport = useMemo(
     () =>
       new DefaultChatTransport({
@@ -130,6 +136,7 @@ export function AssistantChatShell({ children }: { children: ReactNode }) {
       }),
     [],
   );
+  /* eslint-enable react-hooks/refs */
 
   const { messages, sendMessage, setMessages, status, stop, error, clearError } = useChat({
     transport: assistantChatTransport,

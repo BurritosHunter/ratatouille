@@ -4,8 +4,8 @@ import { revalidatePath } from "next/cache";
 
 import { requireUserId } from "@/lib/auth/auth-user";
 import { createIngredient } from "@/lib/data/ingredients";
-import { shortestExpirationDaysOffsetForRecipe } from "@/lib/data/recipe-ingredients";
 import { deletePantryInventoryRow, insertPantryInventoryRow, searchPantryCatalog } from "@/lib/data/pantry-inventory";
+import { shortestExpirationDaysOffsetForRecipe } from "@/lib/data/recipe-ingredients";
 import type { PantryCatalogHit, PantryStorageLocation } from "@/lib/models/pantry-inventory";
 
 const STORAGE_SET = new Set<PantryStorageLocation>(["fridge", "pantry", "storage", "freezer"]);
@@ -49,7 +49,8 @@ export async function searchPantryCatalogAction(query: string): Promise<{ ok: tr
     const userId = await requireUserId("/pantry");
     const hits = await searchPantryCatalog(userId, query);
     return { ok: true, hits };
-  } catch {
+  } catch (error) {
+    void error;
     return { ok: false };
   }
 }
@@ -68,7 +69,8 @@ export async function mealShortestShelfLifeExpiryDaysAction(
     if (!Number.isFinite(numericId)) return { ok: false };
     const daysFromToday = await shortestExpirationDaysOffsetForRecipe(userId, numericId);
     return { ok: true, daysFromToday };
-  } catch {
+  } catch (error) {
+    void error;
     return { ok: false };
   }
 }
@@ -149,7 +151,8 @@ export async function addPantryInventoryLine(payload: unknown): Promise<{ ok: tr
     }
 
     return { ok: false, reason: "validation" };
-  } catch {
+  } catch (error) {
+    void error;
     return { ok: false, reason: "server" };
   }
 }
@@ -163,7 +166,8 @@ export async function removePantryInventoryLine(rowId: unknown): Promise<{ ok: t
     await deletePantryInventoryRow(userId, resolvedInventoryRowNumericId);
     revalidatePath("/pantry");
     return { ok: true };
-  } catch {
+  } catch (error) {
+    void error;
     return { ok: false };
   }
 }

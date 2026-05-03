@@ -1,4 +1,4 @@
-import { PantryBoard } from "./_pantry-board";
+import { PantryList } from "@/components/features/pantry-list";
 import { requireUserId } from "@/lib/auth/auth-user";
 import { getServerT } from "@/lib/i18n/server";
 import { listPantryInventory } from "@/lib/data/pantry-inventory";
@@ -16,7 +16,7 @@ export default async function PantryPage() {
         <div className="flex flex-wrap items-center justify-between gap-4">
           <h1 className="font-large">{t("pantry.title")}</h1>
         </div>
-        <PantryBoard initialRows={initialRows} />
+        <PantryList initialRows={initialRows} />
       </div>
     </div>
   );

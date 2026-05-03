@@ -49,10 +49,10 @@ export function resolveUseMockAiForChatRequest(request: Request): boolean {
   return shouldUseRatatouilleMockAi();
 }
 
-export type RatatouilleMockScenario = "recipes" | "surface";
+export type RatatouilleMockScenario = "recipes" | "surface" | "pantry";
 
 /**
- * First mock model step: `recipes` = listRecipes tool only; `surface` = layout + listRecipes.
+ * First mock model step: `recipes` = listRecipes tool only; `surface` = layout + listRecipes; `pantry` = showPantryBoardForUser.
  * Non-production: header `x-ratatouille-mock-scenario`; if invalid or absent, `recipes`.
  */
 export function resolveRatatouilleMockScenarioFromRequest(request: Request): RatatouilleMockScenario {
@@ -60,9 +60,29 @@ export function resolveRatatouilleMockScenarioFromRequest(request: Request): Rat
 
   const mockScenarioHeader = request.headers.get("x-ratatouille-mock-scenario")?.trim().toLowerCase();
   if (mockScenarioHeader === "surface") return "surface";
+  if (mockScenarioHeader === "pantry") return "pantry";
   if (mockScenarioHeader === "recipes") return "recipes";
 
   return "recipes";
+}
+
+function streamMockShowPantryBoardToolCallStep(): ReadableStream<LanguageModelV3StreamPart> {
+  return simulateReadableStream({
+    chunks: [
+      { type: "stream-start", warnings: [] },
+      {
+        type: "tool-call",
+        toolCallId: "mock-showPantryBoardForUser",
+        toolName: "showPantryBoardForUser",
+        input: "{}",
+      },
+      {
+        type: "finish",
+        usage: mockUsage,
+        finishReason: { unified: "tool-calls", raw: "mock" },
+      },
+    ],
+  });
 }
 
 function streamMockListRecipesToolCallStep(): ReadableStream<LanguageModelV3StreamPart> {
@@ -110,10 +130,17 @@ function streamMockSurfaceMultiToolCallStep(): ReadableStream<LanguageModelV3Str
 }
 
 function streamMockAssistantTextStep(scenario: RatatouilleMockScenario): ReadableStream<LanguageModelV3StreamPart> {
-  const text =
-    scenario === "surface"
-      ? "This is a mock assistant reply (no Anthropic API call). One step emitted two tools: layout (twoColumn) and listRecipesForUser with recipe rows for the generated UI preview below the site header. Turn off Mock AI under Profile to use the real model when your API key is configured."
-      : "This is a mock assistant reply (no Anthropic API call). The listRecipesForUser tool returns your saved recipes for the generated UI preview, and the app adds a short summary in this chat. Turn off Mock AI under Profile to use the real model when your API key is configured.";
+  let text: string;
+  if (scenario === "surface") {
+    text =
+      "This is a mock assistant reply (no Anthropic API call). One step emitted two tools: layout (twoColumn) and listRecipesForUser with recipe rows for the generated UI preview below the site header. Turn off Mock AI under Profile to use the real model when your API key is configured.";
+  } else if (scenario === "pantry") {
+    text =
+      "This is a mock assistant reply (no Anthropic API call). The showPantryBoardForUser tool loads your pantry into the interactive board in the preview below the site header. Turn off Mock AI under Profile to use the real model when your API key is configured.";
+  } else {
+    text =
+      "This is a mock assistant reply (no Anthropic API call). The listRecipesForUser tool returns your saved recipes for the generated UI preview, and the app adds a short summary in this chat. Turn off Mock AI under Profile to use the real model when your API key is configured.";
+  }
   return simulateReadableStream({
     chunks: [
       { type: "stream-start", warnings: [] },
@@ -142,7 +169,12 @@ export function createRatatouilleMockLanguageModel(scenario: RatatouilleMockScen
       const index = stepIndex;
       stepIndex += 1;
       if (index === 0) {
-        const stream = scenario === "surface" ? streamMockSurfaceMultiToolCallStep() : streamMockListRecipesToolCallStep();
+        const stream =
+          scenario === "surface"
+            ? streamMockSurfaceMultiToolCallStep()
+            : scenario === "pantry"
+              ? streamMockShowPantryBoardToolCallStep()
+              : streamMockListRecipesToolCallStep();
         return { stream };
       }
       return { stream: streamMockAssistantTextStep(scenario) };

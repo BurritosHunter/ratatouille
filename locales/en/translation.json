@@ -24,6 +24,7 @@
     "mockScenarioLabel": "Mock first step",
     "mockScenarioRecipes": "List recipes only",
     "mockScenarioSurface": "Surface (layout + recipes)",
+    "mockScenarioPantry": "Pantry board",
     "mockScenarioHint": "Controls the mock model’s first streaming step when Mock AI is on."
   },
   "home": {
@@ -175,6 +176,7 @@
     "recipeListSummaryWithList": "You have {{count}} saved recipe(s):\n\n{{list}}",
     "recipeListFetchError": "Could not load your recipe list.",
     "recipeListFetchUnauthorized": "You are not signed in or your session has expired.",
-    "recipeListFetchLine": "Recipe list: {{error}}"
+    "recipeListFetchLine": "Recipe list: {{error}}",
+    "recipesSectionHeading": "Recipes"
   }
 }

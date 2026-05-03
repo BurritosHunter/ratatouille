@@ -5,30 +5,18 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { TFunction } from "i18next";
 import { useTranslation } from "react-i18next";
-
-import {
-  addPantryInventoryLine,
-  mealShortestShelfLifeExpiryDaysAction,
-  removePantryInventoryLine,
-  searchPantryCatalogAction,
-} from "./actions";
+import { addPantryInventoryLine, mealShortestShelfLifeExpiryDaysAction, removePantryInventoryLine, searchPantryCatalogAction } from "./pantry-list.actions";
 import { Button } from "@/components/ui/button";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input, inputVariants } from "@/components/ui/input";
 import { cn } from "@/lib/helpers/utils";
 import type { PantryCatalogHit, PantryInventoryRow, PantryStorageLocation } from "@/lib/models/pantry-inventory";
-import {
-  expirationDaysOffsetForShelfLifePreset,
-  INGREDIENT_SHELF_LIFE_PRESETS,
-  type IngredientShelfLifePreset,
-} from "@/lib/models/ingredient";
+import { expirationDaysOffsetForShelfLifePreset, INGREDIENT_SHELF_LIFE_PRESETS, type IngredientShelfLifePreset } from "@/lib/models/ingredient";
 
 type LocationFilter = "all" | PantryStorageLocation;
-
-const STORAGE_LOCATIONS: readonly PantryStorageLocation[] = ["fridge", "pantry", "storage", "freezer"] as const;
-
 type PantryExpiryQuickOption = { kind: "today" } | { kind: "twoDaysPantryOnly" } | { kind: "preset"; preset: IngredientShelfLifePreset };
 
+const STORAGE_LOCATIONS: readonly PantryStorageLocation[] = ["fridge", "pantry", "freezer", "storage"] as const;
 const PANTRY_EXPIRY_QUICK_OPTIONS: readonly PantryExpiryQuickOption[] = [{ kind: "today" }, { kind: "twoDaysPantryOnly" }, ...INGREDIENT_SHELF_LIFE_PRESETS.map((preset) => ({ kind: "preset" as const, preset }))];
 
 function formatLocalCalendarDateForDateInput(calendarDate: Date): string {
@@ -37,7 +25,6 @@ function formatLocalCalendarDateForDateInput(calendarDate: Date): string {
   const day = String(calendarDate.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
 }
-
 function localCalendarDateWithDaysFromToday(daysFromToday: number): string {
   const today = new Date();
   const shifted = new Date(today.getFullYear(), today.getMonth(), today.getDate() + daysFromToday);
@@ -47,19 +34,21 @@ function localCalendarDateWithDaysFromToday(daysFromToday: number): string {
 function parseIsoLocalDate(value: string): { year: number; monthIndex: number; day: number } | null {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value.trim());
   if (!match) return null;
+
   const year = Number(match[1]);
   const month = Number(match[2]);
   const dayNum = Number(match[3]);
   if (!Number.isFinite(year) || !Number.isFinite(month) || !Number.isFinite(dayNum)) return null;
+
   const date = new Date(year, month - 1, dayNum);
   if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== dayNum) return null;
+
   return { year, monthIndex: month - 1, day: dayNum };
 }
-
-/** Whole calendar days from local today to yyyy-mm-dd (negative = past). */
 function calendarDayDiffFromToday(yyyyMmDd: string): number | null {
   const parsed = parseIsoLocalDate(yyyyMmDd);
   if (!parsed) return null;
+  
   const today = new Date();
   const todayMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
   const targetMidnight = new Date(parsed.year, parsed.monthIndex, parsed.day).getTime();
@@ -69,6 +58,7 @@ function calendarDayDiffFromToday(yyyyMmDd: string): number | null {
 function formatMediumIsoLocalDate(yyyyMmDd: string, locale: string): string | null {
   const parsed = parseIsoLocalDate(yyyyMmDd);
   if (!parsed) return null;
+
   const date = new Date(parsed.year, parsed.monthIndex, parsed.day);
   return new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(date);
 }
@@ -88,7 +78,7 @@ function rowsSignature(rows: PantryInventoryRow[]): string {
   return JSON.stringify(rows.map((row) => [row.id, row.storageLocation, row.itemKind, row.ingredientId, row.recipeId, row.customLabel, row.quantity, row.expiresOn]));
 }
 
-export function PantryBoard({ initialRows }: Props) {
+export function PantryList({ initialRows }: Props) {
   const { t, i18n } = useTranslation();
   const router = useRouter();
   const [rows, setRows] = useState<PantryInventoryRow[]>(initialRows);
@@ -115,11 +105,13 @@ export function PantryBoard({ initialRows }: Props) {
   const activateExpiryDatePicker = useCallback(() => {
     const input = expiryDateInputReference.current;
     if (!input) return;
+
     try {
       const showPicker = input.showPicker;
       if (typeof showPicker === "function") showPicker.call(input);
       else input.focus();
-    } catch {
+    } catch (error) {
+      void error;
       input.focus();
     }
   }, []);
@@ -141,9 +133,11 @@ export function PantryBoard({ initialRows }: Props) {
   const expiryDateFieldSummary = useMemo(() => {
     const trimmed = detailExpires.trim();
     if (trimmed === "") return null;
+
     const dayDiff = calendarDayDiffFromToday(trimmed);
     const formattedDate = formatMediumIsoLocalDate(trimmed, i18n.language);
     if (dayDiff === null || formattedDate === null) return null;
+
     return { formattedDate, relativeLabel: pantryExpiryRelativeLabel(t, dayDiff) };
   }, [detailExpires, i18n.language, t]);
 
@@ -192,7 +186,6 @@ export function PantryBoard({ initialRows }: Props) {
     setDetailExpires("");
     setFormError(null);
   }
-
   function closeAddDialog() {
     setAddOpen(false);
   }
@@ -208,9 +201,11 @@ export function PantryBoard({ initialRows }: Props) {
       setDetailExpires(localCalendarDateWithDaysFromToday(daysFromToday));
       return;
     }
+
     setDetailExpires("");
     const result = await mealShortestShelfLifeExpiryDaysAction(hit.id);
     if (loadGeneration !== mealExpiryLoadGenerationReference.current) return;
+
     if (result.ok && result.daysFromToday !== null) {
       setDetailExpires(localCalendarDateWithDaysFromToday(result.daysFromToday));
     }
@@ -223,7 +218,6 @@ export function PantryBoard({ initialRows }: Props) {
     setAddPhase("details");
     setFormError(null);
   }
-
   function goToNewIngredientFromSearch() {
     setSelectedHit(null);
     setAddMode("newIngredient");
@@ -286,7 +280,6 @@ export function PantryBoard({ initialRows }: Props) {
 
   const trimmedSearch = searchQuery.trim();
   const showNoResultsActions = addPhase === "search" && trimmedSearch.length > 0 && !searching && searchHits.length === 0;
-
   const catalogIngredientHits = useMemo(() => searchHits.filter((hit) => hit.kind === "ingredient"), [searchHits]);
   const catalogMealHits = useMemo(() => searchHits.filter((hit) => hit.kind === "meal"), [searchHits]);
 
@@ -498,7 +491,7 @@ export function PantryBoard({ initialRows }: Props) {
                           else label = t(`ingredients.shelfLife.${option.preset}`);
                           return (
                             <Button
-                              key={ option.kind === "today" ? "today" : option.kind === "twoDaysPantryOnly" ? "two-days-pantry" : option.preset }
+                              key={option.kind === "today" ? "today" : option.kind === "twoDaysPantryOnly" ? "two-days-pantry" : option.preset}
                               type="button"
                               size="sm"
                               variant={detailExpires === presetDate ? "secondary" : "outline"}
