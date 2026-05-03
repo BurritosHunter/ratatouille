@@ -14,6 +14,11 @@
     "ingredients": "Ingredients",
     "pantry": "Pantry"
   },
+  "profile": {
+    "title": "Profile",
+    "theme": "Theme",
+    "assistantHeading": "Assistant"
+  },
   "home": {
     "signedInAs": "Signed in as {{displayName}}"
   },
@@ -142,6 +147,8 @@
     "roleAssistant": "Assistant",
     "thinking": "Thinking…",
     "stop": "Stop",
+    "accessSwitchLabel": "Quick access",
+    "accessSwitchAria": "Enable or disable assistant quick access and messaging",
     "toolKind": {
       "recipes": "recipes",
       "layout": "layout",

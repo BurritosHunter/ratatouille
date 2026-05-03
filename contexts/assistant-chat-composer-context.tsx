@@ -5,6 +5,8 @@ import { createContext, useContext, type ReactNode } from "react";
 export type AssistantChatComposerContextValue = {
   sendUserMessageToAssistant: (text: string) => void;
   inputDisabled: boolean;
+  assistantAccessEnabled: boolean;
+  setAssistantAccessEnabled: (enabled: boolean) => void;
 };
 
 const AssistantChatComposerContext = createContext<AssistantChatComposerContextValue | null>(null);

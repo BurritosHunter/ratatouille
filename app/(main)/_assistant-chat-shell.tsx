@@ -4,7 +4,7 @@ import { useChat } from "@ai-sdk/react";
 import { IconMessageCircle, IconX } from "@tabler/icons-react";
 import { usePathname, useRouter } from "next/navigation";
 import type { ReactNode } from "react";
-import { startTransition, useCallback, useEffect, useRef, useState } from "react";
+import { startTransition, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { MessageForm } from "@/components/organisms/message-form";
 import { Button } from "@/components/ui/button";
@@ -37,6 +37,24 @@ function isSupportedToolType(type: string): type is (typeof SUPPORTED_TOOL_TYPES
   return SUPPORTED_TOOL_TYPES_SET.has(type);
 }
 
+const ASSISTANT_ACCESS_STORAGE_KEY = "ratatouille-assistant-access-enabled";
+
+function readAssistantAccessFromStorage(): boolean {
+  if (typeof window === "undefined") return true;
+  try {
+    return window.localStorage.getItem(ASSISTANT_ACCESS_STORAGE_KEY) !== "false";
+  } catch {
+    return true;
+  }
+}
+
+function writeAssistantAccessToStorage(enabled: boolean): void {
+  try {
+    window.localStorage.setItem(ASSISTANT_ACCESS_STORAGE_KEY, enabled ? "true" : "false");
+  } catch {
+    /* Quota or private mode */
+  }
+}
 
 export function AssistantChatShell({ children }: { children: ReactNode }) {
   const { t: translate } = useTranslation();
@@ -44,6 +62,7 @@ export function AssistantChatShell({ children }: { children: ReactNode }) {
   
   /* Chat & Generated UI */
   const [panelOpen, setPanelOpen] = useState(false);
+  const [assistantAccessEnabled, setAssistantAccessEnabledState] = useState(true);
   const [generatedUI, setGeneratedUI] = useState<GeneratedUIPayload | null>(null);
   const clearGeneratedUI = useCallback(() => { setGeneratedUI(null); }, []);
   const { messages, sendMessage, setMessages, status, stop, error, clearError } =
@@ -53,13 +72,39 @@ export function AssistantChatShell({ children }: { children: ReactNode }) {
         if (process.env.NODE_ENV === "development") console.error("[assistant]", chatError);
       },
     });
-  const inputDisabled = status === "submitted" || status === "streaming";
+  const chatBlockedByStatus = status === "submitted" || status === "streaming";
+  const formsDisabled = chatBlockedByStatus || !assistantAccessEnabled;
+
+  useLayoutEffect(() => {
+    setAssistantAccessEnabledState(readAssistantAccessFromStorage());
+  }, []);
+
+  const setAssistantAccessEnabled = useCallback((enabled: boolean) => {
+    setAssistantAccessEnabledState(enabled);
+    writeAssistantAccessToStorage(enabled);
+  }, []);
+
+  useEffect(() => {
+    if (!assistantAccessEnabled) setPanelOpen(false);
+  }, [assistantAccessEnabled]);
+
   const sendUserMessageToAssistant = useCallback(
     (text: string) => {
+      if (!assistantAccessEnabled) return;
       setPanelOpen(true);
       void sendMessage({ text });
     },
-    [sendMessage]
+    [assistantAccessEnabled, sendMessage],
+  );
+
+  const composerContextValue = useMemo(
+    () => ({
+      sendUserMessageToAssistant,
+      inputDisabled: formsDisabled,
+      assistantAccessEnabled,
+      setAssistantAccessEnabled,
+    }),
+    [sendUserMessageToAssistant, formsDisabled, assistantAccessEnabled, setAssistantAccessEnabled],
   );
 
   /* Pathname */
@@ -117,12 +162,12 @@ export function AssistantChatShell({ children }: { children: ReactNode }) {
 
   return (
     <GeneratedUIContext.Provider value={{ generatedUI, clearGeneratedUI }}>
-      <AssistantChatComposerProvider value={{ sendUserMessageToAssistant, inputDisabled }}>
+      <AssistantChatComposerProvider value={composerContextValue}>
         <div className="flex h-[100svh] max-h-[100svh] min-h-0 w-full overflow-hidden">
           <div className={cn("flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden", panelOpen && "md:pr-[min(28rem,100%)]")}>
             {children}
           </div>
-          {!panelOpen ? (
+          {assistantAccessEnabled && !panelOpen ? (
             <Button
               type="button"
               size="icon"
@@ -150,9 +195,7 @@ export function AssistantChatShell({ children }: { children: ReactNode }) {
                 aria-modal="true"
               >
                 <div className="flex shrink-0 items-center justify-between border-b border-border px-4 py-3">
-                  <h2 className="font-heading text-sm font-semibold">
-                    {translate("assistant.title")}
-                  </h2>
+                  <h2 className="font-heading text-sm font-semibold">{translate("assistant.title")}</h2>
                   <Button
                     type="button"
                     variant="ghost"
@@ -225,7 +268,7 @@ export function AssistantChatShell({ children }: { children: ReactNode }) {
                   )}
                 </div>
                 <MessageForm
-                  disabled={inputDisabled}
+                  disabled={formsDisabled}
                   onSend={sendUserMessageToAssistant}
                   className="border-t border-border p-3"
                 />

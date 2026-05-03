@@ -3,7 +3,6 @@
 import Link from "next/link"
 import { IconSearch, IconUser } from "@tabler/icons-react"
 
-import { ThemeToggle } from "@/components/theme-toggle"
 import { Button } from "@/components/ui/button"
 import {
   InputGroup,
@@ -23,28 +22,26 @@ export function SiteHeader() {
             <Link href="/">{t("common.appName")}</Link>
           </Button>
           <Button asChild variant="ghost">
-            <Link href="/">{t("nav.explore")}</Link>
-          </Button>
-          <Button asChild variant="ghost">
             <Link href="/recipes">{t("nav.recipes")}</Link>
-          </Button>
-          <Button asChild variant="ghost">
-            <Link href="/ingredients">{t("nav.ingredients")}</Link>
           </Button>
           <Button asChild variant="ghost">
             <Link href="/pantry">{t("nav.pantry")}</Link>
           </Button>
+          <Button asChild variant="ghost">
+            <Link href="/ingredients">{t("nav.ingredients")}</Link>
+          </Button>
         </div>
         <div className="flex shrink-0 flex-row items-center gap-2">
-          <InputGroup className="w-48 sm:w-64">
+          {/* <InputGroup className="w-48 sm:w-64">
             <InputGroupAddon align="inline-start">
               <IconSearch aria-hidden />
             </InputGroupAddon>
             <InputGroupInput placeholder={t("common.search")} type="search" aria-label={t("common.search")} />
-          </InputGroup>
-          <ThemeToggle />
-          <Button type="button" variant="outline" size="icon" aria-label={t("common.profileAria")}>
-            <IconUser aria-hidden />
+          </InputGroup> */}
+          <Button asChild variant="outline" size="icon" aria-label={t("common.profileAria")}>
+            <Link href="/profile">
+              <IconUser aria-hidden />
+            </Link>
           </Button>
         </div>
       </div>
