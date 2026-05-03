@@ -17,13 +17,11 @@ export function createAssistantTools({ userId }: { userId: number }): Record<str
         return { recipes: recipesToToolRows(summaries) };
       },
     },
-    showPantryBoardForUser: {
-      description:
-        "Load the signed-in user's full pantry inventory and show the same interactive Pantry board as `/pantry` in the generated UI preview (below the site header). Call when they want to see, browse, add, or manage pantry items in that preview area. Rows are authoritative—never invent items, quantities, or dates.",
+    pantryBoardForUser: {
+      description: "Load the signed-in user's full pantry inventory and show the same interactive Pantry board as `/pantry` in the generated UI preview (below the site header). Call when they want to see, browse, add, or manage pantry items in that preview area. Rows are authoritative—never invent items, quantities, or dates.",
       inputSchema: emptyInputSchema,
       execute: async () => {
         const pantryRows = await listPantryInventory(userId, "all");
-
         return { pantryRows };
       },
     },

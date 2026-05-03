@@ -15,7 +15,7 @@ export type GeneratedUIDataFields = Partial<Pick<GeneratedUIPayload, "recipes" |
 
 export const SUPPORTED_TOOL_TYPES = [
   "tool-listRecipesForUser",
-  "tool-showPantryBoardForUser",
+  "tool-pantryBoardForUser",
   "tool-setAssistantLayout",
 ] as const;
 
@@ -31,11 +31,9 @@ export function mergeGeneratedUIPayload(previous: GeneratedUIPayload | null, cal
 function isPantryItemKind(value: unknown): value is PantryItemKind {
   return value === "ingredient" || value === "meal" || value === "custom";
 }
-
 function isPantryStorageLocation(value: unknown): value is PantryInventoryRow["storageLocation"] {
   return value === "fridge" || value === "pantry" || value === "storage" || value === "freezer";
 }
-
 function pantryRowFromUnknown(value: unknown): PantryInventoryRow | null {
   if (typeof value !== "object" || value === null) return null;
 
@@ -96,7 +94,6 @@ function pantryRowFromUnknown(value: unknown): PantryInventoryRow | null {
     displayName,
   };
 }
-
 function tryPantryBoardToolGeneratedUIData(toolOutput: unknown): GeneratedUIDataFields | null {
   if (typeof toolOutput !== "object" || toolOutput === null) return null;
 
@@ -121,7 +118,7 @@ export function tryParseToolData(toolType: (typeof SUPPORTED_TOOL_TYPES)[number]
 
       return { recipes: listRecipesToolOutput.recipes };
     }
-    case "tool-showPantryBoardForUser":
+    case "tool-pantryBoardForUser":
       return tryPantryBoardToolGeneratedUIData(toolOutput);
     case "tool-setAssistantLayout": {
       const layoutToolOutput = toolOutput as { layout?: LayoutOption };

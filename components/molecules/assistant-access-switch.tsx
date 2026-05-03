@@ -25,7 +25,6 @@ export function AssistantAccessSwitch({ id }: Props) {
         className={cn(
           "peer inline-flex h-[1.15rem] w-8 shrink-0 cursor-pointer items-center rounded-full border border-transparent shadow-xs transition-colors outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 data-[state=checked]:bg-primary data-[state=unchecked]:bg-input dark:data-[state=unchecked]:bg-input/80",
         )}
-        aria-label={t("assistant.accessSwitchAria")}
       >
         <Switch.Thumb
           className={cn(

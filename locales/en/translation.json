@@ -18,14 +18,11 @@
     "title": "Profile",
     "theme": "Theme",
     "assistantHeading": "Assistant",
-    "mockAiLabel": "Mock AI",
-    "mockAiHint": "Development only. Uses the local mock model instead of Anthropic; you control it here, not via env flags.",
-    "mockAiAria": "Toggle mock assistant AI responses",
-    "mockScenarioLabel": "Mock first step",
-    "mockScenarioRecipes": "List recipes only",
-    "mockScenarioSurface": "Surface (layout + recipes)",
-    "mockScenarioPantry": "Pantry board",
-    "mockScenarioHint": "Controls the mock model’s first streaming step when Mock AI is on."
+    "mockAiLabel": "Assistant mock",
+    "mockScenarioLabel": "Mock type",
+    "mockScenarioRecipes": "Recipes list",
+    "mockScenarioSurface": "Layout + recipes",
+    "mockScenarioPantry": "Pantry board"
   },
   "home": {
     "signedInAs": "Signed in as {{displayName}}"
@@ -155,8 +152,7 @@
     "roleAssistant": "Assistant",
     "thinking": "Thinking…",
     "stop": "Stop",
-    "accessSwitchLabel": "Quick access",
-    "accessSwitchAria": "Enable or disable assistant quick access and messaging",
+    "accessSwitchLabel": "Assistant available",
     "toolKind": {
       "recipes": "recipes",
       "layout": "layout",

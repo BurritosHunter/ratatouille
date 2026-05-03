@@ -66,7 +66,6 @@ export function AssistantChatShell({ children }: { children: ReactNode }) {
   const [assistantAccessEnabled, setAssistantAccessEnabledState] = useState(true);
   const [generatedUI, setGeneratedUI] = useState<GeneratedUIPayload | null>(null);
   const clearGeneratedUI = useCallback(() => { setGeneratedUI(null); }, []);
-  /** Dev: defaults from `/api/assistant/dev-ai-mode` until `localStorage` overrides exist. */
   const devChatMockDefaultRef = useRef<boolean | null>(null);
   const devChatMockScenarioRef = useRef<AssistantMockScenario | null>(null);
 
@@ -92,8 +91,6 @@ export function AssistantChatShell({ children }: { children: ReactNode }) {
       .catch(() => {});
   }, []);
 
-  /** Refs below are read only inside `prepareSendMessagesRequest` (when sending), not synchronously during render. */
-  /* eslint-disable react-hooks/refs -- false positive: callback runs on transport send */
   const assistantChatTransport = useMemo(
     () =>
       new DefaultChatTransport({
@@ -108,22 +105,14 @@ export function AssistantChatShell({ children }: { children: ReactNode }) {
             trigger,
             messageId,
           };
-          const headerRecord: Record<string, string> =
-            headers instanceof Headers
-              ? Object.fromEntries(headers.entries())
-              : { ...((headers as Record<string, string> | undefined) ?? {}) };
-
+          const headerRecord: Record<string, string> = headers instanceof Headers ? Object.fromEntries(headers.entries()) : { ...((headers as Record<string, string> | undefined) ?? {}) };
           if (process.env.NODE_ENV === "production") { return { body: outgoingBody }; }
 
           const fromStorage = readAssistantMockAiOverride();
           const useMockAi = fromStorage ?? devChatMockDefaultRef.current;
           if (useMockAi === null) { return { body: outgoingBody }; }
 
-          const scenario =
-            readAssistantMockScenarioOverride() ??
-            devChatMockScenarioRef.current ??
-            DEFAULT_ASSISTANT_MOCK_SCENARIO;
-
+          const scenario = readAssistantMockScenarioOverride() ?? devChatMockScenarioRef.current ??  DEFAULT_ASSISTANT_MOCK_SCENARIO;
           return {
             body: outgoingBody,
             headers: {
@@ -136,7 +125,6 @@ export function AssistantChatShell({ children }: { children: ReactNode }) {
       }),
     [],
   );
-  /* eslint-enable react-hooks/refs */
 
   const { messages, sendMessage, setMessages, status, stop, error, clearError } = useChat({
     transport: assistantChatTransport,
@@ -163,6 +151,7 @@ export function AssistantChatShell({ children }: { children: ReactNode }) {
   const sendUserMessageToAssistant = useCallback(
     (text: string) => {
       if (!assistantAccessEnabled) return;
+
       setPanelOpen(true);
       void sendMessage({ text });
     },
@@ -184,7 +173,6 @@ export function AssistantChatShell({ children }: { children: ReactNode }) {
   const previousPathnameRef = useRef<string | undefined>(undefined);
   useEffect(() => {
     if (previousPathnameRef.current === "/assistant" && pathname !== "/assistant") {
-      /* Preview mounts only on /assistant; clear shell state when leaving that route. */
       queueMicrotask(() => setGeneratedUI(null));
     }
     previousPathnameRef.current = pathname;
