@@ -102,6 +102,8 @@
       "meal": "Meal",
       "custom": "Custom"
     },
+    "sectionMeals": "Meals",
+    "sectionIngredients": "Ingredients & other",
     "empty": "Nothing in your inventory yet. Use Add to stock an ingredient or meal.",
     "quantityLabel": "Qty",
     "expiresLabel": "Expires",

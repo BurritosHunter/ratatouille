@@ -283,6 +283,40 @@ export function PantryList({ initialRows }: Props) {
   const catalogIngredientHits = useMemo(() => searchHits.filter((hit) => hit.kind === "ingredient"), [searchHits]);
   const catalogMealHits = useMemo(() => searchHits.filter((hit) => hit.kind === "meal"), [searchHits]);
 
+  const mealRows = useMemo(() => filteredRows.filter((row) => row.itemKind === "meal"), [filteredRows]);
+  const ingredientRows = useMemo(() => filteredRows.filter((row) => row.itemKind !== "meal"), [filteredRows]);
+  const hasMealsAndIngredients = mealRows.length > 0 && ingredientRows.length > 0;
+
+  function renderPantryRow(row: PantryInventoryRow) {
+    return (
+      <li key={row.id} className="flex flex-wrap items-center gap-3 p-3 text-sm">
+        <div className="min-w-0 flex-1">
+          <div className="truncate font-medium">{row.displayName}</div>
+          <div className="mt-0.5 flex flex-wrap gap-x-2 gap-y-0.5 text-muted-foreground">
+            <span>{t(`pantry.kind.${row.itemKind}`)}</span>
+            <span aria-hidden>·</span>
+            <span>{t(`pantry.storage.${row.storageLocation}`)}</span>
+            <span aria-hidden>·</span>
+            <span>
+              {t("pantry.quantityLabel")}: {row.quantity}
+            </span>
+            {row.expiresOn ? (
+              <>
+                <span aria-hidden>·</span>
+                <span>
+                  {t("pantry.expiresLabel")}: {row.expiresOn}
+                </span>
+              </>
+            ) : null}
+          </div>
+        </div>
+        <Button type="button" variant="ghost" size="icon-sm" className="shrink-0 text-muted-foreground hover:text-destructive" aria-label={t("pantry.removeAria", { name: row.displayName })} onClick={() => void handleRemove(row.id)}>
+          <IconTrash className="size-4" aria-hidden />
+        </Button>
+      </li>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
@@ -305,35 +339,29 @@ export function PantryList({ initialRows }: Props) {
       {filteredRows.length === 0 ? (
         <p className="text-sm text-muted-foreground">{t("pantry.empty")}</p>
       ) : (
-        <ul className="flex flex-col gap-2 divide-y divide-border rounded-md border border-border">
-          {filteredRows.map((row) => (
-            <li key={row.id} className="flex flex-wrap items-center gap-3 p-3 text-sm">
-              <div className="min-w-0 flex-1">
-                <div className="truncate font-medium">{row.displayName}</div>
-                <div className="mt-0.5 flex flex-wrap gap-x-2 gap-y-0.5 text-muted-foreground">
-                  <span>{t(`pantry.kind.${row.itemKind}`)}</span>
-                  <span aria-hidden>·</span>
-                  <span>{t(`pantry.storage.${row.storageLocation}`)}</span>
-                  <span aria-hidden>·</span>
-                  <span>
-                    {t("pantry.quantityLabel")}: {row.quantity}
-                  </span>
-                  {row.expiresOn ? (
-                    <>
-                      <span aria-hidden>·</span>
-                      <span>
-                        {t("pantry.expiresLabel")}: {row.expiresOn}
-                      </span>
-                    </>
-                  ) : null}
-                </div>
-              </div>
-              <Button type="button" variant="ghost" size="icon-sm" className="shrink-0 text-muted-foreground hover:text-destructive" aria-label={t("pantry.removeAria", { name: row.displayName })} onClick={() => void handleRemove(row.id)}>
-                <IconTrash className="size-4" aria-hidden />
-              </Button>
-            </li>
-          ))}
-        </ul>
+        <div
+          className={cn(
+            "grid grid-cols-1 gap-8 md:items-start",
+            hasMealsAndIngredients ? "md:grid-cols-2 md:gap-6" : "gap-6",
+          )}
+        >
+          {mealRows.length > 0 ? (
+            <section className={cn("flex min-w-0 flex-col gap-2", hasMealsAndIngredients && "md:order-2")} aria-labelledby="pantry-section-meals">
+              <h2 id="pantry-section-meals" className="font-heading text-sm font-semibold text-foreground">
+                {t("pantry.sectionMeals")}
+              </h2>
+              <ul className="flex flex-col gap-2 divide-y divide-border rounded-md border border-border">{mealRows.map((row) => renderPantryRow(row))}</ul>
+            </section>
+          ) : null}
+          {ingredientRows.length > 0 ? (
+            <section className={cn("flex min-w-0 flex-col gap-2", hasMealsAndIngredients && "md:order-1")} aria-labelledby="pantry-section-ingredients">
+              <h2 id="pantry-section-ingredients" className="font-heading text-sm font-semibold text-foreground">
+                {t("pantry.sectionIngredients")}
+              </h2>
+              <ul className="flex flex-col gap-2 divide-y divide-border rounded-md border border-border">{ingredientRows.map((row) => renderPantryRow(row))}</ul>
+            </section>
+          ) : null}
+        </div>
       )}
 
       {addOpen ? (
