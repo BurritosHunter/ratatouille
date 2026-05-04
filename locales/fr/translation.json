@@ -102,6 +102,8 @@
       "meal": "Plat",
       "custom": "Personnalisé"
     },
+    "sectionMeals": "Plats",
+    "sectionIngredients": "Ingrédients et autres",
     "empty": "Votre inventaire est vide. Utilisez Ajouter pour enregistrer un ingrédient ou un plat.",
     "quantityLabel": "Qté",
     "expiresLabel": "Expire",
