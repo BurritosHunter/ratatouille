@@ -1,6 +1,6 @@
 "use client";
 
-import { IconPlus, IconTrash } from "@tabler/icons-react";
+import { IconChevronDown, IconChevronUp, IconPlus, IconTrash } from "@tabler/icons-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { TFunction } from "i18next";
@@ -71,6 +71,17 @@ function pantryExpiryRelativeLabel(t: TFunction<"translation">, dayDiff: number)
   return t("pantry.expiresRelativeDaysAgo", { count: -dayDiff });
 }
 
+function pantryExpiryQuickLabelForDayOffset(translate: TFunction<"translation">, daysFromToday: number): string | null {
+  for (const option of PANTRY_EXPIRY_QUICK_OPTIONS) {
+    const optionDays = option.kind === "today" ? 0 : option.kind === "twoDaysPantryOnly" ? 2 : expirationDaysOffsetForShelfLifePreset(option.preset);
+    if (optionDays !== daysFromToday) continue;
+    if (option.kind === "today") return translate("pantry.expiresPresetToday");
+    if (option.kind === "twoDaysPantryOnly") return translate("pantry.expiresPreset2Days");
+    return translate(`ingredients.shelfLife.${option.preset}`);
+  }
+  return null;
+}
+
 type AddPhase = "search" | "details";
 type Props = { initialRows: PantryInventoryRow[] };
 
@@ -95,6 +106,8 @@ export function PantryList({ initialRows }: Props) {
   const [detailStorage, setDetailStorage] = useState<PantryStorageLocation>("fridge");
   const [detailQuantity, setDetailQuantity] = useState("");
   const [detailExpires, setDetailExpires] = useState("");
+  const [expiryPresetOptionsCollapsed, setExpiryPresetOptionsCollapsed] = useState(false);
+  const [expirySummaryRelativeOverride, setExpirySummaryRelativeOverride] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -138,8 +151,12 @@ export function PantryList({ initialRows }: Props) {
     const formattedDate = formatMediumIsoLocalDate(trimmed, i18n.language);
     if (dayDiff === null || formattedDate === null) return null;
 
-    return { formattedDate, relativeLabel: pantryExpiryRelativeLabel(t, dayDiff) };
-  }, [detailExpires, i18n.language, t]);
+    const relativeLabel = expirySummaryRelativeOverride !== null ? expirySummaryRelativeOverride : pantryExpiryRelativeLabel(t, dayDiff);
+    return { formattedDate, relativeLabel };
+  }, [detailExpires, expirySummaryRelativeOverride, i18n.language, t]);
+
+  const hasExpiryDateValue = detailExpires.trim() !== "";
+  const showExpiryPresetOptions = !hasExpiryDateValue || !expiryPresetOptionsCollapsed;
 
   const runSearch = useCallback(async (query: string) => {
     setSearching(true);
@@ -172,6 +189,13 @@ export function PantryList({ initialRows }: Props) {
     return () => clearTimeout(handle);
   }, [addOpen, addPhase, searchQuery, runSearch]);
 
+  useEffect(() => {
+    if (detailExpires.trim() === "") {
+      setExpiryPresetOptionsCollapsed(false);
+      setExpirySummaryRelativeOverride(null);
+    }
+  }, [detailExpires]);
+
   function openAddDialog() {
     setAddOpen(true);
     setAddPhase("search");
@@ -184,6 +208,8 @@ export function PantryList({ initialRows }: Props) {
     setDetailStorage("fridge");
     setDetailQuantity("");
     setDetailExpires("");
+    setExpiryPresetOptionsCollapsed(false);
+    setExpirySummaryRelativeOverride(null);
     setFormError(null);
   }
   function closeAddDialog() {
@@ -199,15 +225,22 @@ export function PantryList({ initialRows }: Props) {
     if (hit.kind === "ingredient") {
       const daysFromToday = expirationDaysOffsetForShelfLifePreset(hit.shelfLifePreset);
       setDetailExpires(localCalendarDateWithDaysFromToday(daysFromToday));
+      setExpirySummaryRelativeOverride(t(`ingredients.shelfLife.${hit.shelfLifePreset}`));
+      setExpiryPresetOptionsCollapsed(true);
       return;
     }
 
     setDetailExpires("");
+    setExpiryPresetOptionsCollapsed(false);
+    setExpirySummaryRelativeOverride(null);
     const result = await mealShortestShelfLifeExpiryDaysAction(hit.id);
     if (loadGeneration !== mealExpiryLoadGenerationReference.current) return;
 
     if (result.ok && result.daysFromToday !== null) {
-      setDetailExpires(localCalendarDateWithDaysFromToday(result.daysFromToday));
+      const daysFromToday = result.daysFromToday;
+      setDetailExpires(localCalendarDateWithDaysFromToday(daysFromToday));
+      setExpirySummaryRelativeOverride(pantryExpiryQuickLabelForDayOffset(t, daysFromToday));
+      setExpiryPresetOptionsCollapsed(true);
     }
   }
 
@@ -216,6 +249,8 @@ export function PantryList({ initialRows }: Props) {
     setAddMode("custom");
     setCustomLabel(searchQuery.trim());
     setAddPhase("details");
+    setExpiryPresetOptionsCollapsed(false);
+    setExpirySummaryRelativeOverride(null);
     setFormError(null);
   }
   function goToNewIngredientFromSearch() {
@@ -223,6 +258,8 @@ export function PantryList({ initialRows }: Props) {
     setAddMode("newIngredient");
     setNewIngredientName(searchQuery.trim());
     setAddPhase("details");
+    setExpiryPresetOptionsCollapsed(false);
+    setExpirySummaryRelativeOverride(null);
     setFormError(null);
   }
 
@@ -478,58 +515,82 @@ export function PantryList({ initialRows }: Props) {
                   <Field className="gap-1.5">
                     <FieldLabel htmlFor="pantry-exp">{t("pantry.expiresField")}</FieldLabel>
                     <div className="flex min-w-0 flex-col gap-2">
-                      <div
-                        role="presentation"
-                        className={cn(
-                          inputVariants({ variant: "default" }),
-                          "relative flex min-h-9 h-auto w-full min-w-0 cursor-pointer items-center py-1.5 focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50 dark:focus-within:border-ring dark:focus-within:ring-ring/50",
-                        )}
-                        onClick={activateExpiryDatePicker}
-                      >
-                        <div className="relative z-0 flex min-h-9 w-full min-w-0 flex-wrap items-center gap-x-1 text-base md:text-sm">
-                          {expiryDateFieldSummary ? (
-                            <>
-                              <span className="text-foreground">{expiryDateFieldSummary.relativeLabel}</span>
-                              <span className="text-muted-foreground" aria-hidden>
-                                ·
-                              </span>
-                              <span className="text-muted-foreground">{expiryDateFieldSummary.formattedDate}</span>
-                            </>
-                          ) : (
-                            <span className="text-muted-foreground">{t("pantry.expiresDatePlaceholder")}</span>
+                      <div className="flex min-w-0 items-center gap-2">
+                        <div
+                          role="presentation"
+                          className={cn(
+                            inputVariants({ variant: "default" }),
+                            "relative flex min-h-9 h-auto min-w-0 flex-1 cursor-pointer items-center py-1.5 focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50 dark:focus-within:border-ring dark:focus-within:ring-ring/50",
                           )}
+                          onClick={activateExpiryDatePicker}
+                        >
+                          <div className="relative z-0 flex min-h-9 w-full min-w-0 flex-wrap items-center gap-x-1 text-base md:text-sm">
+                            {expiryDateFieldSummary ? (
+                              <>
+                                <span className="text-foreground">{expiryDateFieldSummary.relativeLabel}</span>
+                                <span className="text-muted-foreground" aria-hidden>
+                                  ·
+                                </span>
+                                <span className="text-muted-foreground">{expiryDateFieldSummary.formattedDate}</span>
+                              </>
+                            ) : (
+                              <span className="text-muted-foreground">{t("pantry.expiresDatePlaceholder")}</span>
+                            )}
+                          </div>
+                          <input
+                            ref={expiryDateInputReference}
+                            id="pantry-exp"
+                            type="date"
+                            value={detailExpires}
+                            onChange={(event) => {
+                              setDetailExpires(event.target.value);
+                              setExpirySummaryRelativeOverride(null);
+                            }}
+                            className="sr-only [color-scheme:inherit]"
+                          />
                         </div>
-                        <input
-                          ref={expiryDateInputReference}
-                          id="pantry-exp"
-                          type="date"
-                          value={detailExpires}
-                          onChange={(event) => setDetailExpires(event.target.value)}
-                          className="sr-only [color-scheme:inherit]"
-                        />
+                        {hasExpiryDateValue ? (
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            className="shrink-0 gap-1.5 px-2"
+                            aria-expanded={showExpiryPresetOptions}
+                            onClick={() => setExpiryPresetOptionsCollapsed((previous) => !previous)}
+                          >
+                            <span>{t("pantry.expiresPresetOptionsShow")}</span>
+                            {showExpiryPresetOptions ? <IconChevronUp className="size-4 shrink-0" aria-hidden /> : <IconChevronDown className="size-4 shrink-0" aria-hidden />}
+                          </Button>
+                        ) : null}
                       </div>
-                      <div className="flex min-h-0 min-w-0 w-full flex-wrap content-start gap-2">
-                        {PANTRY_EXPIRY_QUICK_OPTIONS.map((option) => {
-                          const daysFromToday =
-                            option.kind === "today" ? 0 : option.kind === "twoDaysPantryOnly" ? 2 : expirationDaysOffsetForShelfLifePreset(option.preset);
-                          const presetDate = localCalendarDateWithDaysFromToday(daysFromToday);
-                          let label: string;
-                          if (option.kind === "today") label = t("pantry.expiresPresetToday");
-                          else if (option.kind === "twoDaysPantryOnly") label = t("pantry.expiresPreset2Days");
-                          else label = t(`ingredients.shelfLife.${option.preset}`);
-                          return (
-                            <Button
-                              key={option.kind === "today" ? "today" : option.kind === "twoDaysPantryOnly" ? "two-days-pantry" : option.preset}
-                              type="button"
-                              size="sm"
-                              variant={detailExpires === presetDate ? "secondary" : "outline"}
-                              onClick={() => setDetailExpires(presetDate)}
-                            >
-                              {label}
-                            </Button>
-                          );
-                        })}
-                      </div>
+                      {showExpiryPresetOptions ? (
+                        <div className="flex min-h-0 min-w-0 w-full flex-wrap content-start gap-2">
+                          {PANTRY_EXPIRY_QUICK_OPTIONS.map((option) => {
+                            const daysFromToday =
+                              option.kind === "today" ? 0 : option.kind === "twoDaysPantryOnly" ? 2 : expirationDaysOffsetForShelfLifePreset(option.preset);
+                            const presetDate = localCalendarDateWithDaysFromToday(daysFromToday);
+                            let label: string;
+                            if (option.kind === "today") label = t("pantry.expiresPresetToday");
+                            else if (option.kind === "twoDaysPantryOnly") label = t("pantry.expiresPreset2Days");
+                            else label = t(`ingredients.shelfLife.${option.preset}`);
+                            return (
+                              <Button
+                                key={option.kind === "today" ? "today" : option.kind === "twoDaysPantryOnly" ? "two-days-pantry" : option.preset}
+                                type="button"
+                                size="sm"
+                                variant={detailExpires === presetDate ? "secondary" : "outline"}
+                                onClick={() => {
+                                  setDetailExpires(presetDate);
+                                  setExpirySummaryRelativeOverride(label);
+                                  setExpiryPresetOptionsCollapsed(true);
+                                }}
+                              >
+                                {label}
+                              </Button>
+                            );
+                          })}
+                        </div>
+                      ) : null}
                     </div>
                   </Field>
 
