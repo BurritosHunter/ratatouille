@@ -1,15 +1,21 @@
 import Link from "next/link"
 
 import { restoreDeletedRecipe } from "./actions"
-import { RecipeList } from "@/components/features/recipe-list"
+import { RecipeList } from "@/features/recipe/recipe-list"
 import { UndoDeleteToast } from "@/components/molecules/toast-undo-delete"
 import { Button } from "@/components/ui/button"
 import { requireUserId } from "@/lib/auth/auth-user"
 import { listRecipes } from "@/lib/data/recipes"
 import { recipeSummariesToListLinkItems } from "@/lib/helpers/recipe-list-link-items"
 import { getServerT } from "@/lib/i18n/server"
+import { Metadata } from "next"
 
 export const dynamic = "force-dynamic"
+
+export const metadata: Metadata = {
+  title: "Recipes",
+  description: "Recipes is a list of your recipes.",
+}
 
 type PageProps = { searchParams: Promise<{ deleted?: string }> };
 

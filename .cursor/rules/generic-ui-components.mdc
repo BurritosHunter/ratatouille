@@ -22,6 +22,6 @@ export function ImageSelector({ previewSrc, defaultImageUrl }: { previewSrc: str
 
 When **adding/editing** shared UI ⇒ keep generic. When **page**/**`_*.tsx`** ⇒ put non-generic pieces there instead of **`components/ui`**.
 
-## Exception: **`components/features`**
+## Exception: **`features/`** (project root)
 
-When domain UI is used from **both** a **route page** *and* the **assistant generated-UI shell**, place it under **`components/features/`** as a flat slice (client **`.tsx`** + optional **`*.actions.ts`**). See **components-features** for **`features/` vs `tools/`**.
+When domain UI is used from **both** a **route page** *and* the **assistant generated-UI shell**, place it under **`features/<name>/`** (client **`.tsx`** + optional **`*.actions.ts`**). See **components-features** for **`features/` vs `tools/`**.

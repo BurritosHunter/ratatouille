@@ -1,6 +1,6 @@
 import { listPantryInventory } from "@/lib/data/pantry-inventory";
 import { listRecipes } from "@/lib/data/recipes";
-import { recipesToToolRows } from "@/lib/assistant-tools/recipe-rows";
+import { recipeSummariesToListLinkItems } from "@/lib/helpers/recipe-list-link-items";
 import type { AssistantChatTool } from "@/lib/assistant-tools/types";
 import { layoutRegionsSchema } from "@/lib/assistant-tools/layout-regions";
 import { z } from "zod";
@@ -17,7 +17,7 @@ export function createAssistantTools({ userId }: { userId: number }): Record<str
       inputSchema: z.object({}),
       execute: async () => {
         const summaries = await listRecipes(userId);
-        return { recipes: recipesToToolRows(summaries) };
+        return { recipes: recipeSummariesToListLinkItems(summaries) };
       },
     },
     pantryList: {

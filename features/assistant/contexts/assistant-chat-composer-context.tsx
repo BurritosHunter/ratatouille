@@ -18,6 +18,6 @@ export function AssistantChatComposerProvider({ value, children }: { value: Assi
 export function useAssistantChatComposer(): AssistantChatComposerContextValue {
   const context = useContext(AssistantChatComposerContext);
   if (!context) { throw new Error("useAssistantChatComposer must be used within AssistantChatComposerProvider"); }
-  
+
   return context;
 }

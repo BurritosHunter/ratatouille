@@ -8,8 +8,14 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { requireUserId } from "@/lib/auth/auth-user"
 import { listIngredients } from "@/lib/data/ingredients"
+import { Metadata } from "next"
 
 export const dynamic = "force-dynamic"
+
+export const metadata: Metadata = {
+  title: "New recipe",
+  description: "Create a new recipe.",
+}
 
 export default async function NewRecipePage() {
   const userId = await requireUserId("/recipes/new")

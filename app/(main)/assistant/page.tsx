@@ -2,8 +2,8 @@
 
 import { MessageForm } from "@/components/organisms/message-form";
 import { GeneratedUILayout } from "@/app/(main)/assistant/_generated-ui-layout";
-import { useAssistantChatComposer } from "@/contexts/assistant-chat-composer-context";
-import { useGeneratedUI } from "@/contexts/assistant-generated-ui-context";
+import { useAssistantChatComposer } from "@/features/assistant/contexts/assistant-chat-composer-context";
+import { useGeneratedUI } from "@/features/assistant/contexts/assistant-generated-ui-context";
 import { cn } from "@/lib/helpers/utils";
 import { useTranslation } from "react-i18next";
 

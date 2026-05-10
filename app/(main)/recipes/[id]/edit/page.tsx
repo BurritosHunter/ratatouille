@@ -9,8 +9,14 @@ import { listIngredients } from "@/lib/data/ingredients"
 import { legacyPayloadFromIngredientsText, listRecipeIngredientLines } from "@/lib/data/recipe-ingredients"
 import { getRecipeById } from "@/lib/data/recipes"
 import { imageSrcFromStoredOrExternal } from "@/lib/helpers/image/stored-or-external-src"
+import { Metadata } from "next"
 
 export const dynamic = "force-dynamic"
+
+export const metadata: Metadata = {
+  title: "Edit recipe",
+  description: "Edit a recipe.",
+}
 
 type PageProps = {
   params: Promise<{ id: string }>

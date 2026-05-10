@@ -1,4 +1,4 @@
-import type { RecipeToolRow } from "@/lib/assistant-tools/recipe-rows";
+import type { RecipeListLinkItem } from "@/lib/helpers/recipe-list-link-items";
 import { layoutRegionsToolType, tryParseLayoutRegionsToolOutput, type LayoutOption } from "@/lib/assistant-tools/layout-regions";
 import type { PantryInventoryRow, PantryItemKind } from "@/lib/models/pantry-inventory";
 
@@ -7,7 +7,7 @@ export type { LayoutOption };
 export type GeneratedUIPayload = {
   generatedAtIso: string;
   lastCallId: string;
-  recipes?: RecipeToolRow[];
+  recipes?: RecipeListLinkItem[];
   layout?: LayoutOption;
   pantryRows?: PantryInventoryRow[];
 };
@@ -107,7 +107,7 @@ function tryPantryBoardToolGeneratedUIData(toolOutput: unknown): GeneratedUIData
 export function tryParseToolData(toolType: (typeof SUPPORTED_TOOL_TYPES)[number], toolOutput: unknown): GeneratedUIDataFields | null {
   switch (toolType) {
     case "tool-recipeList": {
-      const listRecipesToolOutput = toolOutput as { recipes?: RecipeToolRow[] };
+      const listRecipesToolOutput = toolOutput as { recipes?: RecipeListLinkItem[] };
       if (!listRecipesToolOutput.recipes) return null;
 
       return { recipes: listRecipesToolOutput.recipes };

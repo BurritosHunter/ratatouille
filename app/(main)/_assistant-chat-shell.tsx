@@ -8,8 +8,8 @@ import { startTransition, useCallback, useEffect, useLayoutEffect, useMemo, useR
 import { useTranslation } from "react-i18next";
 import { MessageForm } from "@/components/organisms/message-form";
 import { Button } from "@/components/ui/button";
-import { AssistantChatComposerProvider } from "@/contexts/assistant-chat-composer-context";
-import { GeneratedUIContext } from "@/contexts/assistant-generated-ui-context";
+import { AssistantChatComposerProvider } from "@/features/assistant/contexts/assistant-chat-composer-context";
+import { GeneratedUIContext } from "@/features/assistant/contexts/assistant-generated-ui-context";
 import {
   DEFAULT_ASSISTANT_MOCK_SCENARIO,
   readAssistantMockAiOverride,

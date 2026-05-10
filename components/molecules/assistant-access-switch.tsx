@@ -4,7 +4,7 @@ import { Switch } from "radix-ui";
 import { useTranslation } from "react-i18next";
 
 import { Label } from "@/components/ui/label";
-import { useAssistantChatComposer } from "@/contexts/assistant-chat-composer-context";
+import { useAssistantChatComposer } from "@/features/assistant/contexts/assistant-chat-composer-context";
 import { cn } from "@/lib/helpers/utils";
 
 type Props = { id: string };

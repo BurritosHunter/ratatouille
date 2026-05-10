@@ -1,10 +1,10 @@
 "use client";
 
-import { LayoutRegions } from "@/components/features/layout-regions";
-import { PantryList } from "@/components/features/pantry-list";
-import { RecipeList } from "@/components/features/recipe-list";
-import { useGeneratedUI } from "@/contexts/assistant-generated-ui-context";
-import type { RecipeToolRow } from "@/lib/assistant-tools/recipe-rows";
+import { LayoutRegions } from "@/features/layout/layout-regions";
+import { PantryList } from "@/features/pantry/pantry-list";
+import { RecipeList } from "@/features/recipe/recipe-list";
+import { useGeneratedUI } from "@/features/assistant/contexts/assistant-generated-ui-context";
+import type { RecipeListLinkItem } from "@/lib/helpers/recipe-list-link-items";
 import { useTranslation } from "react-i18next";
 
 export function GeneratedUILayout() {
@@ -14,7 +14,7 @@ export function GeneratedUILayout() {
 
   const pantryRowsMerged = generatedUI.pantryRows;
   const hasPantryList = pantryRowsMerged !== undefined;
-  const recipeRows: RecipeToolRow[] = generatedUI.recipes ?? [];
+  const recipeRows: RecipeListLinkItem[] = generatedUI.recipes ?? [];
 
   const recipePreview = recipeRows.length === 0 ? (
       <p className="text-sm text-muted-foreground">{t("assistant.noRecipesInSurface")}</p>

@@ -1,4 +1,5 @@
 import { Geist_Mono, Figtree, Montserrat } from "next/font/google"
+import type { Metadata } from "next"
 
 import "./globals.css"
 import { AuthSessionProvider } from "@/components/providers/auth-session-provider"
@@ -8,13 +9,20 @@ import { Toaster } from "@/components/ui/sonner"
 import { cn } from "@/lib/helpers/utils"
 
 const montserratHeading = Montserrat({subsets:['latin'],variable:'--font-heading'});
-
 const figtree = Figtree({subsets:['latin'],variable:'--font-sans'})
-
 const fontMono = Geist_Mono({
   subsets: ["latin"],
   variable: "--font-mono",
 })
+
+export const metadata: Metadata = {
+  title: {
+    template: "%s | Ratatouille",
+    default: "Ratatouille",
+  },
+  description: "Ratatouille is a recipe management system that helps you manage your recipes and ingredients.",
+  icons: "/favicon.ico",
+}
 
 export default function RootLayout({
   children,

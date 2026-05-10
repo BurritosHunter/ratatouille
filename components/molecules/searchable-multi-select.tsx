@@ -1,6 +1,8 @@
 "use client"
 
 import { useLayoutEffect, useMemo, useRef, useState } from "react"
+
+import { useDisclosure } from "@/hooks/use-disclosure"
 import { IconCheck, IconMinus, IconPlus } from "@tabler/icons-react"
 
 import { Button } from "@/components/ui/button"
@@ -81,7 +83,7 @@ export function SearchableMultiSelect({
   triggerLabel: triggerLabelOverride,
   listMode = "split",
 }: SearchableMultiSelectProps) {
-  const [open, setOpen] = useState(false)
+  const { isOpen, onOpenChange: setDisclosureOpen } = useDisclosure(false)
   const [searchQuery, setSearchQuery] = useState("")
   const [createPending, setCreatePending] = useState(false)
   const searchInputReference = useRef<HTMLInputElement>(null)
@@ -227,9 +229,9 @@ export function SearchableMultiSelect({
   return (
     <Popover
       modal={false}
-      open={open}
+      open={isOpen}
       onOpenChange={(nextOpen) => {
-        setOpen(nextOpen)
+        setDisclosureOpen(nextOpen)
         if (!nextOpen) setSearchQuery("")
       }}
     >

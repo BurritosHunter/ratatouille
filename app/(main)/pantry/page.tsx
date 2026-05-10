@@ -1,9 +1,14 @@
-import { PantryList } from "@/components/features/pantry-list";
+import { PantryList } from "@/features/pantry/pantry-list";
 import { requireUserId } from "@/lib/auth/auth-user";
 import { getServerT } from "@/lib/i18n/server";
 import { listPantryInventory } from "@/lib/data/pantry-inventory";
+import { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
+export const metadata: Metadata = {
+  title: "Pantry",
+  description: "Pantry is a list of your pantry items.",
+}
 
 export default async function PantryPage() {
   const t = getServerT();

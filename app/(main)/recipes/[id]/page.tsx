@@ -6,8 +6,14 @@ import { Button } from "@/components/ui/button";
 import { requireUserId } from "@/lib/auth/auth-user";
 import { getRecipeById } from "@/lib/data/recipes";
 import { imageSrcFromStoredOrExternal } from "@/lib/helpers/image/stored-or-external-src";
+import { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: "Recipe",
+  description: "Recipe is a recipe.",
+}
 
 type PageProps = {
   params: Promise<{ id: string }>;
