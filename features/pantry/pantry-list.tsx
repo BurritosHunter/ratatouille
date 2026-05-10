@@ -5,7 +5,12 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { TFunction } from "i18next";
 import { useTranslation } from "react-i18next";
-import { addPantryInventoryLine, mealShortestShelfLifeExpiryDaysAction, removePantryInventoryLine, searchPantryCatalogAction } from "./pantry-list.actions";
+import {
+  addPantryInventoryLine,
+  mealShortestShelfLifeExpiryDaysAction,
+  removePantryInventoryLine,
+  searchPantryCatalogAction,
+} from "@/lib/actions/pantry";
 import { Button } from "@/components/ui/button";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input, inputVariants } from "@/components/ui/input";

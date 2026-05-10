@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { IconTrash } from "@tabler/icons-react";
 import { Fragment } from "react/jsx-runtime";
 
-import { quickCreateIngredient } from "@/app/(main)/ingredients/actions";
+import { quickCreateIngredient } from "@/lib/actions/ingredients";
 import {
   SearchableMultiSelect,
   type SearchableMultiSelectListMode,

@@ -15,7 +15,7 @@ import {
   autosaveRecipeIngredients,
   autosaveRecipeInstructions,
   autosaveRecipeTitle,
-} from "../../actions"
+} from "@/lib/actions/recipes";
 import { EditableText } from "@/components/molecules/editable-text"
 import { MealIngredientsEditor } from "@/app/(main)/recipes/_meal-ingredients-editor"
 import type { MealIngredientEditorLine } from "@/app/(main)/recipes/_meal-ingredients-editor"

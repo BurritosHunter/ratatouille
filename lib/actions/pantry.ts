@@ -4,7 +4,11 @@ import { revalidatePath } from "next/cache";
 
 import { requireUserId } from "@/lib/auth/auth-user";
 import { createIngredient } from "@/lib/data/ingredients";
-import { deletePantryInventoryRow, insertPantryInventoryRow, searchPantryCatalog } from "@/lib/data/pantry-inventory";
+import {
+  deletePantryInventoryRow,
+  insertPantryInventoryRow,
+  searchPantryCatalog,
+} from "@/lib/data/pantry-inventory";
 import { shortestExpirationDaysOffsetForRecipe } from "@/lib/data/recipe-ingredients";
 import type { PantryCatalogHit, PantryStorageLocation } from "@/types/pantry-inventory";
 
@@ -95,7 +99,12 @@ export async function addPantryInventoryLine(payload: unknown): Promise<{ ok: tr
       const catalogId = fields.catalogId;
       if (kind !== "ingredient" && kind !== "meal") return { ok: false, reason: "validation" };
 
-      const resolvedCatalogNumericId = typeof catalogId === "number" && Number.isFinite(catalogId) ? catalogId : typeof catalogId === "string" ? Number.parseInt(catalogId, 10) : Number.NaN;
+      const resolvedCatalogNumericId =
+        typeof catalogId === "number" && Number.isFinite(catalogId)
+          ? catalogId
+          : typeof catalogId === "string"
+            ? Number.parseInt(catalogId, 10)
+            : Number.NaN;
       if (!Number.isFinite(resolvedCatalogNumericId)) return { ok: false, reason: "validation" };
 
       await insertPantryInventoryRow({
@@ -160,7 +169,12 @@ export async function addPantryInventoryLine(payload: unknown): Promise<{ ok: tr
 export async function removePantryInventoryLine(rowId: unknown): Promise<{ ok: true } | { ok: false }> {
   try {
     const userId = await requireUserId("/pantry");
-    const resolvedInventoryRowNumericId = typeof rowId === "number" && Number.isFinite(rowId) ? rowId : typeof rowId === "string" ? Number.parseInt(rowId, 10) : Number.NaN;
+    const resolvedInventoryRowNumericId =
+      typeof rowId === "number" && Number.isFinite(rowId)
+        ? rowId
+        : typeof rowId === "string"
+          ? Number.parseInt(rowId, 10)
+          : Number.NaN;
     if (!Number.isFinite(resolvedInventoryRowNumericId)) return { ok: false };
 
     await deletePantryInventoryRow(userId, resolvedInventoryRowNumericId);

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { deleteRecipe } from "../actions";
+import { deleteRecipe } from "@/lib/actions/recipes";
 import { Button } from "@/components/ui/button";
 import { requireUserId } from "@/lib/auth/auth-user";
 import { getRecipeById } from "@/lib/data/recipes";

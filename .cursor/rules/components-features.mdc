@@ -11,8 +11,7 @@ priority: medium
 
 Use for **cross-surface domain slices**: the same substantive UI/logic must be composed from **more than one app surface**—typically **`app/(main)/.../page.tsx` plus the assistant **`GeneratedUILayout`** (`app/(main)/assistant/_generated-ui-layout.tsx`). Route-only consumers should prefer **`app/.../_name.tsx`** (see **generic-ui-components**).
 
-- **One folder per slice** under **`features/<name>/`**: e.g. **`features/pantry/pantry-list.tsx`** + **`pantry-list.actions.ts`** (same pattern as [bulletproof-react `src/features`](https://github.com/alan2207/bulletproof-react/tree/master/apps/nextjs-app/src/features)).
-- **`.actions.ts`**: **`"use server"`** module colocated next to its client counterpart; exported names stay feature-specific (**`searchPantryCatalogAction`**, etc.).
+- **One folder per slice** under **`features/<name>/`**: domain UI (**`features/pantry/pantry-list.tsx`**, …). **`"use server"`** handlers live under **`lib/actions/<slice>.ts`** (e.g. **`lib/actions/pantry.ts`**), imported by the feature client module.
 - **Imports**: **`app`** surfaces (pages and route-colocated **`_*.tsx`** partials such as **`_generated-ui-layout.tsx`**) compose **`@/features/...`**; keep substantive domain UI in **`features/`**, not ad hoc under **`app/`** except as thin wrappers.
 
 ## `components/tools`

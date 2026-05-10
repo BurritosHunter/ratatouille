@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 
-import { saveIngredientsState } from "./actions"
+import { saveIngredientsState } from "@/lib/actions/ingredients";
 import type { CategoryShelfLifeDefaultsMap } from "@/lib/data/ingredient-category-shelf-defaults"
 import { Button } from "@/components/ui/button"
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field"
