@@ -1,4 +1,4 @@
-import { getSql } from "@/lib/db"
+import { prisma } from "@/prisma/client"
 import {
   DEFAULT_SHELF_LIFE_PRESET,
   type IngredientCategory,
@@ -6,20 +6,17 @@ import {
   parseIngredientCategory,
   type IngredientShelfLifePreset,
   resolveShelfLifePreset,
-} from "@/lib/models/ingredient"
+} from "../models/ingredient"
 
 export type CategoryShelfLifeDefaultsMap = Record<IngredientCategory, IngredientShelfLifePreset>
 
-type ShelfDefaultRow = {
-  category: string
-  default_shelf_life_preset: string | null
-}
-
 export async function listIngredientCategoryShelfDefaults(): Promise<CategoryShelfLifeDefaultsMap> {
-  const rows = (await getSql()`
-    SELECT category, default_shelf_life_preset
-    FROM ingredient_category_shelf_defaults
-  `) as ShelfDefaultRow[]
+  const rows = await prisma.ingredientCategoryShelfDefault.findMany({
+    select: {
+      category: true,
+      default_shelf_life_preset: true,
+    },
+  })
   const byCategory = new Map<IngredientCategory, IngredientShelfLifePreset>(
     rows.map((row) => [
       parseIngredientCategory(row.category),

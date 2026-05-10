@@ -1,0 +1,140 @@
+generator client {
+  provider = "prisma-client"
+  output   = "./generated"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Account {
+  id                Int     @id @default(autoincrement())
+  userId            Int
+  type              String  @db.VarChar(255)
+  provider          String  @db.VarChar(255)
+  providerAccountId String  @db.VarChar(255)
+  refresh_token     String?
+  access_token      String?
+  expires_at        BigInt?
+  id_token          String?
+  scope             String?
+  session_state     String?
+  token_type        String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId], map: "accounts_provider_provideraccountid_idx")
+  @@map("accounts")
+}
+
+model IngredientCategoryShelfDefault {
+  category                  String @id
+  default_shelf_life_preset String
+
+  @@map("ingredient_category_shelf_defaults")
+}
+
+model Ingredient {
+  id                 BigInt               @id @default(autoincrement())
+  user_id            Int
+  name               String
+  created_at         DateTime             @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime             @default(now()) @db.Timestamptz(6)
+  deleted_at         DateTime?            @db.Timestamptz(6)
+  category           String               @default("miscellaneous")
+  shelf_life_preset  String               @default("1_year")
+  user               User                 @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  pantry_rows        PantryInventory[]
+  recipe_lines       RecipeIngredient[]
+
+  @@map("ingredients")
+}
+
+model PantryInventory {
+  id               BigInt       @id @default(autoincrement())
+  user_id          Int
+  storage_location String
+  item_kind        String
+  ingredient_id    BigInt?
+  recipe_id        BigInt?
+  custom_label     String?
+  quantity         Decimal      @default(1) @db.Decimal(12, 4)
+  expires_on       DateTime?    @db.Date
+  created_at       DateTime     @default(now()) @db.Timestamptz(6)
+  updated_at       DateTime     @default(now()) @db.Timestamptz(6)
+  ingredient_ref   Ingredient?  @relation(fields: [ingredient_id], references: [id], onDelete: Cascade)
+  meal             Recipe?      @relation(fields: [recipe_id], references: [id], onDelete: Cascade)
+  user             User         @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id, created_at(sort: Desc)], map: "pantry_inventory_user_created_idx")
+  @@index([user_id, storage_location], map: "pantry_inventory_user_location_idx")
+  @@map("pantry_inventory")
+}
+
+model RecipeIngredient {
+  id            BigInt     @id @default(autoincrement())
+  recipe_id     BigInt
+  ingredient_id BigInt
+  sort_order    Int
+  quantity_note String?
+  ingredient    Ingredient @relation(fields: [ingredient_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  recipe        Recipe     @relation(fields: [recipe_id], references: [id], onDelete: Cascade)
+
+  @@unique([recipe_id, sort_order])
+  @@index([ingredient_id], map: "recipe_ingredients_ingredient_id_idx")
+  @@index([recipe_id], map: "recipe_ingredients_recipe_id_idx")
+  @@map("recipe_ingredients")
+}
+
+model Recipe {
+  id                 BigInt               @id @default(autoincrement())
+  user_id            Int
+  title              String
+  ingredients        String
+  instructions       String
+  created_at         DateTime             @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime             @default(now()) @db.Timestamptz(6)
+  deleted_at         DateTime?            @db.Timestamptz(6)
+  main_image_url     String?
+  main_image_data    Bytes?
+  main_image_mime    String?
+  pantry_rows        PantryInventory[]
+  recipe_ingredients RecipeIngredient[]
+  user               User                 @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id], map: "recipes_user_id_idx")
+  @@map("recipes")
+}
+
+model Session {
+  id           Int      @id @default(autoincrement())
+  sessionToken String   @unique @db.VarChar(255)
+  userId       Int
+  expires      DateTime @db.Timestamptz(6)
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model User {
+  id            Int               @id @default(autoincrement())
+  name          String?           @db.VarChar(255)
+  email         String?           @db.VarChar(255)
+  emailVerified DateTime?         @db.Timestamptz(6)
+  image         String?
+  accounts      Account[]
+  ingredients   Ingredient[]
+  pantry_items  PantryInventory[]
+  recipes       Recipe[]
+  sessions      Session[]
+
+  @@map("users")
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime @db.Timestamptz(6)
+
+  @@id([identifier, token])
+  @@map("verification_token")
+}

@@ -1,116 +1,112 @@
-import { getSql } from "@/lib/db"
+import { Prisma } from "@/prisma/client"
+
 import { RecipeImagePatchAction } from "@/lib/constants"
+import { prisma } from "@/prisma/client"
 import type { Recipe, RecipeImagePatch, RecipeSummary } from "../models/recipe"
 
-type RecipeRow = {
-  id: string | number
-  title: string
-  ingredients: string
-  instructions: string
-  main_image_url: string | null
-  has_stored_image: boolean
-}
+import { bigIntId, numberFromBigInt } from "@/prisma/mappers"
 
-type RecipeSummaryRow = {
-  id: string | number
+type RecipeSummaryRowRaw = {
+  id: bigint
   title: string
   main_image_url: string | null
   has_stored_image: boolean
 }
 
-
-function toId(value: string | number): number {
-  const parsed = typeof value === "string" ? Number.parseInt(value, 10) : Number(value)
-  if (!Number.isFinite(parsed)) throw new Error("Invalid recipe id")
-  return parsed
+type RecipeImageUrlRowRaw = {
+  main_image_url: string | null
+  has_stored_image: boolean
 }
 
-function toRecipe(row: RecipeRow): Recipe {
+function fromRecipeColumns(
+  row: {
+    id: bigint
+    title: string
+    ingredients: string
+    instructions: string
+    main_image_url: string | null
+    main_image_data: Uint8Array | null | undefined
+  },
+): Recipe {
   return {
-    id: toId(row.id),
+    id: numberFromBigInt(row.id),
     title: row.title,
     ingredients: row.ingredients,
     instructions: row.instructions,
     mainImageUrl: row.main_image_url,
-    hasStoredImage: Boolean(row.has_stored_image),
+    hasStoredImage: row.main_image_data != null && row.main_image_data.length > 0,
   }
 }
 
-function toRecipeSummary(row: RecipeSummaryRow): RecipeSummary {
-  return {
-    id: toId(row.id),
+/** Aligned with the Postgres `recipes` table / `Recipe` model in `prisma/schema.prisma`. */
+export async function listRecipes(userId: number): Promise<RecipeSummary[]> {
+  const rows = await prisma.$queryRaw<RecipeSummaryRowRaw[]>(
+    Prisma.sql`
+      SELECT
+        id,
+        title,
+        main_image_url,
+        (main_image_data IS NOT NULL) AS has_stored_image
+      FROM recipes
+      WHERE user_id = ${userId} AND deleted_at IS NULL
+      ORDER BY lower(title) ASC
+    `,
+  )
+  return rows.map((row) => ({
+    id: numberFromBigInt(row.id),
     title: row.title,
     mainImageUrl: row.main_image_url,
     hasStoredImage: Boolean(row.has_stored_image),
-  }
-}
-
-/** Expects `recipes` columns per db/recipes.sql */
-export async function listRecipes(userId: number): Promise<RecipeSummary[]> {
-  const rows = await getSql()`
-    SELECT
-      id,
-      title,
-      main_image_url,
-      (main_image_data IS NOT NULL) AS has_stored_image
-    FROM recipes
-    WHERE user_id = ${userId} AND deleted_at IS NULL
-    ORDER BY lower(title) ASC
-  `
-  return (rows as RecipeSummaryRow[]).map(toRecipeSummary)
+  }))
 }
 
 export async function getRecipeById(userId: number, recipeId: number): Promise<Recipe | null> {
-  const rows = await getSql()`
-    SELECT
-      id,
-      title,
-      ingredients,
-      instructions,
-      main_image_url,
-      (main_image_data IS NOT NULL) AS has_stored_image
-    FROM recipes
-    WHERE id = ${recipeId} AND user_id = ${userId} AND deleted_at IS NULL
-    LIMIT 1
-  `
-  const row = (rows as RecipeRow[])[0]
+  const row = await prisma.recipe.findFirst({
+    select: {
+      id: true,
+      title: true,
+      ingredients: true,
+      instructions: true,
+      main_image_url: true,
+      main_image_data: true,
+    },
+    where: { id: bigIntId(recipeId), user_id: userId, deleted_at: null },
+  })
   if (!row) return null
-  return toRecipe(row)
+  return fromRecipeColumns(row)
 }
 
 export async function getRecipeImageState(
   userId: number,
   recipeId: number,
 ): Promise<{ mainImageUrl: string | null; hasStoredImage: boolean } | null> {
-  const rows = await getSql()`
-    SELECT main_image_url, (main_image_data IS NOT NULL) AS has_stored_image
-    FROM recipes
-    WHERE id = ${recipeId} AND user_id = ${userId} AND deleted_at IS NULL
-    LIMIT 1
-  `
-  const row = (rows as { main_image_url: string | null; has_stored_image: boolean }[])[0]
+  const rows = await prisma.$queryRaw<RecipeImageUrlRowRaw[]>(
+    Prisma.sql`
+      SELECT
+        main_image_url,
+        (main_image_data IS NOT NULL) AS has_stored_image
+      FROM recipes
+      WHERE id = ${bigIntId(recipeId)} AND user_id = ${userId} AND deleted_at IS NULL
+      LIMIT 1
+    `,
+  )
+  const row = rows[0]
   if (!row) return null
-
-  return {
-    mainImageUrl: row.main_image_url,
-    hasStoredImage: Boolean(row.has_stored_image),
-  }
+  return { mainImageUrl: row.main_image_url, hasStoredImage: Boolean(row.has_stored_image) }
 }
 
 export async function getRecipeImageBlob(
   userId: number,
   recipeId: number,
 ): Promise<{ data: Buffer; mime: string } | null> {
-  const rows = await getSql()`
-    SELECT main_image_data, main_image_mime
-    FROM recipes
-    WHERE id = ${recipeId} AND user_id = ${userId} AND deleted_at IS NULL
-    LIMIT 1
-  `
-  const row = (rows as { main_image_data: Buffer | null; main_image_mime: string | null }[])[0]
-  if (!row?.main_image_data || !row.main_image_mime) return null
-
-  return { data: row.main_image_data, mime: row.main_image_mime }
+  const row = await prisma.recipe.findFirst({
+    select: { main_image_data: true, main_image_mime: true },
+    where: { id: bigIntId(recipeId), user_id: userId, deleted_at: null },
+  })
+  const data = row?.main_image_data
+  const mime = row?.main_image_mime
+  if (!data?.length || !mime) return null
+  return { data: Buffer.from(data), mime }
 }
 
 export async function createRecipe(
@@ -122,36 +118,53 @@ export async function createRecipe(
   mainImageData: Buffer | null,
   mainImageMime: string | null,
 ): Promise<Recipe> {
-  const rows = await getSql()`
-    INSERT INTO recipes (
-      user_id,
+  const row = await prisma.recipe.create({
+    select: {
+      id: true,
+      title: true,
+      ingredients: true,
+      instructions: true,
+      main_image_url: true,
+      main_image_data: true,
+    },
+    data: {
+      user_id: userId,
       title,
       ingredients,
       instructions,
-      main_image_url,
-      main_image_data,
-      main_image_mime
-    )
-    VALUES (
-      ${userId},
-      ${title},
-      ${ingredients},
-      ${instructions},
-      ${mainImageUrl},
-      ${mainImageData},
-      ${mainImageMime}
-    )
-    RETURNING
-      id,
-      title,
-      ingredients,
-      instructions,
-      main_image_url,
-      (main_image_data IS NOT NULL) AS has_stored_image
-  `
-  const row = (rows as RecipeRow[])[0]
-  if (!row) throw new Error("Failed to create recipe")
-  return toRecipe(row)
+      main_image_url: mainImageUrl,
+      main_image_data: mainImageData == null ? null : new Uint8Array(mainImageData),
+      main_image_mime: mainImageMime,
+    },
+  })
+  return fromRecipeColumns(row)
+}
+
+async function findOwnedRecipeId(userId: number, recipeId: number): Promise<bigint | null> {
+  const row = await prisma.recipe.findFirst({
+    select: { id: true },
+    where: { id: bigIntId(recipeId), user_id: userId, deleted_at: null },
+  })
+  return row?.id ?? null
+}
+
+async function updateRecipeOwned(
+  ownedId: bigint,
+  patch: Prisma.RecipeUncheckedUpdateInput,
+): Promise<Recipe | null> {
+  const row = await prisma.recipe.update({
+    select: {
+      id: true,
+      title: true,
+      ingredients: true,
+      instructions: true,
+      main_image_url: true,
+      main_image_data: true,
+    },
+    where: { id: ownedId },
+    data: patch,
+  })
+  return fromRecipeColumns(row)
 }
 
 export async function updateRecipe(
@@ -164,146 +177,65 @@ export async function updateRecipe(
   },
   imagePatch: RecipeImagePatch,
 ): Promise<Recipe | null> {
+  const ownedId = await findOwnedRecipeId(userId, recipeId)
+  if (ownedId == null) return null
+
+  const baseData: Prisma.RecipeUncheckedUpdateInput = {
+    title: data.title,
+    ingredients: data.ingredients,
+    instructions: data.instructions,
+    updated_at: new Date(),
+  }
+
   if (imagePatch.action === RecipeImagePatchAction.NoChange) {
-    const rows = await getSql()`
-      UPDATE recipes
-      SET
-        title = ${data.title},
-        ingredients = ${data.ingredients},
-        instructions = ${data.instructions},
-        updated_at = now()
-      WHERE id = ${recipeId} AND user_id = ${userId} AND deleted_at IS NULL
-      RETURNING
-        id,
-        title,
-        ingredients,
-        instructions,
-        main_image_url,
-        (main_image_data IS NOT NULL) AS has_stored_image
-    `
-    const row = (rows as RecipeRow[])[0]
-    if (!row) return null
-
-    return toRecipe(row)
+    return updateRecipeOwned(ownedId, baseData)
   }
-
   if (imagePatch.action === RecipeImagePatchAction.ClearAll) {
-    const rows = await getSql()`
-      UPDATE recipes
-      SET
-        title = ${data.title},
-        ingredients = ${data.ingredients},
-        instructions = ${data.instructions},
-        main_image_url = NULL,
-        main_image_data = NULL,
-        main_image_mime = NULL,
-        updated_at = now()
-      WHERE id = ${recipeId} AND user_id = ${userId} AND deleted_at IS NULL
-      RETURNING
-        id,
-        title,
-        ingredients,
-        instructions,
-        main_image_url,
-        (main_image_data IS NOT NULL) AS has_stored_image
-    `
-    const row = (rows as RecipeRow[])[0]
-    if (!row) return null
-
-    return toRecipe(row)
+    return updateRecipeOwned(ownedId, {
+      ...baseData,
+      main_image_url: null,
+      main_image_data: null,
+      main_image_mime: null,
+    })
   }
-
   if (imagePatch.action === RecipeImagePatchAction.SetFile) {
-    const rows = await getSql()`
-      UPDATE recipes
-      SET
-        title = ${data.title},
-        ingredients = ${data.ingredients},
-        instructions = ${data.instructions},
-        main_image_url = NULL,
-        main_image_data = ${imagePatch.buffer},
-        main_image_mime = ${imagePatch.mime},
-        updated_at = now()
-      WHERE id = ${recipeId} AND user_id = ${userId} AND deleted_at IS NULL
-      RETURNING
-        id,
-        title,
-        ingredients,
-        instructions,
-        main_image_url,
-        (main_image_data IS NOT NULL) AS has_stored_image
-    `
-    const row = (rows as RecipeRow[])[0]
-    if (!row) return null
-
-    return toRecipe(row)
+    return updateRecipeOwned(ownedId, {
+      ...baseData,
+      main_image_url: null,
+      main_image_data: new Uint8Array(imagePatch.buffer),
+      main_image_mime: imagePatch.mime,
+    })
   }
-
   if (imagePatch.action === RecipeImagePatchAction.SetExternalUrl) {
-    const rows = await getSql()`
-      UPDATE recipes
-      SET
-        title = ${data.title},
-        ingredients = ${data.ingredients},
-        instructions = ${data.instructions},
-        main_image_url = ${imagePatch.url},
-        main_image_data = NULL,
-        main_image_mime = NULL,
-        updated_at = now()
-      WHERE id = ${recipeId} AND user_id = ${userId} AND deleted_at IS NULL
-      RETURNING
-        id,
-        title,
-        ingredients,
-        instructions,
-        main_image_url,
-        (main_image_data IS NOT NULL) AS has_stored_image
-    `
-    const row = (rows as RecipeRow[])[0]
-    if (!row) return null
-
-    return toRecipe(row)
+    return updateRecipeOwned(ownedId, {
+      ...baseData,
+      main_image_url: imagePatch.url,
+      main_image_data: null,
+      main_image_mime: null,
+    })
   }
-
   if (imagePatch.action === RecipeImagePatchAction.ClearExternalUrlOnly) {
-    const rows = await getSql()`
-      UPDATE recipes
-      SET
-        title = ${data.title},
-        ingredients = ${data.ingredients},
-        instructions = ${data.instructions},
-        main_image_url = NULL,
-        updated_at = now()
-      WHERE id = ${recipeId} AND user_id = ${userId} AND deleted_at IS NULL
-      RETURNING
-        id,
-        title,
-        ingredients,
-        instructions,
-        main_image_url,
-        (main_image_data IS NOT NULL) AS has_stored_image
-    `
-    const row = (rows as RecipeRow[])[0]
-    if (!row) return null
-
-    return toRecipe(row)
+    return updateRecipeOwned(ownedId, {
+      ...baseData,
+      main_image_url: null,
+    })
   }
 
   throw new Error("Invalid image patch")
 }
 
 export async function softDeleteRecipe(userId: number, recipeId: number): Promise<void> {
-  await getSql()`
-    UPDATE recipes
-    SET deleted_at = now(), updated_at = now()
-    WHERE id = ${recipeId} AND user_id = ${userId} AND deleted_at IS NULL
-  `
+  const ownedId = await findOwnedRecipeId(userId, recipeId)
+  if (ownedId == null) return
+  await prisma.recipe.update({
+    where: { id: ownedId },
+    data: { deleted_at: new Date(), updated_at: new Date() },
+  })
 }
 
 export async function restoreRecipe(userId: number, recipeId: number): Promise<void> {
-  await getSql()`
-    UPDATE recipes
-    SET deleted_at = NULL, updated_at = now()
-    WHERE id = ${recipeId} AND user_id = ${userId} AND deleted_at IS NOT NULL
-  `
+  await prisma.recipe.updateMany({
+    where: { id: bigIntId(recipeId), user_id: userId, deleted_at: { not: null } },
+    data: { deleted_at: null, updated_at: new Date() },
+  })
 }
