@@ -1,35 +1,35 @@
-"use client"
+"use client";
 
-import Link from "next/link"
-import { signIn } from "next-auth/react"
-import { useState } from "react"
+import Link from "next/link";
+import { signIn } from "next-auth/react";
+import { useState } from "react";
 
-import { Button } from "@/components/ui/button"
-import { Field, FieldGroup, FieldLabel } from "@/components/ui/field"
-import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button";
+import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
 
-const RESEND_PROVIDER_ID = "resend"
+const RESEND_PROVIDER_ID = "resend";
 
 export function SignupForm() {
-  const [email, setEmail] = useState("")
-  const [status, setStatus] = useState<"idle" | "loading" | "sent" | "error">("idle")
-  const [errorMessage, setErrorMessage] = useState("")
+  const [email, setEmail] = useState("");
+  const [status, setStatus] = useState<"idle" | "loading" | "sent" | "error">("idle");
+  const [errorMessage, setErrorMessage] = useState("");
 
   async function onSubmit(event: React.FormEvent) {
-    event.preventDefault()
-    if (!email.trim()) return
-    setStatus("loading")
-    setErrorMessage("")
+    event.preventDefault();
+    if (!email.trim()) return;
+    setStatus("loading");
+    setErrorMessage("");
     const result = await signIn(RESEND_PROVIDER_ID, {
       email: email.trim(),
       redirect: false,
-    })
+    });
     if (result?.error) {
-      setStatus("error")
-      setErrorMessage("Could not send sign-up email. Check the address and try again.")
-      return
+      setStatus("error");
+      setErrorMessage("Could not send sign-up email. Check the address and try again.");
+      return;
     }
-    setStatus("sent")
+    setStatus("sent");
   }
 
   return (
@@ -55,7 +55,7 @@ export function SignupForm() {
                 autoComplete="email"
                 required
                 value={email}
-                onChange={(ev) => setEmail(ev.target.value)}
+                onChange={(event) => setEmail(event.target.value)}
                 placeholder="you@example.com"
                 disabled={status === "loading"}
               />
@@ -79,5 +79,5 @@ export function SignupForm() {
         </Link>
       </p>
     </div>
-  )
+  );
 }

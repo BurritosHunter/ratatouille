@@ -2,7 +2,7 @@ import Link from "next/link"
 
 import { restoreDeletedRecipe } from "@/lib/actions/recipes";
 import { RecipeList } from "@/features/recipe/recipe-list"
-import { UndoDeleteToast } from "@/components/molecules/toast-undo-delete"
+import { UndoDeleteToast } from "@/components/shared/toast-undo-delete";
 import { Button } from "@/components/ui/button"
 import { requireUserId } from "@/lib/auth/auth-user"
 import { listRecipes } from "@/lib/data/recipes"

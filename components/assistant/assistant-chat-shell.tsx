@@ -6,7 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import type { ReactNode } from "react";
 import { startTransition, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { MessageForm } from "@/components/organisms/message-form";
+import { MessageForm } from "@/components/shared/message-form";
 import { Button } from "@/components/ui/button";
 import { AssistantChatComposerProvider } from "@/features/assistant/contexts/assistant-chat-composer-context";
 import { GeneratedUIContext } from "@/features/assistant/contexts/assistant-generated-ui-context";
@@ -117,7 +117,8 @@ export function AssistantChatShell({ children }: { children: ReactNode }) {
           const useMockAi = fromStorage ?? devChatMockDefaultRef.current;
           if (useMockAi === null) { return { body: outgoingBody }; }
 
-          const scenario = readAssistantMockScenarioOverride() ?? devChatMockScenarioRef.current ??  DEFAULT_ASSISTANT_MOCK_SCENARIO;
+          const scenario =
+            readAssistantMockScenarioOverride() ?? devChatMockScenarioRef.current ?? DEFAULT_ASSISTANT_MOCK_SCENARIO;
           return {
             body: outgoingBody,
             headers: {

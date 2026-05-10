@@ -8,7 +8,7 @@ import { quickCreateIngredient } from "@/lib/actions/ingredients";
 import {
   SearchableMultiSelect,
   type SearchableMultiSelectListMode,
-} from "@/components/molecules/searchable-multi-select";
+} from "@/components/shared/searchable-multi-select";
 import { Button } from "@/components/ui/button";
 import { Field, FieldGroup } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";

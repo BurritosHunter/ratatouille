@@ -1,5 +1,5 @@
-import { AssistantAccessSwitch } from "@/components/molecules/assistant-access-switch";
-import { AssistantMockAiProfileMocks } from "@/components/molecules/assistant-mock-ai-switch";
+import { AssistantAccessSwitch } from "@/components/assistant/assistant-access-switch";
+import { AssistantMockAiProfileMocks } from "@/components/assistant/assistant-mock-ai-switch";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { requireUserId } from "@/lib/auth/auth-user";
 import { getServerT } from "@/lib/i18n/server";

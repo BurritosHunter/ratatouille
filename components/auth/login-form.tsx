@@ -3,16 +3,17 @@
 import Link from "next/link";
 import { signIn } from "next-auth/react";
 import { useState, useSyncExternalStore } from "react";
+import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
-import { useTranslation } from "react-i18next";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 
 const RESEND_PROVIDER_ID = "resend";
+
 const subscribeToNoopStore = () => () => {};
 
-function browserIsLocalhost() {
+function browserIsLocalhost(): boolean {
   if (typeof window === "undefined") return false;
   const { hostname } = window.location;
   return hostname === "localhost" || hostname === "127.0.0.1";
@@ -21,15 +22,9 @@ function browserIsLocalhost() {
 export function LoginForm() {
   const { t } = useTranslation();
   const [email, setEmail] = useState("");
-  const [status, setStatus] = useState<"idle" | "loading" | "sent" | "error">(
-    "idle"
-  );
+  const [status, setStatus] = useState<"idle" | "loading" | "sent" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState("");
-  const showDevLink = useSyncExternalStore(
-    subscribeToNoopStore,
-    browserIsLocalhost,
-    () => false
-  );
+  const showDevLink = useSyncExternalStore(subscribeToNoopStore, browserIsLocalhost, () => false);
 
   async function onSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -57,8 +52,7 @@ export function LoginForm() {
 
       {status === "sent" ? (
         <p className="text-center text-sm text-muted-foreground">
-          {t("auth.checkEmailBefore")}{" "}
-          <span className="font-medium text-foreground">{email}</span>{" "}
+          {t("auth.checkEmailBefore")} <span className="font-medium text-foreground">{email}</span>{" "}
           {t("auth.checkEmailAfter")}
         </p>
       ) : (
@@ -73,7 +67,7 @@ export function LoginForm() {
                 autoComplete="email"
                 required
                 value={email}
-                onChange={(ev) => setEmail(ev.target.value)}
+                onChange={(event) => setEmail(event.target.value)}
                 placeholder={t("auth.emailPlaceholder")}
                 disabled={status === "loading"}
               />

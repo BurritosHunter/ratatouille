@@ -1,4 +1,4 @@
-import { IngredientsCatalog } from "./_ingredients-catalog"
+import { IngredientsCatalog } from "@/components/ingredients/ingredients-catalog";
 import { requireUserId } from "@/lib/auth/auth-user"
 import { listIngredientCategoryShelfDefaults } from "@/lib/data/ingredient-category-shelf-defaults"
 import { getServerT } from "@/lib/i18n/server"

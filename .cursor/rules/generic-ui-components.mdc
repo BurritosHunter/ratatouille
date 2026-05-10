@@ -1,14 +1,15 @@
 ---
 description: Shared UI stays generic; domain UI colocated as app/**/_*.tsx next to page.tsx
-globs: components/ui/**/*,components/molecules/**/*,components/organisms/**/*,app/**/page.tsx,app/**/_*.tsx
+globs: components/ui/**/*,components/shared/**/*,components/ingredients/**/*,components/recipes/**/*,components/assistant/**/*,components/auth/**/*,app/**/page.tsx,app/**/_*.tsx
 alwaysApply: true
 ---
 
-# Generic UI (`components/ui`, `molecules`, `organisms`)
+# Generic UI (`components/ui`, **`components/shared`**)
 
-Components in those folders must stay **reusable**: names, file names, and public props describe **layout and behavior**, not one feature (no “recipe / ingredient / pantry” specificity in shared layers).
+Composable building blocks live under **`components/shared`** (composed controls, shells, selectors); **`components/ui`** holds primitives.
+Components in **`ui`** + **`shared`** must stay **reusable**: names, file names, and public props describe **layout and behavior**, not one feature (no “recipe / ingredient / pantry” specificity in shared layers).
 
-Put **feature-specific** UI next to **`page.tsx`**: **`app/.../_name.tsx`** (underscore = colocated partial, not a route). Never underscore **`page.tsx`** / **`layout.tsx`**.
+Put **section-specific** UI under **`components/<section>/`** (e.g. **`components/ingredients/ingredients-catalog.tsx`**, **`components/recipes/meal-ingredients-editor.tsx`**) and import from **`app/**/page.tsx`**. You may still use **`app/.../_name.tsx`** for thin route-only wrappers if needed. Never underscore **`page.tsx`** / **`layout.tsx`**.
 
 **Avoid** domain-coupled names/props (**`RecipeCard`**, **`IngredientRow`**, **`props: Recipe`** from **`lib/data`** when you could express the same UI with generic props).
 
@@ -20,7 +21,7 @@ export function RecipeMainImageFields({ recipe }: { recipe: Recipe }) {}
 export function ImageSelector({ previewSrc, defaultImageUrl }: { previewSrc: string | null; defaultImageUrl: string }) {}
 ```
 
-When **adding/editing** shared UI ⇒ keep generic. When **page**/**`_*.tsx`** ⇒ put non-generic pieces there instead of **`components/ui`**.
+When **adding/editing** generic pieces ⇒ keep them in **`components/shared`** / **`components/ui`**; section/domain UI ⇒ **`components/<section>/`** (not **`components/ui`** or misleadingly specific **`shared`** names).
 
 ## Exception: **`features/`** (project root)
 

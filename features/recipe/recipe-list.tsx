@@ -1,4 +1,4 @@
-import { RecipeListRowLink } from "@/components/molecules/recipe-list-row-link";
+import { RecipeListRowLink } from "@/components/shared/recipe-list-row-link";
 import type { RecipeListLinkItem } from "@/lib/helpers/recipe-list-link-items";
 
 type Props = { recipes: readonly RecipeListLinkItem[]; };

@@ -1,7 +1,7 @@
 import type { ReactNode } from "react"
 
-import { AssistantChatShell } from "./_assistant-chat-shell"
-import { SiteHeader } from "@/components/organisms/site-header";
+import { AssistantChatShell } from "@/components/assistant/assistant-chat-shell";
+import { SiteHeader } from "@/components/shared/site-header";
 
 export default function MainLayout({ children }: { children: ReactNode }) {
   return (

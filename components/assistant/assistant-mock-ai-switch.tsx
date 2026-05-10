@@ -27,6 +27,8 @@ export function AssistantMockAiProfileMocks({ mockSwitchId, scenarioSelectId }: 
   const [mockAiEnabled, setMockAiEnabled] = useState(false);
   const [scenario, setScenario] = useState<AssistantMockScenario>(DEFAULT_ASSISTANT_MOCK_SCENARIO);
 
+  /* Persisted mock flags are read inside the effect to avoid SSR/localStorage mismatch flicker before paint. */
+  /* eslint-disable react-hooks/set-state-in-effect -- one-shot hydration from storage/fetch defaults */
   useLayoutEffect(() => {
     const mockFromStorage = readAssistantMockAiOverride();
     const scenarioFromStorage = readAssistantMockScenarioOverride();
@@ -37,13 +39,17 @@ export function AssistantMockAiProfileMocks({ mockSwitchId, scenarioSelectId }: 
     if (scenarioFromStorage !== null) {
       setScenario(scenarioFromStorage);
     }
-    if (mockFromStorage !== null && scenarioFromStorage !== null) { return; }
+    if (mockFromStorage !== null && scenarioFromStorage !== null) {
+      return;
+    }
 
     void fetch("/api/assistant/dev-ai-mode", { credentials: "include" })
       .then((response) => (response.ok ? response.json() : null))
       .then((data: { defaultUseMock?: boolean; defaultMockScenario?: string } | null) => {
-        if (!data) { return; }
-        
+        if (!data) {
+          return;
+        }
+
         if (mockFromStorage === null && typeof data.defaultUseMock === "boolean") {
           setMockAiEnabled(data.defaultUseMock);
         }
@@ -56,6 +62,7 @@ export function AssistantMockAiProfileMocks({ mockSwitchId, scenarioSelectId }: 
       })
       .catch(() => {});
   }, []);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   useEffect(() => {
     const onStorage = (event: StorageEvent) => {
@@ -72,38 +79,49 @@ export function AssistantMockAiProfileMocks({ mockSwitchId, scenarioSelectId }: 
     return () => window.removeEventListener("storage", onStorage);
   }, []);
 
-  if (process.env.NODE_ENV === "production") { return null; }
+  if (process.env.NODE_ENV === "production") {
+    return null;
+  }
 
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-col gap-1">
         <div className="flex items-center justify-between gap-3">
-          <Label htmlFor={mockSwitchId} className="text-xs font-normal text-muted-foreground">{t("profile.mockAiLabel")}</Label>
+          <Label htmlFor={mockSwitchId} className="text-xs font-normal text-muted-foreground">
+            {t("profile.mockAiLabel")}
+          </Label>
           <Switch.Root
             id={mockSwitchId}
             checked={mockAiEnabled}
-            onCheckedChange={(value) => {
-              const next = value === true;
+            onCheckedChange={(checked) => {
+              const next = checked === true;
               setMockAiEnabled(next);
               writeAssistantMockAiOverride(next);
             }}
-            className={cn("peer inline-flex h-[1.15rem] w-8 shrink-0 cursor-pointer items-center rounded-full border border-transparent shadow-xs transition-colors outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 data-[state=checked]:bg-primary data-[state=unchecked]:bg-input dark:data-[state=unchecked]:bg-input/80",)}
+            className={cn(
+              "peer inline-flex h-[1.15rem] w-8 shrink-0 cursor-pointer items-center rounded-full border border-transparent shadow-xs transition-colors outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 data-[state=checked]:bg-primary data-[state=unchecked]:bg-input dark:data-[state=unchecked]:bg-input/80",
+            )}
           >
             <Switch.Thumb
-              className={cn("pointer-events-none block size-4 rounded-full bg-background shadow-lg ring-0 transition-transform data-[state=checked]:translate-x-[calc(100%-2px)] data-[state=unchecked]:translate-x-0.5 dark:bg-foreground",)}
+              className={cn(
+                "pointer-events-none block size-4 rounded-full bg-background shadow-lg ring-0 transition-transform data-[state=checked]:translate-x-[calc(100%-2px)] data-[state=unchecked]:translate-x-0.5 dark:bg-foreground",
+              )}
             />
           </Switch.Root>
         </div>
       </div>
       {mockAiEnabled ? (
         <div className="flex flex-row justify-between gap-4">
-          <Label htmlFor={scenarioSelectId} className="text-xs font-normal text-muted-foreground">{t("profile.mockScenarioLabel")}</Label>
+          <Label htmlFor={scenarioSelectId} className="text-xs font-normal text-muted-foreground">
+            {t("profile.mockScenarioLabel")}
+          </Label>
           <select
             id={scenarioSelectId}
             value={scenario}
             onChange={(event) => {
               const raw = event.target.value;
-              const next: AssistantMockScenario = raw === "surface" ? "surface" : raw === "pantry" ? "pantry" : "recipes";
+              const next: AssistantMockScenario =
+                raw === "surface" ? "surface" : raw === "pantry" ? "pantry" : "recipes";
               setScenario(next);
               writeAssistantMockScenarioOverride(next);
             }}

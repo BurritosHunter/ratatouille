@@ -3,8 +3,8 @@
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
 
-import type { IngredientsSortMode } from "./_list-editor"
-import { IngredientsEditor } from "./_list-editor"
+import type { IngredientsSortMode } from "./ingredients-list-editor";
+import { IngredientsEditor } from "./ingredients-list-editor";
 import type { CategoryShelfLifeDefaultsMap } from "@/lib/data/ingredient-category-shelf-defaults"
 import type { Ingredient } from "@/types/ingredient"
 import { inputVariants } from "@/components/ui/input"
