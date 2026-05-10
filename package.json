@@ -18,7 +18,8 @@
     "db:migrate": "prisma migrate dev && prisma generate",
     "db:push": "prisma db push && prisma generate",
     "db:pull": "prisma db pull",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "db:seed": "tsx prisma/seed/index.ts"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.69",
@@ -61,6 +62,7 @@
     "prettier-plugin-tailwindcss": "^0.7.2",
     "prisma": "^7.8.0",
     "tailwindcss": "^4.2.1",
+    "tsx": "^4.21.0",
     "typescript": "^5.9.3"
   }
 }

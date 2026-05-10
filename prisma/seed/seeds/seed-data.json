@@ -1,0 +1,984 @@
+{
+  "userId": 1,
+  "ingredients": [
+    {
+      "name": "Bocconcini"
+    },
+    {
+      "name": "Boursin cheese"
+    },
+    {
+      "name": "Brie Cheese"
+    },
+    {
+      "name": "Butter"
+    },
+    {
+      "name": "Buttermilk"
+    },
+    {
+      "name": "Cheddar Cheese"
+    },
+    {
+      "name": "Cheese"
+    },
+    {
+      "name": "Condensed Milk"
+    },
+    {
+      "name": "Cottage cheese"
+    },
+    {
+      "name": "Cream"
+    },
+    {
+      "name": "Cream Cheese"
+    },
+    {
+      "name": "Feta Cheese"
+    },
+    {
+      "name": "Greek Yogourt"
+    },
+    {
+      "name": "Milk"
+    },
+    {
+      "name": "Parmigiano Reggiano Cheese"
+    },
+    {
+      "name": "Ricotta Cheese"
+    },
+    {
+      "name": "Sour Cream"
+    },
+    {
+      "name": "Whipping Cream"
+    },
+    {
+      "name": "Yogourt"
+    },
+    {
+      "name": "Brown Rice"
+    },
+    {
+      "name": "Fries"
+    },
+    {
+      "name": "Pasta"
+    },
+    {
+      "name": "Potato"
+    },
+    {
+      "name": "Spaghetti"
+    },
+    {
+      "name": "Sweet potatoes"
+    },
+    {
+      "name": "White Rice"
+    },
+    {
+      "name": "Baguette"
+    },
+    {
+      "name": "Ciabatta"
+    },
+    {
+      "name": "Flour"
+    },
+    {
+      "name": "Graham Cracker"
+    },
+    {
+      "name": "Granolat"
+    },
+    {
+      "name": "Pita Bread"
+    },
+    {
+      "name": "Pizza Dough"
+    },
+    {
+      "name": "Puff Pastry"
+    },
+    {
+      "name": "Tortillas"
+    },
+    {
+      "name": "Tostitos Chip"
+    },
+    {
+      "name": "Whole Grain Bread"
+    },
+    {
+      "name": "Bacon"
+    },
+    {
+      "name": "Chicken"
+    },
+    {
+      "name": "Chicken Broth Concentrate"
+    },
+    {
+      "name": "Cold Cuts"
+    },
+    {
+      "name": "Egg"
+    },
+    {
+      "name": "Ground Beef"
+    },
+    {
+      "name": "Ground Pork"
+    },
+    {
+      "name": "Ground Turkey"
+    },
+    {
+      "name": "Herring"
+    },
+    {
+      "name": "Meatballs"
+    },
+    {
+      "name": "Pepperoni"
+    },
+    {
+      "name": "Pork Chops"
+    },
+    {
+      "name": "Pork Tenderloin"
+    },
+    {
+      "name": "Salmon"
+    },
+    {
+      "name": "Shredded Beef"
+    },
+    {
+      "name": "Shrimp"
+    },
+    {
+      "name": "Smoked Meat"
+    },
+    {
+      "name": "Steak"
+    },
+    {
+      "name": "Striploin Steak"
+    },
+    {
+      "name": "Tofu"
+    },
+    {
+      "name": "Tuna"
+    },
+    {
+      "name": "Turkey"
+    },
+    {
+      "name": "Turkey Sausage"
+    },
+    {
+      "name": "Almond"
+    },
+    {
+      "name": "Cashews"
+    },
+    {
+      "name": "Cocoa Powder"
+    },
+    {
+      "name": "Dark Chocolat"
+    },
+    {
+      "name": "Macadamia"
+    },
+    {
+      "name": "Peanut"
+    },
+    {
+      "name": "Pecans"
+    },
+    {
+      "name": "Pistachios"
+    },
+    {
+      "name": "Quick Oats"
+    },
+    {
+      "name": "Walnuts"
+    },
+    {
+      "name": "Whole Rolled Oats"
+    },
+    {
+      "name": "Bagel"
+    },
+    {
+      "name": "Chia seeds"
+    },
+    {
+      "name": "Flax Seeds"
+    },
+    {
+      "name": "Hemp seeds"
+    },
+    {
+      "name": "Pumpkin Seeds"
+    },
+    {
+      "name": "Quinoa"
+    },
+    {
+      "name": "Sesame Oil"
+    },
+    {
+      "name": "Sesame Seed"
+    },
+    {
+      "name": "Sunflower seeds"
+    },
+    {
+      "name": "Basil"
+    },
+    {
+      "name": "Cinnamon"
+    },
+    {
+      "name": "Dill"
+    },
+    {
+      "name": "Garlic"
+    },
+    {
+      "name": "Ginger"
+    },
+    {
+      "name": "Green Onion"
+    },
+    {
+      "name": "Miso Paste"
+    },
+    {
+      "name": "Nutritional Yeast"
+    },
+    {
+      "name": "Parsley"
+    },
+    {
+      "name": "Pesto"
+    },
+    {
+      "name": "Rosemary"
+    },
+    {
+      "name": "Sage"
+    },
+    {
+      "name": "Thyme"
+    },
+    {
+      "name": "Asparagus"
+    },
+    {
+      "name": "Avocado"
+    },
+    {
+      "name": "Beets"
+    },
+    {
+      "name": "Bell Peppers"
+    },
+    {
+      "name": "Black beans"
+    },
+    {
+      "name": "Black Lentils"
+    },
+    {
+      "name": "Black Olive"
+    },
+    {
+      "name": "Broccoli"
+    },
+    {
+      "name": "Bruschetta"
+    },
+    {
+      "name": "Brussels Sprouts"
+    },
+    {
+      "name": "Cabbage"
+    },
+    {
+      "name": "Cannellini Bean"
+    },
+    {
+      "name": "Carrot"
+    },
+    {
+      "name": "Cauliflower"
+    },
+    {
+      "name": "Celery"
+    },
+    {
+      "name": "Cherry Tomatoes"
+    },
+    {
+      "name": "Chickpeas"
+    },
+    {
+      "name": "Chili Pepper"
+    },
+    {
+      "name": "Chives"
+    },
+    {
+      "name": "Cucumber"
+    },
+    {
+      "name": "Edamame"
+    },
+    {
+      "name": "Eggplant"
+    },
+    {
+      "name": "Green Beans"
+    },
+    {
+      "name": "Green Peas"
+    },
+    {
+      "name": "Hummus"
+    },
+    {
+      "name": "Jalapeno"
+    },
+    {
+      "name": "Kale Greens"
+    },
+    {
+      "name": "Kidney Beans"
+    },
+    {
+      "name": "Lettuce"
+    },
+    {
+      "name": "Olive"
+    },
+    {
+      "name": "Onion"
+    },
+    {
+      "name": "Parsnips"
+    },
+    {
+      "name": "Pickle"
+    },
+    {
+      "name": "Radishes"
+    },
+    {
+      "name": "Red Onion"
+    },
+    {
+      "name": "Refried Beans"
+    },
+    {
+      "name": "Shangai Bok Choy"
+    },
+    {
+      "name": "Shitake Mushrooms"
+    },
+    {
+      "name": "Snap peas"
+    },
+    {
+      "name": "Spinach"
+    },
+    {
+      "name": "Split peas"
+    },
+    {
+      "name": "Tomato"
+    },
+    {
+      "name": "Tomato Paste"
+    },
+    {
+      "name": "Tomato Sauce"
+    },
+    {
+      "name": "Turnip greens"
+    },
+    {
+      "name": "Turnips"
+    },
+    {
+      "name": "White Onion"
+    },
+    {
+      "name": "Zucchini"
+    },
+    {
+      "name": "Apple"
+    },
+    {
+      "name": "Banana"
+    },
+    {
+      "name": "Blackberries"
+    },
+    {
+      "name": "Blueberries"
+    },
+    {
+      "name": "Cherry"
+    },
+    {
+      "name": "Cranberries"
+    },
+    {
+      "name": "Grapes"
+    },
+    {
+      "name": "Lemon"
+    },
+    {
+      "name": "Lime"
+    },
+    {
+      "name": "Mangoes"
+    },
+    {
+      "name": "Nectarine"
+    },
+    {
+      "name": "Orange"
+    },
+    {
+      "name": "Orange Juice"
+    },
+    {
+      "name": "Peache"
+    },
+    {
+      "name": "Pineapple"
+    },
+    {
+      "name": "Raspberries"
+    },
+    {
+      "name": "Rutabaga"
+    },
+    {
+      "name": "Strawberrie"
+    },
+    {
+      "name": "Alfredo Sauce"
+    },
+    {
+      "name": "Apple Cider Vinegar"
+    },
+    {
+      "name": "Baking Soda"
+    },
+    {
+      "name": "Banana Pepper"
+    },
+    {
+      "name": "Beef Broth Concentrate"
+    },
+    {
+      "name": "Brown Sugar"
+    },
+    {
+      "name": "Calrose Rice"
+    },
+    {
+      "name": "Caramel"
+    },
+    {
+      "name": "Corn"
+    },
+    {
+      "name": "Corn Starch"
+    },
+    {
+      "name": "Cumin"
+    },
+    {
+      "name": "Extra Virgin Olive Oil"
+    },
+    {
+      "name": "Fettuccine"
+    },
+    {
+      "name": "Filo Pastry"
+    },
+    {
+      "name": "Gnocchi"
+    },
+    {
+      "name": "Ground Basil"
+    },
+    {
+      "name": "Ground Chili"
+    },
+    {
+      "name": "Ground Garlic"
+    },
+    {
+      "name": "Ground Ginger"
+    },
+    {
+      "name": "Ground Nutmeg"
+    },
+    {
+      "name": "Ground Onion"
+    },
+    {
+      "name": "Ground Oregano"
+    },
+    {
+      "name": "Hard Egg"
+    },
+    {
+      "name": "Hoisin Sauce"
+    },
+    {
+      "name": "Honey"
+    },
+    {
+      "name": "Jam"
+    },
+    {
+      "name": "Jasmine Rice"
+    },
+    {
+      "name": "Kefir"
+    },
+    {
+      "name": "Lemon Zest"
+    },
+    {
+      "name": "Macaroni"
+    },
+    {
+      "name": "Maple Syrup"
+    },
+    {
+      "name": "Marinara Sauce"
+    },
+    {
+      "name": "Mashmello"
+    },
+    {
+      "name": "Mayonnaise"
+    },
+    {
+      "name": "Mozzarella"
+    },
+    {
+      "name": "Mustard"
+    },
+    {
+      "name": "Nutella"
+    },
+    {
+      "name": "Oyster Sauce"
+    },
+    {
+      "name": "Paprika"
+    },
+    {
+      "name": "Parmesan Cheese"
+    },
+    {
+      "name": "Peanut Butter"
+    },
+    {
+      "name": "Pear"
+    },
+    {
+      "name": "Peppemint Extract"
+    },
+    {
+      "name": "Red Wine"
+    },
+    {
+      "name": "Relish"
+    },
+    {
+      "name": "Rice Vinegar"
+    },
+    {
+      "name": "Romano Cheese"
+    },
+    {
+      "name": "Salsa"
+    },
+    {
+      "name": "Soy Milk"
+    },
+    {
+      "name": "Soy Sauce"
+    },
+    {
+      "name": "Sriracha"
+    },
+    {
+      "name": "Sugar"
+    },
+    {
+      "name": "Swiss Cheese"
+    },
+    {
+      "name": "Tex Mex Cheese"
+    },
+    {
+      "name": "Thai sauce"
+    },
+    {
+      "name": "Vanilla"
+    },
+    {
+      "name": "Vegetable Broth"
+    },
+    {
+      "name": "Vegetable Broth Concentrate"
+    },
+    {
+      "name": "White Chocolat"
+    },
+    {
+      "name": "White Wine Vinegar"
+    }
+  ],
+  "recipes": [
+    {
+      "title": "Tomato Garlic Pasta",
+      "ingredientsText": "400 g Pasta\n2 cups Tomato Sauce\n3 cloves Garlic\n2 tbsp Extra Virgin Olive Oil\n1/2 cup Basil",
+      "instructions": "1. Bring a large pot of salted water to a boil and cook the pasta until al dente.\n2. In a saucepan, warm the tomato sauce with minced garlic and torn basil.\n3. Drain the pasta, toss with the sauce and a drizzle of olive oil, and serve.",
+      "lines": [
+        {
+          "sortOrder": 0,
+          "ingredientName": "Pasta",
+          "quantityNote": "400 g"
+        },
+        {
+          "sortOrder": 1,
+          "ingredientName": "Tomato Sauce",
+          "quantityNote": "2 cups"
+        },
+        {
+          "sortOrder": 2,
+          "ingredientName": "Garlic",
+          "quantityNote": "3 cloves"
+        },
+        {
+          "sortOrder": 3,
+          "ingredientName": "Extra Virgin Olive Oil",
+          "quantityNote": "2 tbsp"
+        },
+        {
+          "sortOrder": 4,
+          "ingredientName": "Basil",
+          "quantityNote": "1/2 cup"
+        }
+      ]
+    },
+    {
+      "title": "Greek Salad Bowl",
+      "ingredientsText": "1 head Lettuce\n1 medium Cucumber\n2 medium Tomato\n150 g Feta Cheese\n1/2 cup Olive\n1 Lemon",
+      "instructions": "1. Chop the lettuce, cucumber, and tomato into bite-sized pieces.\n2. Combine in a bowl with olives and crumbled feta.\n3. Squeeze lemon over the top and toss gently before serving.",
+      "lines": [
+        {
+          "sortOrder": 0,
+          "ingredientName": "Lettuce",
+          "quantityNote": "1 head"
+        },
+        {
+          "sortOrder": 1,
+          "ingredientName": "Cucumber",
+          "quantityNote": "1"
+        },
+        {
+          "sortOrder": 2,
+          "ingredientName": "Tomato",
+          "quantityNote": "2 medium"
+        },
+        {
+          "sortOrder": 3,
+          "ingredientName": "Feta Cheese",
+          "quantityNote": "150 g"
+        },
+        {
+          "sortOrder": 4,
+          "ingredientName": "Olive",
+          "quantityNote": "1/2 cup"
+        },
+        {
+          "sortOrder": 5,
+          "ingredientName": "Lemon",
+          "quantityNote": "1"
+        }
+      ]
+    },
+    {
+      "title": "Honey Banana Oatmeal",
+      "ingredientsText": "1 cup Quick Oats\n2 cups Milk\n2 tbsp Honey\n1 Banana",
+      "instructions": "1. Heat the milk in a small pot until steaming.\n2. Stir in the oats and cook until thickened to your liking.\n3. Top with sliced banana and a drizzle of honey.",
+      "lines": [
+        {
+          "sortOrder": 0,
+          "ingredientName": "Quick Oats",
+          "quantityNote": "1 cup"
+        },
+        {
+          "sortOrder": 1,
+          "ingredientName": "Milk",
+          "quantityNote": "2 cups"
+        },
+        {
+          "sortOrder": 2,
+          "ingredientName": "Honey",
+          "quantityNote": "2 tbsp"
+        },
+        {
+          "sortOrder": 3,
+          "ingredientName": "Banana",
+          "quantityNote": "1"
+        }
+      ]
+    },
+    {
+      "title": "Chicken and Broccoli Rice",
+      "ingredientsText": "500 g Chicken\n1 head Broccoli\n3 tbsp Soy Sauce\n1 tbsp Ginger\n2 cloves Garlic\n1 cup White Rice",
+      "instructions": "1. Cook the white rice until fluffy and keep warm.\n2. Stir-fry chicken until golden, then add broccoli, garlic, and ginger.\n3. Add soy sauce, toss until the broccoli is tender-crisp, and serve over rice.",
+      "lines": [
+        {
+          "sortOrder": 0,
+          "ingredientName": "Chicken",
+          "quantityNote": "500 g"
+        },
+        {
+          "sortOrder": 1,
+          "ingredientName": "Broccoli",
+          "quantityNote": "1 head"
+        },
+        {
+          "sortOrder": 2,
+          "ingredientName": "Soy Sauce",
+          "quantityNote": "3 tbsp"
+        },
+        {
+          "sortOrder": 3,
+          "ingredientName": "Ginger",
+          "quantityNote": "1 tbsp"
+        },
+        {
+          "sortOrder": 4,
+          "ingredientName": "Garlic",
+          "quantityNote": "2 cloves"
+        },
+        {
+          "sortOrder": 5,
+          "ingredientName": "White Rice",
+          "quantityNote": "1 cup"
+        }
+      ]
+    },
+    {
+      "title": "Beef Tacos",
+      "ingredientsText": "500 g Ground Beef\n8 small Tortillas\n1 cup shredded Cheddar Cheese\n2 cups shredded Lettuce\n2 medium Tomato\n1/2 cup Sour Cream",
+      "instructions": "1. Brown the ground beef in a skillet, seasoning as you like.\n2. Warm the tortillas until pliable.\n3. Fill with beef, lettuce, tomato, cheese, and a dollop of sour cream.",
+      "lines": [
+        {
+          "sortOrder": 0,
+          "ingredientName": "Ground Beef",
+          "quantityNote": "500 g"
+        },
+        {
+          "sortOrder": 1,
+          "ingredientName": "Tortillas",
+          "quantityNote": "8 small"
+        },
+        {
+          "sortOrder": 2,
+          "ingredientName": "Cheddar Cheese",
+          "quantityNote": "1 cup shredded"
+        },
+        {
+          "sortOrder": 3,
+          "ingredientName": "Lettuce",
+          "quantityNote": "2 cups shredded"
+        },
+        {
+          "sortOrder": 4,
+          "ingredientName": "Tomato",
+          "quantityNote": "2 medium"
+        },
+        {
+          "sortOrder": 5,
+          "ingredientName": "Sour Cream",
+          "quantityNote": "1/2 cup"
+        }
+      ]
+    },
+    {
+      "title": "Salmon Avocado Bowl",
+      "ingredientsText": "2 fillets Salmon\n1 cup Brown Rice\n1 Avocado\n1/2 Cucumber\n2 tbsp Soy Sauce",
+      "instructions": "1. Cook the brown rice and let it cool slightly.\n2. Pan-sear or bake the salmon until cooked through.\n3. Flake the salmon over rice with cucumber and avocado, then finish with soy sauce.",
+      "lines": [
+        {
+          "sortOrder": 0,
+          "ingredientName": "Salmon",
+          "quantityNote": "2 fillets"
+        },
+        {
+          "sortOrder": 1,
+          "ingredientName": "Brown Rice",
+          "quantityNote": "1 cup"
+        },
+        {
+          "sortOrder": 2,
+          "ingredientName": "Avocado",
+          "quantityNote": "1"
+        },
+        {
+          "sortOrder": 3,
+          "ingredientName": "Cucumber",
+          "quantityNote": "1/2"
+        },
+        {
+          "sortOrder": 4,
+          "ingredientName": "Soy Sauce",
+          "quantityNote": "2 tbsp"
+        }
+      ]
+    },
+    {
+      "title": "Margherita Pizza",
+      "ingredientsText": "1 ball Pizza Dough\n1/2 cup Tomato Sauce\n200 g Mozzarella\n1/4 cup Basil",
+      "instructions": "1. Stretch or roll the dough and place on a prepared baking surface.\n2. Spread tomato sauce, add mozzarella, and bake in a hot oven until the crust is golden.\n3. Top with fresh basil just before serving.",
+      "lines": [
+        {
+          "sortOrder": 0,
+          "ingredientName": "Pizza Dough",
+          "quantityNote": "1 ball"
+        },
+        {
+          "sortOrder": 1,
+          "ingredientName": "Tomato Sauce",
+          "quantityNote": "1/2 cup"
+        },
+        {
+          "sortOrder": 2,
+          "ingredientName": "Mozzarella",
+          "quantityNote": "200 g"
+        },
+        {
+          "sortOrder": 3,
+          "ingredientName": "Basil",
+          "quantityNote": "1/4 cup"
+        }
+      ]
+    },
+    {
+      "title": "Vegetable Soup",
+      "ingredientsText": "6 cups Vegetable Broth\n2 Carrot\n2 stalks Celery\n1 Onion\n2 medium Potato\n2 tbsp Tomato Paste",
+      "instructions": "1. Sauté onion, carrot, and celery until softened.\n2. Add potato, tomato paste, and broth; bring to a simmer.\n3. Cook until the vegetables are tender, then adjust seasoning and serve hot.",
+      "lines": [
+        {
+          "sortOrder": 0,
+          "ingredientName": "Vegetable Broth",
+          "quantityNote": "6 cups"
+        },
+        {
+          "sortOrder": 1,
+          "ingredientName": "Carrot",
+          "quantityNote": "2"
+        },
+        {
+          "sortOrder": 2,
+          "ingredientName": "Celery",
+          "quantityNote": "2 stalks"
+        },
+        {
+          "sortOrder": 3,
+          "ingredientName": "Onion",
+          "quantityNote": "1"
+        },
+        {
+          "sortOrder": 4,
+          "ingredientName": "Potato",
+          "quantityNote": "2 medium"
+        },
+        {
+          "sortOrder": 5,
+          "ingredientName": "Tomato Paste",
+          "quantityNote": "2 tbsp"
+        }
+      ]
+    },
+    {
+      "title": "Lemon Parmesan Salad",
+      "ingredientsText": "1 head Lettuce\n1/2 cup shaved Parmesan Cheese\n1 Lemon\n1 clove Garlic",
+      "instructions": "1. Whisk lemon juice with finely minced garlic for a simple dressing.\n2. Toss chopped lettuce with shaved parmesan.\n3. Dress the salad and serve right away.",
+      "lines": [
+        {
+          "sortOrder": 0,
+          "ingredientName": "Lettuce",
+          "quantityNote": "1 head"
+        },
+        {
+          "sortOrder": 1,
+          "ingredientName": "Parmesan Cheese",
+          "quantityNote": "1/2 cup shaved"
+        },
+        {
+          "sortOrder": 2,
+          "ingredientName": "Lemon",
+          "quantityNote": "1"
+        },
+        {
+          "sortOrder": 3,
+          "ingredientName": "Garlic",
+          "quantityNote": "1 clove"
+        }
+      ]
+    },
+    {
+      "title": "Berry Yogourt Smoothie",
+      "ingredientsText": "1 cup Yogourt\n1 cup Blueberries\n1 Banana\n1/2 cup Milk",
+      "instructions": "1. Add yogourt, blueberries, banana, and milk to a blender.\n2. Blend until smooth and pour into glasses.",
+      "lines": [
+        {
+          "sortOrder": 0,
+          "ingredientName": "Yogourt",
+          "quantityNote": "1 cup"
+        },
+        {
+          "sortOrder": 1,
+          "ingredientName": "Blueberries",
+          "quantityNote": "1 cup"
+        },
+        {
+          "sortOrder": 2,
+          "ingredientName": "Banana",
+          "quantityNote": "1"
+        },
+        {
+          "sortOrder": 3,
+          "ingredientName": "Milk",
+          "quantityNote": "1/2 cup"
+        }
+      ]
+    }
+  ]
+}

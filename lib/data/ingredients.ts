@@ -1,12 +1,5 @@
 import { prisma } from "@/prisma/client"
-import {
-  type Ingredient,
-  type IngredientCategory,
-  type IngredientShelfLifePreset,
-  parseIngredientCategory,
-  resolveShelfLifePreset,
-} from "../models/ingredient"
-
+import { type Ingredient, type IngredientCategory, type IngredientShelfLifePreset, parseIngredientCategory, resolveShelfLifePreset } from "../models/ingredient"
 import { bigIntId, numberFromBigInt } from "@/prisma/mappers"
 
 export type CreateIngredientOptions = {
