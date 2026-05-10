@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import type { LayoutOption } from "@/lib/assistant-tools/layout-regions";
+import type { LayoutOption } from "@/lib/validators";
 
 export type LayoutRegionSlot = ReactNode | null | undefined;
 

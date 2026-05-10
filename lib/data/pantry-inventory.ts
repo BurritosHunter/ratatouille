@@ -1,13 +1,13 @@
 import type { Prisma } from "@/prisma/client"
 
 import { prisma } from "@/prisma/client"
-import { resolveShelfLifePreset } from "@/lib/models/ingredient"
+import { resolveShelfLifePreset } from "@/types/ingredient"
 import type {
   PantryCatalogHit,
   PantryInventoryRow,
   PantryItemKind,
   PantryStorageLocation,
-} from "@/lib/models/pantry-inventory"
+} from "@/types/pantry-inventory"
 
 import { bigIntId, numberFromBigInt } from "@/prisma/mappers"
 

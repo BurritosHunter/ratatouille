@@ -10,8 +10,8 @@ import { Button } from "@/components/ui/button";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input, inputVariants } from "@/components/ui/input";
 import { cn } from "@/lib/helpers/utils";
-import type { PantryCatalogHit, PantryInventoryRow, PantryStorageLocation } from "@/lib/models/pantry-inventory";
-import { expirationDaysOffsetForShelfLifePreset, INGREDIENT_SHELF_LIFE_PRESETS, type IngredientShelfLifePreset } from "@/lib/models/ingredient";
+import type { PantryCatalogHit, PantryInventoryRow, PantryStorageLocation } from "@/types/pantry-inventory";
+import { expirationDaysOffsetForShelfLifePreset, INGREDIENT_SHELF_LIFE_PRESETS, type IngredientShelfLifePreset } from "@/types/ingredient";
 
 type LocationFilter = "all" | PantryStorageLocation;
 type PantryExpiryQuickOption = { kind: "today" } | { kind: "twoDaysPantryOnly" } | { kind: "preset"; preset: IngredientShelfLifePreset };

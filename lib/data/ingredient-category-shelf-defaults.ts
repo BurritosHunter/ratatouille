@@ -6,7 +6,7 @@ import {
   parseIngredientCategory,
   type IngredientShelfLifePreset,
   resolveShelfLifePreset,
-} from "../models/ingredient"
+} from "@/types/ingredient"
 
 export type CategoryShelfLifeDefaultsMap = Record<IngredientCategory, IngredientShelfLifePreset>
 

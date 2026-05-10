@@ -6,7 +6,7 @@ import { requireUserId } from "@/lib/auth/auth-user";
 import { createIngredient } from "@/lib/data/ingredients";
 import { deletePantryInventoryRow, insertPantryInventoryRow, searchPantryCatalog } from "@/lib/data/pantry-inventory";
 import { shortestExpirationDaysOffsetForRecipe } from "@/lib/data/recipe-ingredients";
-import type { PantryCatalogHit, PantryStorageLocation } from "@/lib/models/pantry-inventory";
+import type { PantryCatalogHit, PantryStorageLocation } from "@/types/pantry-inventory";
 
 const STORAGE_SET = new Set<PantryStorageLocation>(["fridge", "pantry", "storage", "freezer"]);
 

@@ -1,4 +1,4 @@
-import type { RecipeSummary } from "@/lib/models/recipe";
+import type { RecipeSummary } from "@/types/recipe";
 import { imageSrcFromStoredOrExternal } from "@/lib/helpers/image/stored-or-external-src";
 
 export type RecipeListLinkItem = {

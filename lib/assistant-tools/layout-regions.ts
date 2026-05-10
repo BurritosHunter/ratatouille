@@ -1,13 +1,6 @@
-import { z } from "zod";
-
-export const layoutOptions = ["singleColumn", "twoColumn", "fullWidth"] as const;
-export type LayoutOption = (typeof layoutOptions)[number];
+import { layoutRegionsSchema, type LayoutOption } from "@/lib/validators";
 
 export const layoutRegionsToolType = "tool-layoutRegions" as const;
-
-export const layoutRegionsSchema = z.object({ layout: z.enum(layoutOptions) });
-
-export type LayoutRegionsToolInput = z.infer<typeof layoutRegionsSchema>;
 
 export function tryParseLayoutRegionsToolOutput(toolOutput: unknown): { layout: LayoutOption } | null {
   const parsed = layoutRegionsSchema.safeParse(toolOutput);

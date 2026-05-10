@@ -8,11 +8,11 @@ import {
   softDeleteIngredient,
   updateIngredient,
 } from "@/lib/data/ingredients"
-import type { IngredientShelfLifePreset } from "@/lib/models/ingredient"
+import type { IngredientShelfLifePreset } from "@/types/ingredient"
 import {
   parseIngredientCategory,
   resolveShelfLifePreset,
-} from "@/lib/models/ingredient"
+} from "@/types/ingredient"
 
 export type IngredientLinePayload = {
   id?: number

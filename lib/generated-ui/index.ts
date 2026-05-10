@@ -1,6 +1,7 @@
 import type { RecipeListLinkItem } from "@/lib/helpers/recipe-list-link-items";
-import { layoutRegionsToolType, tryParseLayoutRegionsToolOutput, type LayoutOption } from "@/lib/assistant-tools/layout-regions";
-import type { PantryInventoryRow, PantryItemKind } from "@/lib/models/pantry-inventory";
+import { layoutRegionsToolType, tryParseLayoutRegionsToolOutput } from "@/lib/assistant-tools/layout-regions";
+import type { LayoutOption } from "@/lib/validators";
+import type { PantryInventoryRow, PantryItemKind } from "@/types/pantry-inventory";
 
 export type { LayoutOption };
 

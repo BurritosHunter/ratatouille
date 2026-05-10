@@ -18,7 +18,7 @@ import {
 } from "@/lib/data/recipe-ingredients"
 import { parseRecipeIngredientsPayload } from "@/lib/helpers/recipe-ingredients-form"
 import { RecipeImagePatchAction } from "@/lib/constants"
-import type { RecipeImagePatch } from "@/lib/models/recipe"
+import type { RecipeImagePatch } from "@/types/recipe"
 import { parseImageUpload } from "@/lib/helpers/image/image-file"
 
 function parseMainImageUrl(raw: unknown): string | null {

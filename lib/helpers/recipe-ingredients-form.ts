@@ -1,4 +1,4 @@
-import type { RecipeIngredientPayloadItem } from "@/lib/models/recipe-ingredient"
+import type { RecipeIngredientPayloadItem } from "@/types/recipe-ingredient"
 
 export function parseRecipeIngredientsPayload(raw: unknown): RecipeIngredientPayloadItem[] | null {
   if (typeof raw !== "string") return null

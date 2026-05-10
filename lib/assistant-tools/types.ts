@@ -1,7 +1,7 @@
-import { z } from "zod";
+import type { ZodType } from "zod";
 
 export type AssistantChatTool = {
   description: string;
-  inputSchema: z.ZodType<unknown>;
+  inputSchema: ZodType<unknown>;
   execute: (input?: unknown) => Promise<unknown>;
 };

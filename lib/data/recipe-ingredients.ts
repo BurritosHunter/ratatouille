@@ -1,6 +1,6 @@
 import { prisma } from "@/prisma/client"
-import type { RecipeIngredientLine, RecipeIngredientPayloadItem } from "../models/recipe-ingredient"
-import { expirationDaysOffsetForShelfLifePreset, resolveShelfLifePreset } from "@/lib/models/ingredient"
+import type { RecipeIngredientLine, RecipeIngredientPayloadItem } from "@/types/recipe-ingredient"
+import { expirationDaysOffsetForShelfLifePreset, resolveShelfLifePreset } from "@/types/ingredient"
 import { findOrCreateIngredient, getIngredientById } from "./ingredients"
 
 import { bigIntId, numberFromBigInt } from "@/prisma/mappers"

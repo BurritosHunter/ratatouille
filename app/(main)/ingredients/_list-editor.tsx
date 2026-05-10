@@ -11,14 +11,14 @@ import { Button } from "@/components/ui/button"
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field"
 import { Input, inputVariants } from "@/components/ui/input"
 import { cn } from "@/lib/helpers/utils"
-import type { Ingredient, IngredientCategory, IngredientShelfLifePreset } from "@/lib/models/ingredient"
+import type { Ingredient, IngredientCategory, IngredientShelfLifePreset } from "@/types/ingredient"
 import {
   DEFAULT_SHELF_LIFE_PRESET,
   INGREDIENT_CATEGORIES,
   INGREDIENT_SHELF_LIFE_PRESETS,
   parseIngredientCategory,
   resolveShelfLifePreset,
-} from "@/lib/models/ingredient"
+} from "@/types/ingredient"
 
 type Line = {
   id?: number

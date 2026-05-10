@@ -2,7 +2,7 @@ import { Prisma } from "@/prisma/client"
 
 import { RecipeImagePatchAction } from "@/lib/constants"
 import { prisma } from "@/prisma/client"
-import type { Recipe, RecipeImagePatch, RecipeSummary } from "../models/recipe"
+import type { Recipe, RecipeImagePatch, RecipeSummary } from "@/types/recipe"
 
 import { bigIntId, numberFromBigInt } from "@/prisma/mappers"
 
